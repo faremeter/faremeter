@@ -35,5 +35,6 @@ checkout-staging() {
 
 	dir="$_GIT_HOOK_STAGING_DIR/$hookname-$$"
 	git checkout-index -a --prefix="$dir/"
+	ln -s "$(realpath "$SCRIPTDIR/../node_modules")" "$dir/node_modules"
 	echo "$dir"
 }

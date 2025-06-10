@@ -2,5 +2,8 @@
   "name": "faremeter",
   "license": "GPL-3.0-only",
   "packageManager": "pnpm@10.12.1",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
 }

@@ -4,6 +4,9 @@
   "packageManager": "pnpm@10.12.1",
   "private": true,
   "devDependencies": {
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "typescript-language-server": "^4.3.4"
   }
 }

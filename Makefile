@@ -2,6 +2,7 @@ all: lint test
 
 lint:
 	pnpm prettier -c .
+	pnpm eslint .
 
 test:
 

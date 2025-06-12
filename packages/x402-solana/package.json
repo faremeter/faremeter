@@ -4,6 +4,28 @@
   "license": "GPL-3.0-only",
   "main": "dist/src/index.js",
   "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/src/index.js",
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    },
+    "./header": {
+      "require": "./dist/src/header.js",
+      "import": "./dist/header.js",
+      "types": "./dist/header.d.ts"
+    },
+    "./solana": {
+      "require": "./dist/src/solana.js",
+      "import": "./dist/src/solana.js",
+      "types": "./dist/src/solana.d.ts"
+    },
+    "./types": {
+      "require": "./dist/src/types.js",
+      "import": "./dist/src/types.js",
+      "types": "./dist/src/types.d.ts"
+    }
+  },
   "packageManager": "pnpm@10.12.1",
   "devDependencies": {
     "@eslint/js": "^9.28.0",

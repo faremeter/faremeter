@@ -17,15 +17,12 @@ import {
   processTransaction,
   settleTransaction,
 } from "./solana";
-import fs from "fs";
 
-export const paymentMiddleware = (paymentRequirements: PaymentRequirements) => {
+export const paymentMiddleware = (
+  adminKeypair: Keypair,
+  paymentRequirements: PaymentRequirements,
+) => {
   const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-  const adminKeypair = Keypair.fromSecretKey(
-    Uint8Array.from(
-      JSON.parse(fs.readFileSync("../../keypairs/admin.json", "utf-8")),
-    ),
-  );
 
   const sendPaymentRequired = (res: Response) => {
     res.status(402).json({

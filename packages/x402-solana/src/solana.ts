@@ -1,33 +1,23 @@
 import {
   clusterApiUrl,
   Keypair,
-  MessageV0,
   PublicKey,
   SystemProgram,
-  TransactionInstruction,
   TransactionMessage,
-  TransactionSignature,
-  VersionedMessage,
+  type TransactionSignature,
   VersionedTransaction,
 } from "@solana/web3.js";
 import { Connection } from "@solana/web3.js";
-import {
-  CreatePaymentArgs,
-  PaymentRequirements,
-  TransactionVerificationResult,
-  Uint8Array32,
-} from "./types";
+import type { CreatePaymentArgs, PaymentRequirements } from "./types";
 import idl from "./payment_program.json";
 import {
   AnchorProvider,
   BN,
   BorshCoder,
-  Instruction,
   Program,
-  Provider,
   Wallet,
 } from "@coral-xyz/anchor";
-import { PaymentProgram } from "./idl_type";
+import type { PaymentProgram } from "./idl_type";
 
 import paymentProgramInfo from "./payment_program.json" assert { type: "json" };
 
@@ -168,7 +158,7 @@ export const createPaymentTransaction = async (
 ): Promise<VersionedTransaction> => {
   const nonce = crypto.getRandomValues(new Uint8Array(32));
 
-  const [paymentAccount, bump] = PublicKey.findProgramAddressSync(
+  const [paymentAccount] = PublicKey.findProgramAddressSync(
     [Buffer.from("payment"), nonce, payer.publicKey.toBuffer()],
     program.programId,
   );

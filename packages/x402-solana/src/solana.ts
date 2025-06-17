@@ -74,6 +74,10 @@ export const isValidTransferTransaction = async (
           transaction.transaction.message.staticAccountKeys[
             instruction.programIdIndex
           ];
+
+        if (programId === undefined) {
+          return false;
+        }
         return programId.equals(new PublicKey(paymentProgramInfo.address));
       },
     );
@@ -114,6 +118,9 @@ export const extractTransferData = async (
           transaction.transaction.message.staticAccountKeys[
             instruction.programIdIndex
           ];
+        if (programId === undefined) {
+          return false;
+        }
         return programId.equals(new PublicKey(paymentProgramInfo.address));
       },
     );
@@ -125,14 +132,36 @@ export const extractTransferData = async (
     };
   }
 
-  const payer =
-    transaction.transaction.message.staticAccountKeys[
-      transaction.transaction.message.compiledInstructions[transferIndex]
-        .accountKeyIndexes[0]
-    ];
+  const message = transaction.transaction.message;
 
-  const transferData =
-    transaction.transaction.message.compiledInstructions[transferIndex].data;
+  const payerKeyIndex =
+    message.compiledInstructions[transferIndex]?.accountKeyIndexes[0];
+
+  if (payerKeyIndex === undefined) {
+    return {
+      success: false,
+      err: "Cound not find payer index",
+    };
+  }
+
+  const payer = message.staticAccountKeys[payerKeyIndex];
+
+  if (payer === undefined) {
+    return {
+      success: false,
+      err: "Cound not find payer",
+    };
+  }
+
+  const transferData = message.compiledInstructions[transferIndex]?.data;
+
+  if (transferData === undefined) {
+    return {
+      success: false,
+      err: "Cound not find transfer data",
+    };
+  }
+
   const decoded = coder.instruction.decode(Buffer.from(transferData));
 
   if (!decoded) {
@@ -165,8 +194,16 @@ export const createPaymentTransaction = async (
 
   const ixs = [];
 
-  const programInstruction = await program.methods
-    .createPayment(new BN(paymentRequirements.amount), Array.from(nonce))
+  const createPayment = program.methods.createPayment;
+
+  if (createPayment === undefined) {
+    throw new Error("couldn't find create payment instruction");
+  }
+
+  const programInstruction = await createPayment(
+    new BN(paymentRequirements.amount),
+    Array.from(nonce),
+  )
     .accountsStrict({
       payer: payer.publicKey,
       receiver: paymentRequirements.receiver,
@@ -211,8 +248,17 @@ export const createSettleTransaction = async (
 
   const ixs = [];
 
-  const programInstruction = await program.methods
-    .settlePayment(payer, paymentNonce, Array.from(settleNonce))
+  const settlePayment = program.methods.settlePayment;
+
+  if (settlePayment === undefined) {
+    throw new Error("couldn't find settle payment instruction");
+  }
+
+  const programInstruction = await settlePayment(
+    payer,
+    paymentNonce,
+    Array.from(settleNonce),
+  )
     .accountsStrict({
       admin: settleAuthority.publicKey,
       payment: paymentAccount,

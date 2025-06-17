@@ -1,5 +1,5 @@
 import { Keypair, PublicKey, VersionedTransaction } from "@solana/web3.js";
-import { Payment, PaymentHeader } from "./types";
+import type { Payment, PaymentHeader } from "./types";
 import type { Request } from "express";
 import { sign } from "tweetnacl";
 import bs58 from "bs58";

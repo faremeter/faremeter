@@ -1,14 +1,6 @@
-import {
-  clusterApiUrl,
-  Connection,
-  Keypair,
-  PublicKey,
-  VersionedTransaction,
-} from "@solana/web3.js";
+import { clusterApiUrl, Connection, Keypair } from "@solana/web3.js";
 import type { NextFunction, Request, Response } from "express";
-import { Payment, PaymentHeader, PaymentRequirements } from "./types";
-import bs58 from "bs58";
-import { sign } from "tweetnacl";
+import type { PaymentRequirements } from "./types";
 import { extractPaymentFromHeader } from "./header";
 import {
   createSettleTransaction,

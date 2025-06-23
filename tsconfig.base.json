@@ -13,6 +13,7 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
 
     "declaration": true,
     "declarationMap": true,

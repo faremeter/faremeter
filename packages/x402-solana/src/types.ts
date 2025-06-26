@@ -1,5 +1,5 @@
 import { PublicKey, VersionedTransaction } from "@solana/web3.js";
-import { BN } from "@coral-xyz/anchor";
+import type { default as BN } from "bn.js";
 
 export interface PaymentRequirements {
   receiver: PublicKey;

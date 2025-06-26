@@ -10,16 +10,11 @@ import {
 import { Connection } from "@solana/web3.js";
 import type { CreatePaymentArgs, PaymentRequirements } from "./types";
 import idl from "./payment_program.json";
-import {
-  AnchorProvider,
-  BN,
-  BorshCoder,
-  Program,
-  Wallet,
-} from "@coral-xyz/anchor";
+import { AnchorProvider, BorshCoder, Program, Wallet } from "@coral-xyz/anchor";
 import type { PaymentProgram } from "./idl_type";
+import { default as BN } from "bn.js";
 
-import paymentProgramInfo from "./payment_program.json" assert { type: "json" };
+import paymentProgramInfo from "./payment_program.json";
 
 export const coder = new BorshCoder(idl as PaymentProgram);
 

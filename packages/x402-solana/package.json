@@ -2,6 +2,7 @@
   "name": "@faremeter/x402-solana",
   "version": "0.0.1",
   "license": "GPL-3.0-only",
+  "type": "module",
   "main": "dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {

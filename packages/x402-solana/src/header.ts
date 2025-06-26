@@ -1,8 +1,10 @@
 import { Keypair, PublicKey, VersionedTransaction } from "@solana/web3.js";
 import type { Payment, PaymentHeader } from "./types";
 import type { Request } from "express";
-import { sign } from "tweetnacl";
+import tweetnacl from "tweetnacl";
 import bs58 from "bs58";
+
+const { sign } = tweetnacl;
 
 export const extractPaymentFromHeader = (req: Request): Payment | null => {
   try {

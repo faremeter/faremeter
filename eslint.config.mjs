@@ -9,4 +9,9 @@ export default tseslint.config(
   tseslint.configs.strict,
   tseslint.configs.stylistic,
   globalIgnores(["**/idl_type.ts", "**/dist/**"]),
+  {
+    rules: {
+      "@typescript-eslint/consistent-type-definitions": 0,
+    },
+  },
 );

@@ -1,0 +1,14 @@
+{
+  "license": "GPL-3.0-only",
+  "packageManager": "pnpm@10.12.1",
+  "type": "module",
+  "dependencies": {
+    "@faremeter/fetch": "workspace:*",
+    "@faremeter/x402-solana": "workspace:*"
+  },
+  "devDependencies": {
+    "tap": "^21.1.0",
+    "tsx": "^4.19.4",
+    "typescript-language-server": "^4.3.4"
+  }
+}

@@ -7,8 +7,15 @@
     "@faremeter/x402-solana": "workspace:*"
   },
   "devDependencies": {
+    "@tapjs/tsx": "^3.0.1",
     "tap": "^21.1.0",
     "tsx": "^4.19.4",
     "typescript-language-server": "^4.3.4"
+  },
+  "tap": {
+    "plugin": [
+      "@tapjs/tsx",
+      "!@tapjs/typescript"
+    ]
   }
 }

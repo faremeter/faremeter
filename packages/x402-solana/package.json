@@ -13,8 +13,13 @@
     },
     "./header": {
       "require": "./dist/src/header.js",
-      "import": "./dist/header.js",
-      "types": "./dist/header.d.ts"
+      "import": "./dist/src/header.js",
+      "types": "./dist/src/header.d.ts"
+    },
+    "./middleware": {
+      "require": "./dist/src/middleware.js",
+      "import": "./dist/src/middleware.js",
+      "types": "./dist/src/middleware.d.ts"
     },
     "./solana": {
       "require": "./dist/src/solana.js",

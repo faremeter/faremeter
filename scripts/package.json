@@ -4,10 +4,16 @@
   "type": "module",
   "dependencies": {
     "@faremeter/fetch": "workspace:*",
-    "@faremeter/x402-solana": "workspace:*"
+    "@faremeter/x402-solana": "workspace:*",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.98.2",
+    "@sqds/multisig": "^2.1.4",
+    "bs58": "^6.0.0",
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "@tapjs/tsx": "^3.0.1",
+    "@types/express": "^5.0.3",
     "tap": "^21.1.0",
     "tsx": "^4.19.4",
     "typescript-language-server": "^4.3.4"

@@ -11,8 +11,8 @@ import {
 } from "./solana";
 
 export const paymentMiddleware = (
-  adminKeypair: Keypair,
   paymentRequirements: PaymentRequirements,
+  adminKeypair: Keypair,
 ) => {
   const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
@@ -20,6 +20,7 @@ export const paymentMiddleware = (
     res.status(402).json({
       msg: "Payment required",
       address: paymentRequirements.receiver.toString(),
+      admin: paymentRequirements.admin.toString(),
       amount: paymentRequirements.amount.toString(),
     });
   };

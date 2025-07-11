@@ -3,6 +3,7 @@ import type { default as BN } from "bn.js";
 
 export interface PaymentRequirements {
   receiver: PublicKey;
+  admin: PublicKey;
   amount: number;
 }
 
@@ -29,4 +30,10 @@ export interface TransactionVerificationResult {
 export interface CreatePaymentArgs {
   amount: BN;
   nonce: number[];
+}
+
+export interface PaymentResponse {
+  address: string;
+  admin: string;
+  amount: string;
 }

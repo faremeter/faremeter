@@ -5,3 +5,4 @@ git-*
 node_modules
 tsconfig.tsbuildinfo
 .tap
+keypairs

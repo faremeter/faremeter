@@ -27,7 +27,7 @@ export function chooseFirstAvailable(
   return payer;
 }
 
-export function wrap(fetch: typeof globalThis.fetch, options: WrapOptions) {
+export function wrap(wrappedFetch: typeof fetch, options: WrapOptions) {
   return async (input: RequestInfo | URL, init: RequestInit = {}) => {
     const response = await fetch(input, init);
 
@@ -64,7 +64,7 @@ export function wrap(fetch: typeof globalThis.fetch, options: WrapOptions) {
       },
     };
 
-    const secondResponse = await fetch(input, newInit);
+    const secondResponse = await wrappedFetch(input, newInit);
     return secondResponse;
   };
 }

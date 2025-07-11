@@ -16,6 +16,8 @@
     "@eslint/js": "^9.28.0",
     "@tapjs/asserts": "^4.0.1",
     "@tapjs/tsx": "^3.0.1",
+    "@types/web": "^0.0.246",
+    "@typescript/lib-dom": "npm:@types/web@^0.0.246",
     "eslint": "^9.28.0",
     "prettier": "^3.5.3",
     "tap": "^21.1.0",

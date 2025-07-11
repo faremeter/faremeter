@@ -45,6 +45,12 @@ importers:
       '@tapjs/tsx':
         specifier: ^3.0.1
         version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.0.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+      '@types/web':
+        specifier: ^0.0.246
+        version: 0.0.246
+      '@typescript/lib-dom':
+        specifier: npm:@types/web@^0.0.246
+        version: '@types/web@0.0.246'
       eslint:
         specifier: ^9.28.0
         version: 9.28.0
@@ -756,6 +762,9 @@ packages:
 
   '@types/uuid@8.3.4':
     resolution: {integrity: sha512-c/I8ZRb51j+pYGAu5CrFMRxqZ2ke4y2grEBO5AUjgSkSk+qT2Ea+OdWElz/OiMf5MNpn2b17kuVBwZLQJXzihw==}
+
+  '@types/web@0.0.246':
+    resolution: {integrity: sha512-TCeVQAgAophSXiipdERUYPbYIOn2sfhqEN/Zmr+rJGdWsBkEbYbzqNjOxS0GabsJyAOuZcoHOd7N6QX4zNlq0A==}
 
   '@types/ws@7.4.7':
     resolution: {integrity: sha512-JQbbmxZTZehdc2iszGKs5oC3NFnjeay7mtAWrdt7qNtAVK0g19muApzAy4bm9byz79xa2ZnO/BOBC2R8RC5Lww==}
@@ -3178,6 +3187,8 @@ snapshots:
       '@types/send': 0.17.5
 
   '@types/uuid@8.3.4': {}
+
+  '@types/web@0.0.246': {}
 
   '@types/ws@7.4.7':
     dependencies:

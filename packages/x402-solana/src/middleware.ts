@@ -18,10 +18,20 @@ export const paymentMiddleware = (
 
   const sendPaymentRequired = (res: Response) => {
     res.status(402).json({
-      msg: "Payment required",
-      address: paymentRequirements.receiver.toString(),
-      admin: paymentRequirements.admin.toString(),
-      amount: paymentRequirements.amount.toString(),
+      x402Version: 1,
+      accepts: [
+        {
+          scheme: "exact",
+          network: "solana",
+          maxAmountRequired: paymentRequirements.amount.toString(),
+          resource: "http://whatever.com",
+          description: "what else",
+          mimeType: "what",
+          payTo: paymentRequirements.receiver.toString(),
+          asset: paymentRequirements.admin.toString(),
+          maxTimeoutSeconds: 5,
+        },
+      ],
     });
   };
 

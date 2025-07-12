@@ -1,16 +1,20 @@
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { createPaymentSplTransaction } from "@faremeter/x402-solana/solana";
-import type {
-  PaymentRequirements,
-  PaymentResponse,
-} from "@faremeter/x402-solana/types";
-import { createPaymentHeader } from "@faremeter/x402-solana/header";
+import { createTokenPaymentHandler } from "@faremeter/x402-solana";
+import { wrap as wrapFetch } from "@faremeter/fetch";
 import fs from "fs";
+
 import {
   createMint,
   getOrCreateAssociatedTokenAccount,
   mintTo,
 } from "@solana/spl-token";
+
+const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+const keypair = Keypair.fromSecretKey(
+  Uint8Array.from(
+    JSON.parse(fs.readFileSync("../keypairs/payer.json", "utf-8")),
+  ),
+);
 
 const createTestToken = async (
   connection: Connection,
@@ -55,50 +59,12 @@ const createTestToken = async (
   }
 };
 
-const testTokenPayment = async () => {
-  const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-  const keypair = Keypair.fromSecretKey(
-    Uint8Array.from(
-      JSON.parse(fs.readFileSync("../keypairs/payer.json", "utf-8")),
-    ),
-  );
-  const url = "http://127.0.0.1:3000/protected";
+const mint = await createTestToken(connection, keypair);
 
-  const initialResponse = (await (await fetch(url)).json()) as PaymentResponse;
-  const { address, admin, amount } = initialResponse;
+const fetchWithPayer = wrapFetch(fetch, {
+  handlers: [createTokenPaymentHandler(connection, keypair, mint)],
+});
 
-  const paymentRequirements: PaymentRequirements = {
-    receiver: new PublicKey(address),
-    admin: new PublicKey(admin),
-    amount: Number(amount),
-  };
+const req = await fetchWithPayer("http://127.0.0.1:3000/protected");
 
-  const mint = await createTestToken(connection, keypair);
-
-  await getOrCreateAssociatedTokenAccount(
-    connection,
-    keypair,
-    mint,
-    paymentRequirements.receiver,
-  );
-
-  const tx = await createPaymentSplTransaction(
-    connection,
-    paymentRequirements,
-    mint,
-    keypair,
-  );
-  const header = createPaymentHeader(tx, keypair);
-
-  const secondResponse = await (
-    await fetch(url, {
-      headers: {
-        "X-PAYMENT": header,
-      },
-    })
-  ).json();
-
-  console.log(secondResponse);
-};
-
-testTokenPayment();
+console.log(await req.json());

@@ -6,20 +6,13 @@ import {
   sendAndConfirmTransaction,
   SystemProgram,
   Transaction,
-  TransactionMessage,
-  VersionedTransaction,
 } from "@solana/web3.js";
 import * as multisig from "@sqds/multisig";
 import fs from "fs";
-import { createSolPaymentInstruction } from "@faremeter/x402-solana/solana";
-import type {
-  PaymentRequirements,
-  PaymentResponse,
-} from "@faremeter/x402-solana/types";
-import { createPaymentHeader } from "@faremeter/x402-solana/header";
-import bs58 from "bs58";
-
 const { Permission, Permissions } = multisig.types;
+
+import { wrap as wrapFetch } from "@faremeter/fetch";
+import { createSquadsPaymentHandler } from "@faremeter/x402-solana";
 
 const transferSol = async (
   connection: Connection,
@@ -38,15 +31,14 @@ const transferSol = async (
   await sendAndConfirmTransaction(connection, transaction, [sender]);
 };
 
-const testSquadsMultisigPayment = async () => {
-  const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-  const keypair = Keypair.fromSecretKey(
-    Uint8Array.from(
-      JSON.parse(fs.readFileSync("../keypairs/payer.json", "utf-8")),
-    ),
-  );
-  const url = "http://127.0.0.1:3000/protected";
+const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+const keypair = Keypair.fromSecretKey(
+  Uint8Array.from(
+    JSON.parse(fs.readFileSync("../keypairs/payer.json", "utf-8")),
+  ),
+);
 
+async function createSquad() {
   const createKey = Keypair.generate();
   const squadMember = Keypair.generate();
 
@@ -94,139 +86,19 @@ const testSquadsMultisigPayment = async () => {
 
   console.log("Created squad with signature", squadCreateSignature);
 
-  const [vaultPda] = multisig.getVaultPda({
+  return {
     multisigPda,
-    index: 0,
-  });
-
-  const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
-    connection,
-    multisigPda,
-  );
-
-  const currentTransactionIndex = Number(multisigInfo.transactionIndex);
-  const newTransactionIndex = BigInt(currentTransactionIndex + 1);
-
-  const initialResponse = (await (await fetch(url)).json()) as PaymentResponse;
-  const { address, admin, amount } = initialResponse;
-
-  const paymentRequirements: PaymentRequirements = {
-    receiver: new PublicKey(address),
-    admin: new PublicKey(admin),
-    amount: Number(amount),
+    squadMember,
   };
+}
 
-  const createPaymentInstruction = await createSolPaymentInstruction(
-    paymentRequirements,
-    keypair.publicKey,
-  );
+const { multisigPda, squadMember } = await createSquad();
 
-  const testTransferMessage = new TransactionMessage({
-    payerKey: vaultPda,
-    recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
-    instructions: [createPaymentInstruction],
-  });
+const fetchWithPayer = wrapFetch(fetch, {
+  handlers: [
+    createSquadsPaymentHandler(connection, keypair, multisigPda, squadMember),
+  ],
+});
 
-  const createVaultInstruction = multisig.instructions.vaultTransactionCreate({
-    multisigPda,
-    transactionIndex: newTransactionIndex,
-    creator: keypair.publicKey,
-    vaultIndex: 0,
-    ephemeralSigners: 0,
-    transactionMessage: testTransferMessage,
-    memo: "Our first transfer!",
-  });
-
-  const createVaultTransaction = new Transaction().add(createVaultInstruction);
-  const createVaultTxSignature = await sendAndConfirmTransaction(
-    connection,
-    createVaultTransaction,
-    [keypair],
-  );
-  console.log(
-    "Create vault transaction with signature",
-    createVaultTxSignature,
-  );
-
-  const createProposalInstruction = multisig.instructions.proposalCreate({
-    multisigPda,
-    transactionIndex: newTransactionIndex,
-    creator: keypair.publicKey,
-  });
-
-  const createProposalTransaction = new Transaction().add(
-    createProposalInstruction,
-  );
-  const createProposalTxSignature = await sendAndConfirmTransaction(
-    connection,
-    createProposalTransaction,
-    [keypair],
-  );
-  console.log(
-    "Create proposal transaction with signature",
-    createProposalTxSignature,
-  );
-
-  const adminApproveInstruction = multisig.instructions.proposalApprove({
-    multisigPda,
-    transactionIndex: newTransactionIndex,
-    member: keypair.publicKey,
-  });
-
-  const memberApproveInstruction = multisig.instructions.proposalApprove({
-    multisigPda,
-    transactionIndex: newTransactionIndex,
-    member: squadMember.publicKey,
-  });
-
-  const approveProposalTransaction = new Transaction().add(
-    adminApproveInstruction,
-    memberApproveInstruction,
-  );
-  const approveProposalTxSignature = await sendAndConfirmTransaction(
-    connection,
-    approveProposalTransaction,
-    [keypair, squadMember],
-  );
-  console.log(
-    "Approve vault transaction with signature",
-    approveProposalTxSignature,
-  );
-
-  const { instruction } = await multisig.instructions.vaultTransactionExecute({
-    connection,
-    multisigPda,
-    transactionIndex: newTransactionIndex,
-    member: keypair.publicKey,
-  });
-
-  const { blockhash } = await connection.getLatestBlockhash("confirmed");
-
-  const message = new TransactionMessage({
-    instructions: [instruction],
-    payerKey: keypair.publicKey,
-    recentBlockhash: blockhash,
-  }).compileToV0Message();
-
-  const tx = new VersionedTransaction(message);
-  tx.sign([keypair]);
-
-  console.log(
-    "Execute vault transaction signature",
-    bs58.encode(tx.signatures[0]),
-  );
-
-  const header = createPaymentHeader(tx, keypair);
-
-  const secondResponse = await (
-    await fetch(url, {
-      headers: {
-        "X-PAYMENT": header,
-      },
-    })
-  ).json();
-
-  console.log(secondResponse);
-};
-
-testSquadsMultisigPayment();
+const req = await fetchWithPayer("http://127.0.0.1:3000/protected");
+console.log(await req.json());

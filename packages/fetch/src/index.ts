@@ -68,3 +68,5 @@ export function wrap(wrappedFetch: typeof fetch, options: WrapOptions) {
     return secondResponse;
   };
 }
+
+export * from "./types";

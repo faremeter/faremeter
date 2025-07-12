@@ -44,15 +44,18 @@ export const paymentMiddleware = (
 
       const isValidTx = await isValidTransferTransaction(connection, signature);
       if (!isValidTx) {
+        console.log("invalid transaction");
         return sendPaymentRequired(res);
       }
 
       const transactionData = await extractTransferData(connection, signature);
       if (!transactionData.success) {
+        console.log("couldn't extract transfer data");
         return sendPaymentRequired(res);
       }
 
       if (Number(transactionData.data.amount) !== paymentRequirements.amount) {
+        console.log("payments didn't match amount");
         return sendPaymentRequired(res);
       }
 
@@ -63,11 +66,13 @@ export const paymentMiddleware = (
         transactionData.data.nonce,
       );
       if (!settleTx) {
+        console.log("couldn't create settle tx");
         return sendPaymentRequired(res);
       }
 
       const settleResult = await settleTransaction(connection, settleTx);
       if (!settleResult.success) {
+        console.log("couldn't send settle");
         return sendPaymentRequired(res);
       }
 

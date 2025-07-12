@@ -25,7 +25,7 @@ export const PaymentRequiredResponse = type({
 export type PaymentRequiredResponse = typeof PaymentRequiredResponse.infer;
 
 export const PaymentPayload = type({
-  x042Version: "number.integer",
+  x402Version: "number.integer",
   scheme: "string",
   network: "string",
   payload: "object",

@@ -35,6 +35,7 @@
   "packageManager": "pnpm@10.12.1",
   "devDependencies": {
     "@eslint/js": "^9.28.0",
+    "@faremeter/fetch": "workspace:*",
     "@tapjs/asserts": "^4.0.1",
     "@types/bn.js": "^5.2.0",
     "@types/express": "^5.0.3",
@@ -49,6 +50,7 @@
     "@coral-xyz/anchor": "^0.31.1",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",
+    "@sqds/multisig": "^2.1.4",
     "bn.js": "^5.2.2",
     "bs58": "^6.0.0",
     "tweetnacl": "^1.0.3"

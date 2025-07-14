@@ -282,11 +282,11 @@ export const createSolPaymentInstruction = async (
 export const createPaymentTransaction = async (
   connection: Connection,
   paymentRequirements: PaymentRequirements,
-  payer: Keypair,
+  payer: PublicKey,
 ): Promise<VersionedTransaction> => {
   const instruction = await createSolPaymentInstruction(
     paymentRequirements,
-    payer.publicKey,
+    payer,
   );
 
   return buildVersionedTransaction(connection, [instruction], payer);
@@ -422,12 +422,12 @@ export const createPaymentSplTransaction = async (
   connection: Connection,
   paymentRequirements: PaymentRequirements,
   mint: PublicKey,
-  payer: Keypair,
+  payer: PublicKey,
 ): Promise<VersionedTransaction> => {
   const instruction = await createSplPaymentInstruction(
     paymentRequirements,
     mint,
-    payer.publicKey,
+    payer,
   );
 
   return buildVersionedTransaction(connection, [instruction], payer);
@@ -436,18 +436,16 @@ export const createPaymentSplTransaction = async (
 const buildVersionedTransaction = async (
   connection: Connection,
   instructions: TransactionInstruction[],
-  payer: Keypair,
+  payer: PublicKey,
 ): Promise<VersionedTransaction> => {
   const { blockhash } = await connection.getLatestBlockhash("confirmed");
 
   const message = new TransactionMessage({
     instructions,
-    payerKey: payer.publicKey,
+    payerKey: payer,
     recentBlockhash: blockhash,
   }).compileToV0Message();
 
   const tx = new VersionedTransaction(message);
-  tx.sign([payer]);
-
   return tx;
 };

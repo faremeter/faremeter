@@ -60,18 +60,18 @@ export function createPaymentHeader(
   versionedTransaction: VersionedTransaction,
   payer: Keypair,
 ): string {
-  const versionedTransactionB64 = bs58.encode(versionedTransaction.serialize());
+  const versionedTransactionB58 = bs58.encode(versionedTransaction.serialize());
 
   const payerB58 = payer.publicKey.toBase58();
 
-  const message = versionedTransactionB64 + payerB58;
+  const message = versionedTransactionB58 + payerB58;
   const messageBytes = new TextEncoder().encode(message);
 
   const signature = sign.detached(messageBytes, payer.secretKey);
   const signatureB58 = bs58.encode(signature);
 
   const paymentHeader: PaymentHeader = {
-    versionedTransaction: versionedTransactionB64,
+    versionedTransaction: versionedTransactionB58,
     payer: payerB58,
     signature: signatureB58,
   };

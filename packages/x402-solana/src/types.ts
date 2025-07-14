@@ -18,7 +18,6 @@ export interface Payment {
 export interface PaymentHeader {
   versionedTransaction: base64;
   payer: string;
-  signature: string;
 }
 
 export interface TransactionVerificationResult {

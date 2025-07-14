@@ -90,9 +90,6 @@ importers:
       bs58:
         specifier: ^6.0.0
         version: 6.0.0
-      tweetnacl:
-        specifier: ^1.0.3
-        version: 1.0.3
     devDependencies:
       '@eslint/js':
         specifier: ^9.28.0
@@ -2457,9 +2454,6 @@ packages:
   tuf-js@2.2.1:
     resolution: {integrity: sha512-GwIJau9XaA8nLVbUXsN3IlFi7WmQ48gBUrl3FTkkL/XLu/POhBzfmX9hd33FNMX1qAsfl6ozO1iMmW9NC8YniA==}
     engines: {node: ^16.14.0 || >=18.0.0}
-
-  tweetnacl@1.0.3:
-    resolution: {integrity: sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -5351,8 +5345,6 @@ snapshots:
       make-fetch-happen: 13.0.1
     transitivePeerDependencies:
       - supports-color
-
-  tweetnacl@1.0.3: {}
 
   type-check@0.4.0:
     dependencies:

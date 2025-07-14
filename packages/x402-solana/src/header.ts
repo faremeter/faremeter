@@ -1,10 +1,7 @@
-import { Keypair, PublicKey, VersionedTransaction } from "@solana/web3.js";
+import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import type { Payment, PaymentHeader } from "./types";
 import type { Request } from "express";
-import tweetnacl from "tweetnacl";
 import bs58 from "bs58";
-
-const { sign } = tweetnacl;
 
 export const extractPaymentFromHeader = (req: Request): Payment | null => {
   try {
@@ -16,31 +13,11 @@ export const extractPaymentFromHeader = (req: Request): Payment | null => {
 
     const paymentData: PaymentHeader = JSON.parse(paymentHeader);
 
-    if (
-      !paymentData.versionedTransaction ||
-      !paymentData.payer ||
-      !paymentData.signature
-    ) {
+    if (!paymentData.versionedTransaction || !paymentData.payer) {
       throw new Error("Missing required fields");
     }
 
-    const message = paymentData.versionedTransaction + paymentData.payer;
-    const messageBytes = new TextEncoder().encode(message);
-
-    const signatureBytes = bs58.decode(paymentData.signature);
-
     const payerPublicKey = new PublicKey(paymentData.payer);
-    const publicKeyBytes = payerPublicKey.toBytes();
-
-    const isValid = sign.detached.verify(
-      messageBytes,
-      signatureBytes,
-      publicKeyBytes,
-    );
-
-    if (!isValid) {
-      throw new Error("Signature verification failed");
-    }
 
     const transactionBuffer = bs58.decode(paymentData.versionedTransaction);
     const versionedTransaction =
@@ -58,22 +35,14 @@ export const extractPaymentFromHeader = (req: Request): Payment | null => {
 
 export function createPaymentHeader(
   versionedTransaction: VersionedTransaction,
-  payer: Keypair,
+  payer: PublicKey,
 ): string {
   const versionedTransactionB58 = bs58.encode(versionedTransaction.serialize());
-
-  const payerB58 = payer.publicKey.toBase58();
-
-  const message = versionedTransactionB58 + payerB58;
-  const messageBytes = new TextEncoder().encode(message);
-
-  const signature = sign.detached(messageBytes, payer.secretKey);
-  const signatureB58 = bs58.encode(signature);
+  const payerB58 = payer.toBase58();
 
   const paymentHeader: PaymentHeader = {
     versionedTransaction: versionedTransactionB58,
     payer: payerB58,
-    signature: signatureB58,
   };
 
   return JSON.stringify(paymentHeader);

@@ -42,8 +42,10 @@ export function createBasicPaymentHandler(
           receiver: new PublicKey(requirements.payTo),
           admin: new PublicKey(requirements.asset),
         },
-        keypair,
+        keypair.publicKey,
       );
+      tx.sign([keypair]);
+
       const header = createPaymentHeader(tx, keypair.publicKey);
       return {
         headers: {
@@ -89,8 +91,10 @@ export function createTokenPaymentHandler(
         connection,
         paymentRequirements,
         mint,
-        keypair,
+        keypair.publicKey,
       );
+      tx.sign([keypair]);
+
       const header = createPaymentHeader(tx, keypair.publicKey);
 
       return {

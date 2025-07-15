@@ -49,6 +49,7 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",
     "@crossmint/wallets-sdk": "^0.10.13",
+    "@faremeter/types": "workspace:^",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",
     "@sqds/multisig": "^2.1.4",

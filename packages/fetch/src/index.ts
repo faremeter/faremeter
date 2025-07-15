@@ -3,8 +3,9 @@ import {
   type RequestContext,
   type PaymentHandler,
   PaymentRequiredResponse,
-} from "./types";
-import { isValidationError, throwValidationError } from "./validation";
+  isValidationError,
+  throwValidationError,
+} from "@faremeter/types";
 
 type WrapOptions = {
   handlers: PaymentHandler[];
@@ -68,5 +69,3 @@ export function wrap(wrappedFetch: typeof fetch, options: WrapOptions) {
     return secondResponse;
   };
 }
-
-export * from "./types";

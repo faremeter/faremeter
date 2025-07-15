@@ -24,6 +24,11 @@ import type { RequestContext, PaymentRequirements } from "@faremeter/fetch";
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 import bs58 from "bs58";
 import * as multisig from "@sqds/multisig";
+import {
+  createCrossmint,
+  CrossmintWallets,
+  SolanaWallet,
+} from "@crossmint/wallets-sdk";
 
 export function createBasicPaymentHandler(
   connection: Connection,
@@ -257,6 +262,64 @@ export function createSquadsPaymentHandler(
       const signature = bs58.encode(tx.signatures[0]!);
       const header = createPaymentHeader(tx, signature, keypair.publicKey);
 
+      return {
+        headers: {
+          "X-PAYMENT": header,
+        },
+      };
+    };
+
+    return [
+      {
+        exec,
+        requirements,
+      },
+    ];
+  };
+}
+
+export function createCrossmintPaymentHandler(
+  connection: Connection,
+  crossmintApiKey: string,
+  crossmintWalletAddress: string,
+) {
+  return async (ctx: RequestContext, accepts: PaymentRequirements[]) => {
+    const requirements = accepts[0]!;
+
+    const exec = async () => {
+      const crossmint = createCrossmint({
+        apiKey: crossmintApiKey,
+      });
+      const crossmintWallets = CrossmintWallets.from(crossmint);
+      const wallet = await crossmintWallets.getWallet(crossmintWalletAddress, {
+        chain: "solana",
+        signer: {
+          type: "api-key",
+        },
+      });
+      console.log(wallet.address);
+
+      const solanaWallet = SolanaWallet.from(wallet);
+      const walletPubkey = new PublicKey(solanaWallet.address);
+
+      const tx = await createPaymentTransaction(
+        connection,
+        {
+          // XXX - we need to map over to the x402 requirements.
+          amount: Number(requirements.maxAmountRequired),
+          receiver: new PublicKey(requirements.payTo),
+          admin: new PublicKey(requirements.asset),
+        },
+        walletPubkey,
+      );
+
+      const solTx = await solanaWallet.sendTransaction({
+        transaction: tx as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+
+      console.log(solTx);
+
+      const header = createPaymentHeader(tx, solTx.hash, walletPubkey);
       return {
         headers: {
           "X-PAYMENT": header,

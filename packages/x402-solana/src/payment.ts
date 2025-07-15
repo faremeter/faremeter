@@ -51,8 +51,7 @@ export function createBasicPaymentHandler(
       );
       tx.sign([keypair]);
 
-      const signature = bs58.encode(tx.signatures[0]!);
-      const header = createPaymentHeader(tx, signature, keypair.publicKey);
+      const header = createPaymentHeader(keypair.publicKey, tx);
       return {
         headers: {
           "X-PAYMENT": header,
@@ -101,8 +100,7 @@ export function createTokenPaymentHandler(
       );
       tx.sign([keypair]);
 
-      const signature = bs58.encode(tx.signatures[0]!);
-      const header = createPaymentHeader(tx, signature, keypair.publicKey);
+      const header = createPaymentHeader(keypair.publicKey, tx);
 
       return {
         headers: {
@@ -259,8 +257,7 @@ export function createSquadsPaymentHandler(
         bs58.encode(tx.signatures[0]),
       );
 
-      const signature = bs58.encode(tx.signatures[0]!);
-      const header = createPaymentHeader(tx, signature, keypair.publicKey);
+      const header = createPaymentHeader(keypair.publicKey, tx);
 
       return {
         headers: {
@@ -319,7 +316,7 @@ export function createCrossmintPaymentHandler(
 
       console.log(solTx);
 
-      const header = createPaymentHeader(tx, solTx.hash, walletPubkey);
+      const header = createPaymentHeader(walletPubkey, undefined, solTx.hash);
       return {
         headers: {
           "X-PAYMENT": header,

@@ -41,24 +41,18 @@ export const program = new Program(idl as PaymentProgram, provider);
 export const processTransaction = async (
   connection: Connection,
   transaction: VersionedTransaction,
-  transactionSignature: string,
-): Promise<void> => {
+): Promise<string | null> => {
   try {
-    // Return early and don't send the transaction if it has already landed
-    if (
-      await connection.getTransaction(transactionSignature, {
-        commitment: "confirmed",
-        maxSupportedTransactionVersion: 0,
-      })
-    ) {
-      return;
-    }
-
     const signature = await connection.sendTransaction(transaction);
-    await connection.confirmTransaction(signature, "confirmed");
+    const { value } = await connection.confirmTransaction(
+      signature,
+      "confirmed",
+    );
+
+    return value.err ? null : signature;
   } catch (err) {
     console.log(err);
-    throw err;
+    return null;
   }
 };
 
@@ -372,9 +366,7 @@ export const settleTransaction = async (
     };
   }
   try {
-    const signature = bs58.encode(tx.signatures[0]);
-
-    await processTransaction(conneciton, tx, signature);
+    const signature = await processTransaction(conneciton, tx);
     console.log("Settle signature", signature);
   } catch (err) {
     console.log(err);

@@ -42,13 +42,12 @@ export const paymentMiddleware = (
         return sendPaymentRequired(res);
       }
 
-      const signature = await processTransaction(
+      await processTransaction(
         connection,
         payment.versionedTransaction,
+        payment.transactionSignature,
       );
-      if (!signature) {
-        return sendPaymentRequired(res);
-      }
+      const signature = payment.transactionSignature;
 
       console.log("Payment signature", signature);
 

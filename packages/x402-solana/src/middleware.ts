@@ -1,6 +1,6 @@
 import { clusterApiUrl, Connection, Keypair } from "@solana/web3.js";
 import type { NextFunction, Request, Response } from "express";
-import type { PaymentRequirements } from "./types";
+import { type PaymentRequirements } from "./types";
 import { extractPaymentFromHeader } from "./header";
 import {
   createSettleTransaction,
@@ -42,14 +42,10 @@ export const paymentMiddleware = (
         return sendPaymentRequired(res);
       }
 
-      if (payment.versionedTransaction && payment.transactionSignature) {
-        console.log("cannot provide both versioned tx and signature in header");
-        return sendPaymentRequired(res);
-      }
-
-      const signature = payment.versionedTransaction
-        ? await processTransaction(connection, payment.versionedTransaction)
-        : payment.transactionSignature;
+      const signature =
+        "versionedTransaction" in payment
+          ? await processTransaction(connection, payment.versionedTransaction)
+          : payment.transactionSignature;
 
       if (!signature) {
         return sendPaymentRequired(res);

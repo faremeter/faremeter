@@ -1,25 +1,45 @@
 import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import type { default as BN } from "bn.js";
+import { type } from "arktype";
+import bs58 from "bs58";
+
+const VersionedTransactionString = type("string").pipe.try((tx) => {
+  const decoded = bs58.decode(tx);
+  return VersionedTransaction.deserialize(decoded);
+});
+
+export const Payment = type({
+  payer: "string",
+}).and(
+  type({
+    type: "'transaction'",
+    versionedTransaction: VersionedTransactionString,
+  }).or({
+    type: "'signature'",
+    transactionSignature: "string",
+  }),
+);
+
+export type Payment = typeof Payment.infer;
+
+export const PaymentHeader = type({
+  payer: "string",
+}).and(
+  type({
+    type: "'transaction'",
+    versionedTransaction: "string",
+  }).or({
+    type: "'signature'",
+    transactionSignature: "string",
+  }),
+);
+
+export type PaymentHeader = typeof PaymentHeader.infer;
 
 export interface PaymentRequirements {
   receiver: PublicKey;
   admin: PublicKey;
   amount: number;
-}
-
-type base58 = string;
-export type Uint8Array32 = Uint8Array & { length: 32 };
-export interface Payment {
-  versionedTransaction: VersionedTransaction | undefined;
-  transactionSignature: string | undefined;
-  payer: PublicKey;
-  // nonce: Uint8Array32
-}
-
-export interface PaymentHeader {
-  versionedTransaction: base58 | undefined;
-  transactionSignature: string | undefined;
-  payer: string;
 }
 
 export interface TransactionVerificationResult {

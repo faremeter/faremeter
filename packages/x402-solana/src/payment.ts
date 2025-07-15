@@ -20,7 +20,7 @@ import {
   createSolPaymentInstruction,
 } from "./solana";
 import { createPaymentHeader } from "./header";
-import type { RequestContext, PaymentRequirements } from "@faremeter/fetch";
+import type { RequestContext, PaymentRequirements } from "@faremeter/types";
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 import bs58 from "bs58";
 import * as multisig from "@sqds/multisig";

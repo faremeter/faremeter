@@ -1,6 +1,6 @@
 all: lint build test
 
-build: $(wildcard packages/*)
+build: packages/types $(wildcard packages/*)
 
 lint:
 	pnpm prettier -c .

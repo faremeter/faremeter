@@ -1,5 +1,5 @@
 {
-  "name": "@faremeter/fetch",
+  "name": "@faremeter/types",
   "version": "0.0.0",
   "type": "module",
   "main": "dist/src/index.js",
@@ -26,7 +26,6 @@
     "typescript-language-server": "^4.3.4"
   },
   "dependencies": {
-    "@faremeter/types": "workspace:^",
     "arktype": "^2.1.20"
   },
   "tap": {

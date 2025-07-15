@@ -42,12 +42,18 @@ export const paymentMiddleware = (
         return sendPaymentRequired(res);
       }
 
-      await processTransaction(
-        connection,
-        payment.versionedTransaction,
-        payment.transactionSignature,
-      );
-      const signature = payment.transactionSignature;
+      if (payment.versionedTransaction && payment.transactionSignature) {
+        console.log("cannot provide both versioned tx and signature in header");
+        return sendPaymentRequired(res);
+      }
+
+      const signature = payment.versionedTransaction
+        ? await processTransaction(connection, payment.versionedTransaction)
+        : payment.transactionSignature;
+
+      if (!signature) {
+        return sendPaymentRequired(res);
+      }
 
       console.log("Payment signature", signature);
 

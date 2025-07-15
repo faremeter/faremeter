@@ -8,4 +8,5 @@ export {
   createBasicPaymentHandler,
   createTokenPaymentHandler,
   createSquadsPaymentHandler,
+  createCrossmintPaymentHandler,
 } from "./payment";

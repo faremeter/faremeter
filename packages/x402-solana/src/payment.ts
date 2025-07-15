@@ -46,7 +46,8 @@ export function createBasicPaymentHandler(
       );
       tx.sign([keypair]);
 
-      const header = createPaymentHeader(tx, keypair.publicKey);
+      const signature = bs58.encode(tx.signatures[0]!);
+      const header = createPaymentHeader(tx, signature, keypair.publicKey);
       return {
         headers: {
           "X-PAYMENT": header,
@@ -95,7 +96,8 @@ export function createTokenPaymentHandler(
       );
       tx.sign([keypair]);
 
-      const header = createPaymentHeader(tx, keypair.publicKey);
+      const signature = bs58.encode(tx.signatures[0]!);
+      const header = createPaymentHeader(tx, signature, keypair.publicKey);
 
       return {
         headers: {
@@ -252,7 +254,8 @@ export function createSquadsPaymentHandler(
         bs58.encode(tx.signatures[0]),
       );
 
-      const header = createPaymentHeader(tx, keypair.publicKey);
+      const signature = bs58.encode(tx.signatures[0]!);
+      const header = createPaymentHeader(tx, signature, keypair.publicKey);
 
       return {
         headers: {

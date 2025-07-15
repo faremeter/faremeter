@@ -11,12 +11,14 @@ type base64 = string;
 export type Uint8Array32 = Uint8Array & { length: 32 };
 export interface Payment {
   versionedTransaction: VersionedTransaction;
+  transactionSignature: string;
   payer: PublicKey;
   // nonce: Uint8Array32
 }
 
 export interface PaymentHeader {
   versionedTransaction: base64;
+  transactionSignature: string;
   payer: string;
 }
 

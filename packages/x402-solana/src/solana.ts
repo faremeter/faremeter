@@ -40,19 +40,25 @@ export const program = new Program(idl as PaymentProgram, provider);
 
 export const processTransaction = async (
   connection: Connection,
-  signedTransaction: VersionedTransaction,
-): Promise<string | null> => {
+  transaction: VersionedTransaction,
+  transactionSignature: string,
+): Promise<void> => {
   try {
-    const signature = await connection.sendTransaction(signedTransaction);
-    const { value } = await connection.confirmTransaction(
-      signature,
-      "confirmed",
-    );
+    // Return early and don't send the transaction if it has already landed
+    if (
+      await connection.getTransaction(transactionSignature, {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 0,
+      })
+    ) {
+      return;
+    }
 
-    return value.err ? null : signature;
+    const signature = await connection.sendTransaction(transaction);
+    await connection.confirmTransaction(signature, "confirmed");
   } catch (err) {
     console.log(err);
-    return null;
+    throw err;
   }
 };
 
@@ -359,10 +365,19 @@ export const settleTransaction = async (
       err: string;
     }
 > => {
-  const signature = await processTransaction(conneciton, tx);
-  console.log("Settle signature", signature);
+  if (!tx.signatures[0]) {
+    return {
+      success: false,
+      err: "Transaction is missing a signature",
+    };
+  }
+  try {
+    const signature = bs58.encode(tx.signatures[0]);
 
-  if (!signature) {
+    await processTransaction(conneciton, tx, signature);
+    console.log("Settle signature", signature);
+  } catch (err) {
+    console.log(err);
     return {
       success: false,
       err: "Unable to proccess settlement tx",

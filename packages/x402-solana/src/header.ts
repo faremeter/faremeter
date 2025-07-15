@@ -13,7 +13,11 @@ export const extractPaymentFromHeader = (req: Request): Payment | null => {
 
     const paymentData: PaymentHeader = JSON.parse(paymentHeader);
 
-    if (!paymentData.versionedTransaction || !paymentData.payer) {
+    if (
+      !paymentData.versionedTransaction ||
+      !paymentData.payer ||
+      !paymentData.transactionSignature
+    ) {
       throw new Error("Missing required fields");
     }
 
@@ -25,6 +29,7 @@ export const extractPaymentFromHeader = (req: Request): Payment | null => {
 
     return {
       versionedTransaction,
+      transactionSignature: paymentData.transactionSignature,
       payer: payerPublicKey,
     };
   } catch (error) {
@@ -35,6 +40,7 @@ export const extractPaymentFromHeader = (req: Request): Payment | null => {
 
 export function createPaymentHeader(
   versionedTransaction: VersionedTransaction,
+  transactionSignature: string,
   payer: PublicKey,
 ): string {
   const versionedTransactionB58 = bs58.encode(versionedTransaction.serialize());
@@ -42,6 +48,7 @@ export function createPaymentHeader(
 
   const paymentHeader: PaymentHeader = {
     versionedTransaction: versionedTransactionB58,
+    transactionSignature,
     payer: payerB58,
   };
 

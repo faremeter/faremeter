@@ -1,7 +1,8 @@
 import { PublicKey, VersionedTransaction } from "@solana/web3.js";
-import type { Payment, PaymentHeader } from "./types";
 import type { Request } from "express";
 import bs58 from "bs58";
+import { Payment, PaymentHeader } from "./types";
+import { isValidationError } from "@faremeter/types";
 
 export const extractPaymentFromHeader = (req: Request): Payment | null => {
   try {
@@ -10,50 +11,14 @@ export const extractPaymentFromHeader = (req: Request): Payment | null => {
       return null;
     }
 
-    const paymentData: PaymentHeader = JSON.parse(paymentHeader);
+    const paymentData = Payment(JSON.parse(paymentHeader));
 
-    if (!paymentData.payer) {
-      throw new Error("Missing payer field");
+    if (isValidationError(paymentData)) {
+      console.log("type error:", paymentData.summary);
+      return null;
     }
 
-    const hasVersionedTransaction =
-      paymentData.versionedTransaction &&
-      paymentData.versionedTransaction !== undefined;
-    const hasSignature =
-      paymentData.transactionSignature &&
-      paymentData.transactionSignature !== undefined;
-
-    if (hasVersionedTransaction && hasSignature) {
-      throw new Error(
-        "Cannot provide both versionedTransaction and transactionSignature",
-      );
-    }
-
-    if (!hasVersionedTransaction && !hasSignature) {
-      throw new Error(
-        "Must provide either versionedTransaction or transactionSignature",
-      );
-    }
-
-    const payerPublicKey = new PublicKey(paymentData.payer);
-
-    if (hasVersionedTransaction && paymentData.versionedTransaction) {
-      const transactionBuffer = bs58.decode(paymentData.versionedTransaction);
-      const versionedTransaction =
-        VersionedTransaction.deserialize(transactionBuffer);
-
-      return {
-        versionedTransaction,
-        transactionSignature: undefined,
-        payer: payerPublicKey,
-      };
-    } else {
-      return {
-        versionedTransaction: undefined,
-        transactionSignature: paymentData.transactionSignature,
-        payer: payerPublicKey,
-      };
-    }
+    return paymentData;
   } catch (error) {
     console.error("Failed to extract payment from header:", error);
     return null;
@@ -69,17 +34,27 @@ export function createPaymentHeader(
     throw Error("Cannot pass both transaction and signature");
   }
 
-  const versionedTransactionB58 = versionedTransaction
-    ? bs58.encode(versionedTransaction.serialize())
-    : undefined;
-  const signature = transactionSignature ?? undefined;
   const payerB58 = payer.toBase58();
 
-  const paymentHeader: PaymentHeader = {
-    versionedTransaction: versionedTransactionB58,
-    transactionSignature: signature,
-    payer: payerB58,
-  };
+  if (versionedTransaction) {
+    const versionedTransactionB58 = bs58.encode(
+      versionedTransaction.serialize(),
+    );
 
-  return JSON.stringify(paymentHeader);
+    return JSON.stringify(
+      PaymentHeader({
+        type: "transaction",
+        versionedTransaction: versionedTransactionB58,
+        payer: payerB58,
+      }),
+    );
+  } else {
+    return JSON.stringify(
+      PaymentHeader({
+        type: "signature",
+        transactionSignature,
+        payer: payerB58,
+      }),
+    );
+  }
 }

@@ -20,7 +20,13 @@ import {
   createSolPaymentInstruction,
 } from "./solana";
 import { createPaymentHeader } from "./header";
-import type { RequestContext, PaymentRequirements } from "@faremeter/types";
+import { PaymentRequirementsExtra } from "./types";
+import {
+  type RequestContext,
+  type PaymentRequirements,
+  isValidationError,
+  throwValidationError,
+} from "@faremeter/types";
 import bs58 from "bs58";
 import * as multisig from "@sqds/multisig";
 import {
@@ -29,17 +35,20 @@ import {
   SolanaWallet,
 } from "@crossmint/wallets-sdk";
 
-export function createBasicPaymentHandler(
-  connection: Connection,
-  keypair: Keypair,
-) {
+export function createBasicPaymentHandler(keypair: Keypair) {
   return async (ctx: RequestContext, accepts: PaymentRequirements[]) => {
     // XXX - We need to decide how to filter for possibilities.
     const requirements = accepts[0]!;
 
+    const extra = PaymentRequirementsExtra(requirements.extra);
+
+    if (isValidationError(extra)) {
+      throwValidationError("couldn't validate requirements extra field", extra);
+    }
+
     const exec = async () => {
       const tx = await createPaymentTransaction(
-        connection,
+        extra,
         {
           // XXX - we need to map over to the x402 requirements.
           amount: Number(requirements.maxAmountRequired),
@@ -67,14 +76,16 @@ export function createBasicPaymentHandler(
   };
 }
 
-export function createTokenPaymentHandler(
-  connection: Connection,
-  keypair: Keypair,
-  mint: PublicKey,
-) {
+export function createTokenPaymentHandler(keypair: Keypair, mint: PublicKey) {
   return async (ctx: RequestContext, accepts: PaymentRequirements[]) => {
     // XXX - We need to decide how to filter for possibilities.
     const requirements = accepts[0]!;
+
+    const extra = PaymentRequirementsExtra(requirements.extra);
+
+    if (isValidationError(extra)) {
+      throwValidationError("couldn't validate requirements extra field", extra);
+    }
 
     const exec = async () => {
       const paymentRequirements = {
@@ -85,7 +96,7 @@ export function createTokenPaymentHandler(
       };
 
       const tx = await createPaymentSplTransaction(
-        connection,
+        extra,
         paymentRequirements,
         mint,
         keypair.publicKey,
@@ -268,12 +279,16 @@ export function createSquadsPaymentHandler(
 }
 
 export function createCrossmintPaymentHandler(
-  connection: Connection,
   crossmintApiKey: string,
   crossmintWalletAddress: string,
 ) {
   return async (ctx: RequestContext, accepts: PaymentRequirements[]) => {
     const requirements = accepts[0]!;
+    const extra = PaymentRequirementsExtra(requirements.extra);
+
+    if (isValidationError(extra)) {
+      throwValidationError("couldn't validate requirements extra field", extra);
+    }
 
     const exec = async () => {
       const crossmint = createCrossmint({
@@ -292,7 +307,7 @@ export function createCrossmintPaymentHandler(
       const walletPubkey = new PublicKey(solanaWallet.address);
 
       const tx = await createPaymentTransaction(
-        connection,
+        extra,
         {
           // XXX - we need to map over to the x402 requirements.
           amount: Number(requirements.maxAmountRequired),

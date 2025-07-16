@@ -1,6 +1,7 @@
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createTokenPaymentHandler } from "@faremeter/x402-solana";
 import { wrap as wrapFetch } from "@faremeter/fetch";
+import type { RequestContext, PaymentRequirements } from "@faremeter/types";
 import fs from "fs";
 
 import {
@@ -61,8 +62,31 @@ const createTestToken = async (
 
 const mint = await createTestToken(connection, keypair);
 
+const handler = createTokenPaymentHandler(connection, keypair, mint);
+
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [createTokenPaymentHandler(connection, keypair, mint)],
+  handlers: [
+    async (ctx: RequestContext, accepts: PaymentRequirements[]) => {
+      const req = accepts[0];
+
+      if (req === undefined) {
+        throw new Error("no payment requirements found!");
+      }
+
+      // XXX - This is a temporary hack to make sure the funds
+      // receiving account exists.  This will get removed once the
+      // mint configuration has been pushed to the server example.
+
+      await getOrCreateAssociatedTokenAccount(
+        connection,
+        keypair,
+        mint,
+        new PublicKey(req.payTo),
+      );
+
+      return handler(ctx, accepts);
+    },
+  ],
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

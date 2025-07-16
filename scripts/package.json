@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@faremeter/fetch": "workspace:*",
+    "@faremeter/types": "workspace:^",
     "@faremeter/x402-solana": "workspace:*",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",

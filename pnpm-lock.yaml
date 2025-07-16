@@ -182,6 +182,9 @@ importers:
       '@faremeter/fetch':
         specifier: workspace:*
         version: link:../packages/fetch
+      '@faremeter/types':
+        specifier: workspace:^
+        version: link:../packages/types
       '@faremeter/x402-solana':
         specifier: workspace:*
         version: link:../packages/x402-solana

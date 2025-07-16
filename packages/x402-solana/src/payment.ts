@@ -21,7 +21,6 @@ import {
 } from "./solana";
 import { createPaymentHeader } from "./header";
 import type { RequestContext, PaymentRequirements } from "@faremeter/types";
-import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 import bs58 from "bs58";
 import * as multisig from "@sqds/multisig";
 import {
@@ -78,13 +77,6 @@ export function createTokenPaymentHandler(
     const requirements = accepts[0]!;
 
     const exec = async () => {
-      await getOrCreateAssociatedTokenAccount(
-        connection,
-        keypair,
-        mint,
-        new PublicKey(requirements.payTo),
-      );
-
       const paymentRequirements = {
         // XXX - we need to map over to the x402 requirements.
         amount: Number(requirements.maxAmountRequired),

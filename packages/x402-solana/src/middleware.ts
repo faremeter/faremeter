@@ -1,4 +1,4 @@
-import { clusterApiUrl, Connection, Keypair } from "@solana/web3.js";
+import { Connection, Keypair } from "@solana/web3.js";
 import type { NextFunction, Request, Response } from "express";
 import { type PaymentRequirements } from "./types";
 import { extractPaymentFromHeader } from "./header";
@@ -11,11 +11,10 @@ import {
 } from "./solana";
 
 export const paymentMiddleware = (
+  connection: Connection,
   paymentRequirements: PaymentRequirements,
   adminKeypair: Keypair,
 ) => {
-  const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-
   const sendPaymentRequired = (res: Response) => {
     res.status(402).json({
       x402Version: 1,

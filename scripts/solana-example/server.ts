@@ -1,7 +1,7 @@
 import { default as express } from "express";
 import type { Request, Response } from "express";
 import { paymentMiddleware } from "@faremeter/x402-solana/middleware";
-import { Keypair } from "@solana/web3.js";
+import { clusterApiUrl, Connection, Keypair } from "@solana/web3.js";
 import fs from "fs";
 
 const adminKeypair = Keypair.fromSecretKey(
@@ -10,12 +10,15 @@ const adminKeypair = Keypair.fromSecretKey(
   ),
 );
 
+const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+
 const run = async () => {
   const app = express();
 
   app.get(
     "/protected",
     paymentMiddleware(
+      connection,
       {
         receiver: Keypair.generate().publicKey,
         amount: 1000000,

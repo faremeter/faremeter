@@ -1,5 +1,4 @@
 import {
-  clusterApiUrl,
   Keypair,
   PublicKey,
   SystemProgram,
@@ -11,7 +10,8 @@ import {
 import { Connection } from "@solana/web3.js";
 import type { CreatePaymentArgs, PaymentRequirements } from "./types";
 import idl from "./payment_program.json";
-import { AnchorProvider, BorshCoder, Program, Wallet } from "@coral-xyz/anchor";
+import { BorshCoder, Program } from "@coral-xyz/anchor";
+import { DummyProvider } from "./dummyprovider";
 import type { PaymentProgram } from "./idl_type";
 import { default as BN } from "bn.js";
 
@@ -25,18 +25,7 @@ import bs58 from "bs58";
 
 export const coder = new BorshCoder(idl as PaymentProgram);
 
-const connection = new Connection(clusterApiUrl("devnet"));
-
-const dummyKeypair = Keypair.generate();
-const wallet = new Wallet(dummyKeypair);
-
-const provider = new AnchorProvider(
-  connection,
-  wallet,
-  AnchorProvider.defaultOptions(),
-);
-
-export const program = new Program(idl as PaymentProgram, provider);
+export const program = new Program(idl as PaymentProgram, new DummyProvider());
 
 export const processTransaction = async (
   connection: Connection,

@@ -58,3 +58,9 @@ export interface PaymentResponse {
   admin: string;
   amount: string;
 }
+
+export const PaymentRequirementsExtra = type({
+  blockHash: "string",
+});
+
+export type PaymentRequirementsExtra = typeof PaymentRequirementsExtra.infer;

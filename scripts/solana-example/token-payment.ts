@@ -62,7 +62,7 @@ const createTestToken = async (
 
 const mint = await createTestToken(connection, keypair);
 
-const handler = createTokenPaymentHandler(connection, keypair, mint);
+const handler = createTokenPaymentHandler(keypair, mint);
 
 const fetchWithPayer = wrapFetch(fetch, {
   handlers: [

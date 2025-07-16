@@ -15,7 +15,9 @@ export const paymentMiddleware = (
   paymentRequirements: PaymentRequirements,
   adminKeypair: Keypair,
 ) => {
-  const sendPaymentRequired = (res: Response) => {
+  const sendPaymentRequired = async (res: Response) => {
+    const blockHash = (await connection.getLatestBlockhash()).blockhash;
+
     res.status(402).json({
       x402Version: 1,
       accepts: [
@@ -29,6 +31,9 @@ export const paymentMiddleware = (
           payTo: paymentRequirements.receiver.toString(),
           asset: paymentRequirements.admin.toString(),
           maxTimeoutSeconds: 5,
+          extra: {
+            blockHash,
+          },
         },
       ],
     });

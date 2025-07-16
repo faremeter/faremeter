@@ -1,8 +1,5 @@
-import { clusterApiUrl, Connection } from "@solana/web3.js";
 import { createCrossmintPaymentHandler } from "@faremeter/x402-solana";
 import { wrap as wrapFetch } from "@faremeter/fetch";
-
-const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
 // Address of your crossmint wallet
 const crossmintWallet = process.env.CROSSMINT_WALLET;
@@ -15,9 +12,7 @@ if (!crossmintWallet || !crossmintApi) {
 }
 
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [
-    createCrossmintPaymentHandler(connection, crossmintApi, crossmintWallet),
-  ],
+  handlers: [createCrossmintPaymentHandler(crossmintApi, crossmintWallet)],
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

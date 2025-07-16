@@ -8,7 +8,11 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { Connection } from "@solana/web3.js";
-import type { CreatePaymentArgs, PaymentRequirements } from "./types";
+import type {
+  CreatePaymentArgs,
+  PaymentRequirements,
+  PaymentRequirementsExtra,
+} from "./types";
 import idl from "./payment_program.json";
 import { BorshCoder, Program } from "@coral-xyz/anchor";
 import { DummyProvider } from "./dummyprovider";
@@ -269,7 +273,7 @@ export const createSolPaymentInstruction = async (
 };
 
 export const createPaymentTransaction = async (
-  connection: Connection,
+  extra: PaymentRequirementsExtra,
   paymentRequirements: PaymentRequirements,
   payer: PublicKey,
 ): Promise<VersionedTransaction> => {
@@ -278,7 +282,7 @@ export const createPaymentTransaction = async (
     payer,
   );
 
-  return buildVersionedTransaction(connection, [instruction], payer);
+  return buildVersionedTransaction(extra, [instruction], payer);
 };
 
 export const createSettleTransaction = async (
@@ -415,7 +419,7 @@ export const createSplPaymentInstruction = async (
 };
 
 export const createPaymentSplTransaction = async (
-  connection: Connection,
+  extra: PaymentRequirementsExtra,
   paymentRequirements: PaymentRequirements,
   mint: PublicKey,
   payer: PublicKey,
@@ -426,20 +430,20 @@ export const createPaymentSplTransaction = async (
     payer,
   );
 
-  return buildVersionedTransaction(connection, [instruction], payer);
+  return buildVersionedTransaction(extra, [instruction], payer);
 };
 
 const buildVersionedTransaction = async (
-  connection: Connection,
+  extra: PaymentRequirementsExtra,
   instructions: TransactionInstruction[],
   payer: PublicKey,
 ): Promise<VersionedTransaction> => {
-  const { blockhash } = await connection.getLatestBlockhash("confirmed");
+  const { blockHash } = extra;
 
   const message = new TransactionMessage({
     instructions,
     payerKey: payer,
-    recentBlockhash: blockhash,
+    recentBlockhash: blockHash,
   }).compileToV0Message();
 
   const tx = new VersionedTransaction(message);

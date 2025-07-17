@@ -8,11 +8,7 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { Connection } from "@solana/web3.js";
-import type {
-  CreatePaymentArgs,
-  PaymentTargetInfo,
-  PaymentRequirementsExtra,
-} from "./types";
+import type { CreatePaymentArgs, PaymentTargetInfo } from "./types";
 import idl from "./payment_program.json";
 import { BorshCoder, Program } from "@coral-xyz/anchor";
 import { DummyProvider } from "./dummyprovider";
@@ -273,13 +269,12 @@ export const createSolPaymentInstruction = async (
 };
 
 export const createPaymentTransaction = async (
-  extra: PaymentRequirementsExtra,
   target: PaymentTargetInfo,
   payer: PublicKey,
 ): Promise<VersionedTransaction> => {
   const instruction = await createSolPaymentInstruction(target, payer);
 
-  return buildVersionedTransaction(extra, [instruction], payer);
+  return buildVersionedTransaction(target, [instruction], payer);
 };
 
 export const createSettleTransaction = async (
@@ -416,22 +411,21 @@ export const createSplPaymentInstruction = async (
 };
 
 export const createPaymentSplTransaction = async (
-  extra: PaymentRequirementsExtra,
   target: PaymentTargetInfo,
   mint: PublicKey,
   payer: PublicKey,
 ): Promise<VersionedTransaction> => {
   const instruction = await createSplPaymentInstruction(target, mint, payer);
 
-  return buildVersionedTransaction(extra, [instruction], payer);
+  return buildVersionedTransaction(target, [instruction], payer);
 };
 
 const buildVersionedTransaction = async (
-  extra: PaymentRequirementsExtra,
+  target: PaymentTargetInfo,
   instructions: TransactionInstruction[],
   payer: PublicKey,
 ): Promise<VersionedTransaction> => {
-  const { blockHash } = extra;
+  const { blockHash } = target;
 
   const message = new TransactionMessage({
     instructions,

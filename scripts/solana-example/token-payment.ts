@@ -1,7 +1,7 @@
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createTokenPaymentHandler } from "@faremeter/x402-solana";
 import { wrap as wrapFetch } from "@faremeter/fetch";
-import type { RequestContext, PaymentRequirements } from "@faremeter/types";
+import type { RequestContext, x402PaymentRequirements } from "@faremeter/types";
 import fs from "fs";
 
 import {
@@ -66,7 +66,7 @@ const handler = createTokenPaymentHandler(keypair, mint);
 
 const fetchWithPayer = wrapFetch(fetch, {
   handlers: [
-    async (ctx: RequestContext, accepts: PaymentRequirements[]) => {
+    async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
       const req = accepts[0];
 
       if (req === undefined) {

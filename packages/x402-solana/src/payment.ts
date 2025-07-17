@@ -23,7 +23,7 @@ import { createPaymentHeader } from "./header";
 import { PaymentRequirementsExtra } from "./types";
 import {
   type RequestContext,
-  type PaymentRequirements,
+  type x402PaymentRequirements,
   isValidationError,
   throwValidationError,
 } from "@faremeter/types";
@@ -36,7 +36,7 @@ import {
 } from "@crossmint/wallets-sdk";
 
 export function createBasicPaymentHandler(keypair: Keypair) {
-  return async (ctx: RequestContext, accepts: PaymentRequirements[]) => {
+  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
     // XXX - We need to decide how to filter for possibilities.
     const requirements = accepts[0]!;
 
@@ -77,7 +77,7 @@ export function createBasicPaymentHandler(keypair: Keypair) {
 }
 
 export function createTokenPaymentHandler(keypair: Keypair, mint: PublicKey) {
-  return async (ctx: RequestContext, accepts: PaymentRequirements[]) => {
+  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
     // XXX - We need to decide how to filter for possibilities.
     const requirements = accepts[0]!;
 
@@ -127,7 +127,7 @@ export function createSquadsPaymentHandler(
   multisigPda: PublicKey,
   squadMember: Keypair,
 ) {
-  return async (ctx: RequestContext, accepts: PaymentRequirements[]) => {
+  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
     // XXX - We need to decide how to filter for possibilities.
     const requirements = accepts[0]!;
 
@@ -282,7 +282,7 @@ export function createCrossmintPaymentHandler(
   crossmintApiKey: string,
   crossmintWalletAddress: string,
 ) {
-  return async (ctx: RequestContext, accepts: PaymentRequirements[]) => {
+  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
     const requirements = accepts[0]!;
     const extra = PaymentRequirementsExtra(requirements.extra);
 

@@ -10,7 +10,7 @@ import {
 import { Connection } from "@solana/web3.js";
 import type {
   CreatePaymentArgs,
-  PaymentRequirements,
+  PaymentTargetInfo,
   PaymentRequirementsExtra,
 } from "./types";
 import idl from "./payment_program.json";
@@ -240,7 +240,7 @@ export const extractTransferData = async (
 };
 
 export const createSolPaymentInstruction = async (
-  paymentRequirements: PaymentRequirements,
+  target: PaymentTargetInfo,
   payer: PublicKey,
 ): Promise<TransactionInstruction> => {
   const nonce = crypto.getRandomValues(new Uint8Array(32));
@@ -257,13 +257,13 @@ export const createSolPaymentInstruction = async (
   }
 
   const programInstruction = await createPayment(
-    new BN(paymentRequirements.amount),
+    new BN(target.amount),
     Array.from(nonce),
   )
     .accountsStrict({
       payer: payer,
-      receiver: paymentRequirements.receiver,
-      admin: paymentRequirements.admin,
+      receiver: target.receiver,
+      admin: target.admin,
       payment: paymentAccount,
       systemProgram: SystemProgram.programId,
     })
@@ -274,13 +274,10 @@ export const createSolPaymentInstruction = async (
 
 export const createPaymentTransaction = async (
   extra: PaymentRequirementsExtra,
-  paymentRequirements: PaymentRequirements,
+  target: PaymentTargetInfo,
   payer: PublicKey,
 ): Promise<VersionedTransaction> => {
-  const instruction = await createSolPaymentInstruction(
-    paymentRequirements,
-    payer,
-  );
+  const instruction = await createSolPaymentInstruction(target, payer);
 
   return buildVersionedTransaction(extra, [instruction], payer);
 };
@@ -375,7 +372,7 @@ export const settleTransaction = async (
 };
 
 export const createSplPaymentInstruction = async (
-  paymentRequirements: PaymentRequirements,
+  target: PaymentTargetInfo,
   mint: PublicKey,
   payer: PublicKey,
 ): Promise<TransactionInstruction> => {
@@ -389,7 +386,7 @@ export const createSplPaymentInstruction = async (
   const payerTokenAccount = getAssociatedTokenAddressSync(mint, payer);
   const receiverTokenAccount = getAssociatedTokenAddressSync(
     mint,
-    paymentRequirements.receiver,
+    target.receiver,
   );
 
   const createPaymentSpl = program.methods.createPaymentSpl;
@@ -399,13 +396,13 @@ export const createSplPaymentInstruction = async (
   }
 
   const programInstruction = await createPaymentSpl(
-    new BN(paymentRequirements.amount),
+    new BN(target.amount),
     Array.from(nonce),
   )
     .accountsStrict({
       payer: payer,
-      receiver: paymentRequirements.receiver,
-      admin: paymentRequirements.admin,
+      receiver: target.receiver,
+      admin: target.admin,
       mint: mint,
       payerTokenAccount: payerTokenAccount,
       receiverTokenAccount: receiverTokenAccount,
@@ -420,15 +417,11 @@ export const createSplPaymentInstruction = async (
 
 export const createPaymentSplTransaction = async (
   extra: PaymentRequirementsExtra,
-  paymentRequirements: PaymentRequirements,
+  target: PaymentTargetInfo,
   mint: PublicKey,
   payer: PublicKey,
 ): Promise<VersionedTransaction> => {
-  const instruction = await createSplPaymentInstruction(
-    paymentRequirements,
-    mint,
-    payer,
-  );
+  const instruction = await createSplPaymentInstruction(target, mint, payer);
 
   return buildVersionedTransaction(extra, [instruction], payer);
 };

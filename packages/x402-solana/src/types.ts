@@ -36,7 +36,7 @@ export const PaymentHeader = type({
 
 export type PaymentHeader = typeof PaymentHeader.infer;
 
-export interface PaymentRequirements {
+export interface PaymentTargetInfo {
   receiver: PublicKey;
   admin: PublicKey;
   amount: number;

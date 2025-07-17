@@ -1,6 +1,6 @@
 import { Connection, Keypair } from "@solana/web3.js";
 import type { NextFunction, Request, Response } from "express";
-import { type PaymentRequirements } from "./types";
+import { type PaymentTargetInfo } from "./types";
 import { extractPaymentFromHeader } from "./header";
 import {
   createSettleTransaction,
@@ -12,7 +12,7 @@ import {
 
 export const paymentMiddleware = (
   connection: Connection,
-  paymentRequirements: PaymentRequirements,
+  paymentRequirements: PaymentTargetInfo,
   adminKeypair: Keypair,
 ) => {
   const sendPaymentRequired = async (res: Response) => {

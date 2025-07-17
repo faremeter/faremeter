@@ -12,11 +12,11 @@ import {
 
 export const paymentMiddleware = (
   connection: Connection,
-  paymentRequirements: Omit<PaymentTargetInfo, "blockHash">,
+  paymentRequirements: Omit<PaymentTargetInfo, "recentBlockhash">,
   adminKeypair: Keypair,
 ) => {
   const sendPaymentRequired = async (res: Response) => {
-    const blockHash = (await connection.getLatestBlockhash()).blockhash;
+    const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
     res.status(402).json({
       x402Version: 1,
@@ -32,7 +32,7 @@ export const paymentMiddleware = (
           asset: paymentRequirements.admin.toString(),
           maxTimeoutSeconds: 5,
           extra: {
-            blockHash,
+            recentBlockhash,
           },
         },
       ],

@@ -40,7 +40,7 @@ export interface PaymentTargetInfo {
   receiver: PublicKey;
   admin: PublicKey;
   amount: number;
-  blockHash: string;
+  recentBlockhash: string;
 }
 
 export interface TransactionVerificationResult {
@@ -61,7 +61,7 @@ export interface PaymentResponse {
 }
 
 export const PaymentRequirementsExtra = type({
-  blockHash: "string",
+  recentBlockhash: "string",
 });
 
 export type PaymentRequirementsExtra = typeof PaymentRequirementsExtra.infer;

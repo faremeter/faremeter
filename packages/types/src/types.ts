@@ -1,6 +1,6 @@
 import { type } from "arktype";
 
-export const PaymentRequirements = type({
+export const x402PaymentRequirements = type({
   scheme: "string",
   network: "string",
   maxAmountRequired: "string.numeric",
@@ -14,24 +14,25 @@ export const PaymentRequirements = type({
   extra: "object?",
 });
 
-export type PaymentRequirements = typeof PaymentRequirements.infer;
+export type x402PaymentRequirements = typeof x402PaymentRequirements.infer;
 
-export const PaymentRequiredResponse = type({
+export const x402PaymentRequiredResponse = type({
   x402Version: "number.integer",
-  accepts: PaymentRequirements.array(),
+  accepts: x402PaymentRequirements.array(),
   error: "string?",
 });
 
-export type PaymentRequiredResponse = typeof PaymentRequiredResponse.infer;
+export type x402PaymentRequiredResponse =
+  typeof x402PaymentRequiredResponse.infer;
 
-export const PaymentPayload = type({
+export const x402PaymentPayload = type({
   x402Version: "number.integer",
   scheme: "string",
   network: "string",
   payload: "object",
 });
 
-export type PaymentPayload = typeof PaymentPayload.infer;
+export type x402PaymentPayload = typeof x402PaymentPayload.infer;
 
 export type RequestContext = {
   request: RequestInfo | URL;
@@ -42,11 +43,11 @@ export type PaymentExecResult = {
 };
 
 export type PaymentExecer = {
-  requirements: PaymentRequirements;
+  requirements: x402PaymentRequirements;
   exec(): Promise<PaymentExecResult>;
 };
 
 export type PaymentHandler = (
   context: RequestContext,
-  requiredResponse: PaymentRequirements[],
+  requiredResponse: x402PaymentRequirements[],
 ) => Promise<PaymentExecer[]>;

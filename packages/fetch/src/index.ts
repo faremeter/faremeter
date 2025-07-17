@@ -2,7 +2,7 @@ import {
   type PaymentExecer,
   type RequestContext,
   type PaymentHandler,
-  PaymentRequiredResponse,
+  x402PaymentRequiredResponse,
   isValidationError,
   throwValidationError,
 } from "@faremeter/types";
@@ -38,7 +38,7 @@ export function wrap(wrappedFetch: typeof fetch, options: WrapOptions) {
 
     const payerChooser = options.payerChooser ?? chooseFirstAvailable;
 
-    const payResp = PaymentRequiredResponse(await response.json());
+    const payResp = x402PaymentRequiredResponse(await response.json());
 
     if (isValidationError(payResp)) {
       throwValidationError("couldn't parse payment required response", payResp);

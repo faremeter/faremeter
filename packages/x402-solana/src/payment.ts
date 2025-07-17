@@ -143,13 +143,13 @@ export function createSquadsPaymentHandler(
       const currentTransactionIndex = Number(multisigInfo.transactionIndex);
       const newTransactionIndex = BigInt(currentTransactionIndex + 1);
 
-      const blockHash = (await connection.getLatestBlockhash()).blockhash;
+      const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
       const paymentRequirements = {
         amount: Number(requirements.maxAmountRequired),
         receiver: new PublicKey(requirements.payTo),
         admin: new PublicKey(requirements.asset),
-        blockHash,
+        recentBlockhash,
       };
 
       const createPaymentInstruction = await createSolPaymentInstruction(
@@ -159,7 +159,7 @@ export function createSquadsPaymentHandler(
 
       const testTransferMessage = new TransactionMessage({
         payerKey: vaultPda,
-        recentBlockhash: blockHash,
+        recentBlockhash,
         instructions: [createPaymentInstruction],
       });
 

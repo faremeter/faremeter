@@ -425,12 +425,12 @@ const buildVersionedTransaction = async (
   instructions: TransactionInstruction[],
   payer: PublicKey,
 ): Promise<VersionedTransaction> => {
-  const { blockHash } = target;
+  const { recentBlockhash } = target;
 
   const message = new TransactionMessage({
     instructions,
     payerKey: payer,
-    recentBlockhash: blockHash,
+    recentBlockhash,
   }).compileToV0Message();
 
   const tx = new VersionedTransaction(message);

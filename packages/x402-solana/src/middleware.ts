@@ -12,7 +12,7 @@ import {
 
 export const paymentMiddleware = (
   connection: Connection,
-  paymentRequirements: PaymentTargetInfo,
+  paymentRequirements: Omit<PaymentTargetInfo, "blockHash">,
   adminKeypair: Keypair,
 ) => {
   const sendPaymentRequired = async (res: Response) => {

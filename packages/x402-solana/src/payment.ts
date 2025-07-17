@@ -48,9 +48,8 @@ export function createBasicPaymentHandler(keypair: Keypair) {
 
     const exec = async () => {
       const tx = await createPaymentTransaction(
-        extra,
         {
-          // XXX - we need to map over to the x402 requirements.
+          ...extra,
           amount: Number(requirements.maxAmountRequired),
           receiver: new PublicKey(requirements.payTo),
           admin: new PublicKey(requirements.asset),
@@ -89,14 +88,13 @@ export function createTokenPaymentHandler(keypair: Keypair, mint: PublicKey) {
 
     const exec = async () => {
       const paymentRequirements = {
-        // XXX - we need to map over to the x402 requirements.
+        ...extra,
         amount: Number(requirements.maxAmountRequired),
         receiver: new PublicKey(requirements.payTo),
         admin: new PublicKey(requirements.asset),
       };
 
       const tx = await createPaymentSplTransaction(
-        extra,
         paymentRequirements,
         mint,
         keypair.publicKey,
@@ -145,11 +143,13 @@ export function createSquadsPaymentHandler(
       const currentTransactionIndex = Number(multisigInfo.transactionIndex);
       const newTransactionIndex = BigInt(currentTransactionIndex + 1);
 
+      const blockHash = (await connection.getLatestBlockhash()).blockhash;
+
       const paymentRequirements = {
-        // XXX - we need to map over to the x402 requirements.
         amount: Number(requirements.maxAmountRequired),
         receiver: new PublicKey(requirements.payTo),
         admin: new PublicKey(requirements.asset),
+        blockHash,
       };
 
       const createPaymentInstruction = await createSolPaymentInstruction(
@@ -159,7 +159,7 @@ export function createSquadsPaymentHandler(
 
       const testTransferMessage = new TransactionMessage({
         payerKey: vaultPda,
-        recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
+        recentBlockhash: blockHash,
         instructions: [createPaymentInstruction],
       });
 
@@ -307,9 +307,8 @@ export function createCrossmintPaymentHandler(
       const walletPubkey = new PublicKey(solanaWallet.address);
 
       const tx = await createPaymentTransaction(
-        extra,
         {
-          // XXX - we need to map over to the x402 requirements.
+          ...extra,
           amount: Number(requirements.maxAmountRequired),
           receiver: new PublicKey(requirements.payTo),
           admin: new PublicKey(requirements.asset),

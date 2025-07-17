@@ -40,6 +40,7 @@ export interface PaymentTargetInfo {
   receiver: PublicKey;
   admin: PublicKey;
   amount: number;
+  blockHash: string;
 }
 
 export interface TransactionVerificationResult {

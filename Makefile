@@ -1,6 +1,6 @@
 all: lint build test
 
-build: packages/types $(wildcard packages/*)
+build: packages/types $(wildcard packages/*) scripts
 
 lint:
 	pnpm prettier -c .
@@ -13,6 +13,9 @@ format:
 
 packages/%: FORCE
 	cd $@ && rm -rf dist && tsc
+
+scripts: FORCE
+	cd scripts && rm -rf dist && tsc
 
 .PHONY: all lint test
 FORCE:

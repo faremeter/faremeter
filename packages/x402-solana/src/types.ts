@@ -8,7 +8,7 @@ const VersionedTransactionString = type("string").pipe.try((tx) => {
   return VersionedTransaction.deserialize(decoded);
 });
 
-export const Payment = type({
+export const PaymentPayload = type({
   payer: "string",
 }).and(
   type({
@@ -20,21 +20,7 @@ export const Payment = type({
   }),
 );
 
-export type Payment = typeof Payment.infer;
-
-export const PaymentHeader = type({
-  payer: "string",
-}).and(
-  type({
-    type: "'transaction'",
-    versionedTransaction: "string",
-  }).or({
-    type: "'signature'",
-    transactionSignature: "string",
-  }),
-);
-
-export type PaymentHeader = typeof PaymentHeader.infer;
+export type PaymentPayload = typeof PaymentPayload.infer;
 
 export interface PaymentTargetInfo {
   receiver: PublicKey;
@@ -43,21 +29,9 @@ export interface PaymentTargetInfo {
   recentBlockhash: string;
 }
 
-export interface TransactionVerificationResult {
-  success: boolean;
-  payer?: PublicKey;
-  err?: string;
-}
-
 export interface CreatePaymentArgs {
   amount: BN;
   nonce: number[];
-}
-
-export interface PaymentResponse {
-  address: string;
-  admin: string;
-  amount: string;
 }
 
 export const PaymentRequirementsExtra = type({

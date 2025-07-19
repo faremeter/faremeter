@@ -20,7 +20,7 @@ import {
   createPaymentSplTransaction,
 } from "./solana";
 
-import { createPaymentHeader } from "./header";
+import { createPaymentPayload } from "./header";
 
 export function createBasicPaymentHandler(keypair: Keypair) {
   return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
@@ -45,11 +45,9 @@ export function createBasicPaymentHandler(keypair: Keypair) {
       );
       tx.sign([keypair]);
 
-      const header = createPaymentHeader(keypair.publicKey, tx);
+      const payload = createPaymentPayload(keypair.publicKey, tx);
       return {
-        headers: {
-          "X-PAYMENT": header,
-        },
+        payload,
       };
     };
 
@@ -88,12 +86,10 @@ export function createTokenPaymentHandler(keypair: Keypair, mint: PublicKey) {
       );
       tx.sign([keypair]);
 
-      const header = createPaymentHeader(keypair.publicKey, tx);
+      const payload = createPaymentPayload(keypair.publicKey, tx);
 
       return {
-        headers: {
-          "X-PAYMENT": header,
-        },
+        payload,
       };
     };
 

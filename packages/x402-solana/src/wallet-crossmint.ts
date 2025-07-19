@@ -19,7 +19,7 @@ import {
 } from "@crossmint/wallets-sdk";
 
 import { PaymentRequirementsExtra } from "./types";
-import { createPaymentHeader } from "./header";
+import { createPaymentPayload } from "./header";
 import { createPaymentTransaction } from "./solana";
 
 export function createCrossmintPaymentHandler(
@@ -66,11 +66,10 @@ export function createCrossmintPaymentHandler(
 
       console.log(solTx);
 
-      const header = createPaymentHeader(walletPubkey, undefined, solTx.hash);
+      const payload = createPaymentPayload(walletPubkey, undefined, solTx.hash);
+
       return {
-        headers: {
-          "X-PAYMENT": header,
-        },
+        payload,
       };
     };
 

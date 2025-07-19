@@ -3,6 +3,7 @@ import {
   type RequestContext,
   type PaymentHandler,
   x402PaymentRequiredResponse,
+  x402PaymentPayload,
   isValidationError,
   throwValidationError,
 } from "@faremeter/types";
@@ -57,11 +58,20 @@ export function wrap(wrappedFetch: typeof fetch, options: WrapOptions) {
     const payer = await payerChooser(possiblePayers);
     const payerResult = await payer.exec();
 
+    const payload: x402PaymentPayload = {
+      x402Version: payResp.x402Version,
+      scheme: payer.requirements.scheme,
+      network: payer.requirements.network,
+      payload: payerResult.payload,
+    };
+
+    const xPaymentHeader = btoa(JSON.stringify(payload));
+
     const newInit: RequestInit = {
       ...init,
       headers: {
         ...(init.headers ?? {}),
-        ...payerResult.headers,
+        "X-PAYMENT": xPaymentHeader,
       },
     };
 

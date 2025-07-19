@@ -20,9 +20,8 @@ const run = async () => {
     paymentMiddleware(
       connection,
       {
-        receiver: Keypair.generate().publicKey,
+        payTo: Keypair.generate().publicKey,
         amount: 1000000,
-        admin: adminKeypair.publicKey,
       },
       adminKeypair,
     ),

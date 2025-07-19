@@ -4,120 +4,20 @@
 // production ready.
 //
 
+import type { RequestContext, x402PaymentRequirements } from "@faremeter/types";
+import { createSolPaymentInstruction } from "./solana";
 import {
   type Connection,
   Keypair,
   PublicKey,
-  sendAndConfirmTransaction,
   Transaction,
   TransactionMessage,
   VersionedTransaction,
+  sendAndConfirmTransaction,
 } from "@solana/web3.js";
-
-import {
-  createPaymentTransaction,
-  createPaymentSplTransaction,
-  createSolPaymentInstruction,
-} from "./solana";
-import { createPaymentHeader } from "./header";
-import { PaymentRequirementsExtra } from "./types";
-import {
-  type RequestContext,
-  type x402PaymentRequirements,
-  isValidationError,
-  throwValidationError,
-} from "@faremeter/types";
-import bs58 from "bs58";
 import * as multisig from "@sqds/multisig";
-import {
-  createCrossmint,
-  CrossmintWallets,
-  SolanaWallet,
-} from "@crossmint/wallets-sdk";
-
-export function createBasicPaymentHandler(keypair: Keypair) {
-  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
-    // XXX - We need to decide how to filter for possibilities.
-    const requirements = accepts[0]!;
-
-    const extra = PaymentRequirementsExtra(requirements.extra);
-
-    if (isValidationError(extra)) {
-      throwValidationError("couldn't validate requirements extra field", extra);
-    }
-
-    const exec = async () => {
-      const tx = await createPaymentTransaction(
-        {
-          ...extra,
-          amount: Number(requirements.maxAmountRequired),
-          receiver: new PublicKey(requirements.payTo),
-          admin: new PublicKey(requirements.asset),
-        },
-        keypair.publicKey,
-      );
-      tx.sign([keypair]);
-
-      const header = createPaymentHeader(keypair.publicKey, tx);
-      return {
-        headers: {
-          "X-PAYMENT": header,
-        },
-      };
-    };
-
-    return [
-      {
-        exec,
-        requirements,
-      },
-    ];
-  };
-}
-
-export function createTokenPaymentHandler(keypair: Keypair, mint: PublicKey) {
-  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
-    // XXX - We need to decide how to filter for possibilities.
-    const requirements = accepts[0]!;
-
-    const extra = PaymentRequirementsExtra(requirements.extra);
-
-    if (isValidationError(extra)) {
-      throwValidationError("couldn't validate requirements extra field", extra);
-    }
-
-    const exec = async () => {
-      const paymentRequirements = {
-        ...extra,
-        amount: Number(requirements.maxAmountRequired),
-        receiver: new PublicKey(requirements.payTo),
-        admin: new PublicKey(requirements.asset),
-      };
-
-      const tx = await createPaymentSplTransaction(
-        paymentRequirements,
-        mint,
-        keypair.publicKey,
-      );
-      tx.sign([keypair]);
-
-      const header = createPaymentHeader(keypair.publicKey, tx);
-
-      return {
-        headers: {
-          "X-PAYMENT": header,
-        },
-      };
-    };
-
-    return [
-      {
-        exec,
-        requirements,
-      },
-    ];
-  };
-}
+import bs58 from "bs58";
+import { createPaymentHeader } from "./header";
 
 export function createSquadsPaymentHandler(
   connection: Connection,
@@ -262,67 +162,6 @@ export function createSquadsPaymentHandler(
 
       const header = createPaymentHeader(keypair.publicKey, tx);
 
-      return {
-        headers: {
-          "X-PAYMENT": header,
-        },
-      };
-    };
-
-    return [
-      {
-        exec,
-        requirements,
-      },
-    ];
-  };
-}
-
-export function createCrossmintPaymentHandler(
-  crossmintApiKey: string,
-  crossmintWalletAddress: string,
-) {
-  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
-    const requirements = accepts[0]!;
-    const extra = PaymentRequirementsExtra(requirements.extra);
-
-    if (isValidationError(extra)) {
-      throwValidationError("couldn't validate requirements extra field", extra);
-    }
-
-    const exec = async () => {
-      const crossmint = createCrossmint({
-        apiKey: crossmintApiKey,
-      });
-      const crossmintWallets = CrossmintWallets.from(crossmint);
-      const wallet = await crossmintWallets.getWallet(crossmintWalletAddress, {
-        chain: "solana",
-        signer: {
-          type: "api-key",
-        },
-      });
-      console.log(wallet.address);
-
-      const solanaWallet = SolanaWallet.from(wallet);
-      const walletPubkey = new PublicKey(solanaWallet.address);
-
-      const tx = await createPaymentTransaction(
-        {
-          ...extra,
-          amount: Number(requirements.maxAmountRequired),
-          receiver: new PublicKey(requirements.payTo),
-          admin: new PublicKey(requirements.asset),
-        },
-        walletPubkey,
-      );
-
-      const solTx = await solanaWallet.sendTransaction({
-        transaction: tx as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-      });
-
-      console.log(solTx);
-
-      const header = createPaymentHeader(walletPubkey, undefined, solTx.hash);
       return {
         headers: {
           "X-PAYMENT": header,

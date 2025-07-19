@@ -17,7 +17,7 @@ import {
 } from "@solana/web3.js";
 import * as multisig from "@sqds/multisig";
 import bs58 from "bs58";
-import { createPaymentHeader } from "./header";
+import { createPaymentPayload } from "./header";
 
 export function createSquadsPaymentHandler(
   connection: Connection,
@@ -160,12 +160,10 @@ export function createSquadsPaymentHandler(
         bs58.encode(tx.signatures[0]),
       );
 
-      const header = createPaymentHeader(keypair.publicKey, tx);
+      const payload = createPaymentPayload(keypair.publicKey, tx);
 
       return {
-        headers: {
-          "X-PAYMENT": header,
-        },
+        payload,
       };
     };
 

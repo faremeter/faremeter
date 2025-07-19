@@ -1,6 +1,11 @@
+import { PaymentPayload } from "./types";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import type { NextFunction, Request, Response } from "express";
-import { extractPaymentFromHeader } from "./header";
+import {
+  isValidationError,
+  headerToX402PaymentPayload,
+} from "@faremeter/types";
+
 import {
   createSettleTransaction,
   extractTransferData,
@@ -13,6 +18,21 @@ export type PaymentRequirements = {
   payTo: PublicKey;
   amount: number;
 };
+
+function extractPaymentFromHeader(req: Request) {
+  const paymentHeader = req.header("X-PAYMENT");
+  if (!paymentHeader) {
+    return null;
+  }
+
+  const payload = headerToX402PaymentPayload(paymentHeader);
+  if (isValidationError(payload)) {
+    console.log("type validation error:", payload.summary);
+    return null;
+  }
+
+  return payload;
+}
 
 export const paymentMiddleware = (
   connection: Connection,
@@ -46,14 +66,25 @@ export const paymentMiddleware = (
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const payment = extractPaymentFromHeader(req);
+
       if (!payment) {
         return sendPaymentRequired(res);
       }
 
+      const paymentPayload = PaymentPayload(payment.payload);
+
+      if (isValidationError(paymentPayload)) {
+        console.log("type validation error:", paymentPayload.summary);
+        return sendPaymentRequired(res);
+      }
+
       const signature =
-        "versionedTransaction" in payment
-          ? await processTransaction(connection, payment.versionedTransaction)
-          : payment.transactionSignature;
+        paymentPayload.type == "transaction"
+          ? await processTransaction(
+              connection,
+              paymentPayload.versionedTransaction,
+            )
+          : paymentPayload.transactionSignature;
 
       if (!signature) {
         return sendPaymentRequired(res);

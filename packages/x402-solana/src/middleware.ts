@@ -1,6 +1,5 @@
-import { Connection, Keypair } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import type { NextFunction, Request, Response } from "express";
-import { type PaymentTargetInfo } from "./types";
 import { extractPaymentFromHeader } from "./header";
 import {
   createSettleTransaction,
@@ -10,9 +9,14 @@ import {
   settleTransaction,
 } from "./solana";
 
+export type PaymentRequirements = {
+  payTo: PublicKey;
+  amount: number;
+};
+
 export const paymentMiddleware = (
   connection: Connection,
-  paymentRequirements: Omit<PaymentTargetInfo, "recentBlockhash">,
+  paymentRequirements: PaymentRequirements,
   adminKeypair: Keypair,
 ) => {
   const sendPaymentRequired = async (res: Response) => {
@@ -28,8 +32,8 @@ export const paymentMiddleware = (
           resource: "http://whatever.com",
           description: "what else",
           mimeType: "what",
-          payTo: paymentRequirements.receiver.toString(),
-          asset: paymentRequirements.admin.toString(),
+          payTo: paymentRequirements.payTo.toString(),
+          asset: adminKeypair.publicKey.toString(),
           maxTimeoutSeconds: 5,
           extra: {
             recentBlockhash,

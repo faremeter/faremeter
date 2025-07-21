@@ -1,8 +1,6 @@
 import { Keypair } from "@solana/web3.js";
-import {
-  createLocalWallet,
-  createSolPaymentHandler,
-} from "@faremeter/x402-solana";
+import { createLocalWallet } from "@faremeter/wallet-solana";
+import { createSolPaymentHandler } from "@faremeter/x402-solana";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import fs from "fs";
 

@@ -10,3 +10,5 @@ export {
 } from "./wallet-solana";
 export { createSquadsPaymentHandler } from "./wallet-solana-squads";
 export { createCrossmintPaymentHandler } from "./wallet-crossmint";
+
+export { createSolPaymentHandler, createTokenPaymentHandler } from "./payment";

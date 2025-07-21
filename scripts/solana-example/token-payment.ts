@@ -1,8 +1,6 @@
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
-import {
-  createTokenPaymentHandler,
-  createLocalWallet,
-} from "@faremeter/x402-solana";
+import { createLocalWallet } from "@faremeter/wallet-solana";
+import { createTokenPaymentHandler } from "@faremeter/x402-solana";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import type { RequestContext, x402PaymentRequirements } from "@faremeter/types";
 import fs from "fs";

@@ -113,14 +113,122 @@ importers:
         specifier: ^4.3.4
         version: 4.3.4
 
+  packages/wallet-crossmint:
+    dependencies:
+      '@crossmint/wallets-sdk':
+        specifier: ^0.10.13
+        version: 0.10.13(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4)
+      '@solana/web3.js':
+        specifier: ^1.98.2
+        version: 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.28.0
+        version: 9.28.0
+      '@tapjs/asserts':
+        specifier: ^4.0.1
+        version: 4.0.1(@tapjs/core@4.0.1(@types/node@24.0.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/web':
+        specifier: ^0.0.246
+        version: 0.0.246
+      eslint:
+        specifier: ^9.28.0
+        version: 9.28.0
+      prettier:
+        specifier: ^3.5.3
+        version: 3.5.3
+      tap:
+        specifier: ^21.1.0
+        version: 21.1.0(@types/node@24.0.3)(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      typescript-eslint:
+        specifier: ^8.34.0
+        version: 8.34.0(eslint@9.28.0)(typescript@5.8.3)
+      typescript-language-server:
+        specifier: ^4.3.4
+        version: 4.3.4
+
+  packages/wallet-solana:
+    dependencies:
+      '@solana/web3.js':
+        specifier: ^1.98.2
+        version: 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.28.0
+        version: 9.28.0
+      '@tapjs/asserts':
+        specifier: ^4.0.1
+        version: 4.0.1(@tapjs/core@4.0.1(@types/node@24.0.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      eslint:
+        specifier: ^9.28.0
+        version: 9.28.0
+      prettier:
+        specifier: ^3.5.3
+        version: 3.5.3
+      tap:
+        specifier: ^21.1.0
+        version: 21.1.0(@types/node@24.0.3)(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      typescript-eslint:
+        specifier: ^8.34.0
+        version: 8.34.0(eslint@9.28.0)(typescript@5.8.3)
+      typescript-language-server:
+        specifier: ^4.3.4
+        version: 4.3.4
+
+  packages/wallet-solana-squads:
+    dependencies:
+      '@faremeter/types':
+        specifier: workspace:^
+        version: link:../types
+      '@solana/web3.js':
+        specifier: ^1.98.2
+        version: 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      '@sqds/multisig':
+        specifier: ^2.1.4
+        version: 2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      bs58:
+        specifier: ^6.0.0
+        version: 6.0.0
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.28.0
+        version: 9.28.0
+      '@faremeter/fetch':
+        specifier: workspace:*
+        version: link:../fetch
+      '@tapjs/asserts':
+        specifier: ^4.0.1
+        version: 4.0.1(@tapjs/core@4.0.1(@types/node@24.0.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      eslint:
+        specifier: ^9.28.0
+        version: 9.28.0
+      prettier:
+        specifier: ^3.5.3
+        version: 3.5.3
+      tap:
+        specifier: ^21.1.0
+        version: 21.1.0(@types/node@24.0.3)(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      typescript-eslint:
+        specifier: ^8.34.0
+        version: 8.34.0(eslint@9.28.0)(typescript@5.8.3)
+      typescript-language-server:
+        specifier: ^4.3.4
+        version: 4.3.4
+
   packages/x402-solana:
     dependencies:
       '@coral-xyz/anchor':
         specifier: ^0.31.1
         version: 0.31.1(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      '@crossmint/wallets-sdk':
-        specifier: ^0.10.13
-        version: 0.10.13(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4)
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
@@ -130,9 +238,6 @@ importers:
       '@solana/web3.js':
         specifier: ^1.98.2
         version: 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      '@sqds/multisig':
-        specifier: ^2.1.4
-        version: 2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
       arktype:
         specifier: ^2.1.20
         version: 2.1.20
@@ -185,6 +290,15 @@ importers:
       '@faremeter/types':
         specifier: workspace:^
         version: link:../packages/types
+      '@faremeter/wallet-crossmint':
+        specifier: workspace:^
+        version: link:../packages/wallet-crossmint
+      '@faremeter/wallet-solana':
+        specifier: workspace:^
+        version: link:../packages/wallet-solana
+      '@faremeter/wallet-solana-squads':
+        specifier: workspace:^
+        version: link:../packages/wallet-solana-squads
       '@faremeter/x402-solana':
         specifier: workspace:*
         version: link:../packages/x402-solana

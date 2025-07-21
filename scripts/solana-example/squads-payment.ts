@@ -12,10 +12,8 @@ import fs from "fs";
 const { Permission, Permissions } = multisig.types;
 
 import { wrap as wrapFetch } from "@faremeter/fetch";
-import {
-  createSquadsWallet,
-  createSolPaymentHandler,
-} from "@faremeter/x402-solana";
+import { createSquadsWallet } from "@faremeter/wallet-solana-squads";
+import { createSolPaymentHandler } from "@faremeter/x402-solana";
 
 const transferSol = async (
   connection: Connection,

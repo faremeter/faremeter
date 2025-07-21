@@ -1,7 +1,5 @@
-import {
-  createCrossmintWallet,
-  createSolPaymentHandler,
-} from "@faremeter/x402-solana";
+import { createCrossmintWallet } from "@faremeter/wallet-crossmint";
+import { createSolPaymentHandler } from "@faremeter/x402-solana";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 
 // Address of your crossmint wallet

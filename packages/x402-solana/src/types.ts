@@ -1,4 +1,8 @@
-import { PublicKey, VersionedTransaction } from "@solana/web3.js";
+import {
+  PublicKey,
+  VersionedTransaction,
+  TransactionInstruction,
+} from "@solana/web3.js";
 import type { default as BN } from "bn.js";
 import { type } from "arktype";
 import bs58 from "bs58";
@@ -39,3 +43,15 @@ export const PaymentRequirementsExtra = type({
 });
 
 export type PaymentRequirementsExtra = typeof PaymentRequirementsExtra.infer;
+
+export type Wallet = {
+  publicKey: PublicKey;
+  buildTransaction?: (
+    instructions: TransactionInstruction[],
+    recentBlockHash: string,
+  ) => Promise<VersionedTransaction>;
+  updateTransaction?: (
+    tx: VersionedTransaction,
+  ) => Promise<VersionedTransaction>;
+  sendTransaction?: (tx: VersionedTransaction) => Promise<string>;
+};

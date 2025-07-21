@@ -1,103 +1,11 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-//
-// Disable checks for no-non-null-assertions until this is
-// production ready.
-//
+import { Keypair, type VersionedTransaction } from "@solana/web3.js";
 
-import { PublicKey, Keypair } from "@solana/web3.js";
-
-import {
-  type RequestContext,
-  type x402PaymentRequirements,
-  isValidationError,
-  throwValidationError,
-} from "@faremeter/types";
-
-import { PaymentRequirementsExtra } from "./types";
-
-import {
-  createPaymentTransaction,
-  createPaymentSplTransaction,
-} from "./solana";
-
-import { createPaymentPayload } from "./header";
-
-export function createBasicPaymentHandler(keypair: Keypair) {
-  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
-    // XXX - We need to decide how to filter for possibilities.
-    const requirements = accepts[0]!;
-
-    const extra = PaymentRequirementsExtra(requirements.extra);
-
-    if (isValidationError(extra)) {
-      throwValidationError("couldn't validate requirements extra field", extra);
-    }
-
-    const exec = async () => {
-      const tx = await createPaymentTransaction(
-        {
-          ...extra,
-          amount: Number(requirements.maxAmountRequired),
-          receiver: new PublicKey(requirements.payTo),
-          admin: new PublicKey(requirements.asset),
-        },
-        keypair.publicKey,
-      );
+export async function createLocalWallet(keypair: Keypair) {
+  return {
+    publicKey: keypair.publicKey,
+    updateTransaction: async (tx: VersionedTransaction) => {
       tx.sign([keypair]);
-
-      const payload = createPaymentPayload(keypair.publicKey, tx);
-      return {
-        payload,
-      };
-    };
-
-    return [
-      {
-        exec,
-        requirements,
-      },
-    ];
-  };
-}
-
-export function createTokenPaymentHandler(keypair: Keypair, mint: PublicKey) {
-  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
-    // XXX - We need to decide how to filter for possibilities.
-    const requirements = accepts[0]!;
-
-    const extra = PaymentRequirementsExtra(requirements.extra);
-
-    if (isValidationError(extra)) {
-      throwValidationError("couldn't validate requirements extra field", extra);
-    }
-
-    const exec = async () => {
-      const paymentRequirements = {
-        ...extra,
-        amount: Number(requirements.maxAmountRequired),
-        receiver: new PublicKey(requirements.payTo),
-        admin: new PublicKey(requirements.asset),
-      };
-
-      const tx = await createPaymentSplTransaction(
-        paymentRequirements,
-        mint,
-        keypair.publicKey,
-      );
-      tx.sign([keypair]);
-
-      const payload = createPaymentPayload(keypair.publicKey, tx);
-
-      return {
-        payload,
-      };
-    };
-
-    return [
-      {
-        exec,
-        requirements,
-      },
-    ];
+      return tx;
+    },
   };
 }

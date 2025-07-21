@@ -1,5 +1,8 @@
 import { Keypair } from "@solana/web3.js";
-import { createBasicPaymentHandler } from "@faremeter/x402-solana";
+import {
+  createLocalWallet,
+  createSolPaymentHandler,
+} from "@faremeter/x402-solana";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import fs from "fs";
 
@@ -8,8 +11,11 @@ const keypair = Keypair.fromSecretKey(
     JSON.parse(fs.readFileSync("../keypairs/payer.json", "utf-8")),
   ),
 );
+
+const wallet = await createLocalWallet(keypair);
+
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [createBasicPaymentHandler(keypair)],
+  handlers: [createSolPaymentHandler(wallet)],
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

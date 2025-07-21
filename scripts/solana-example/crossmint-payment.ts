@@ -1,4 +1,7 @@
-import { createCrossmintPaymentHandler } from "@faremeter/x402-solana";
+import {
+  createCrossmintWallet,
+  createSolPaymentHandler,
+} from "@faremeter/x402-solana";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 
 // Address of your crossmint wallet
@@ -11,8 +14,9 @@ if (!crossmintWallet || !crossmintApi) {
   );
 }
 
+const wallet = await createCrossmintWallet(crossmintApi, crossmintWallet);
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [createCrossmintPaymentHandler(crossmintApi, crossmintWallet)],
+  handlers: [createSolPaymentHandler(wallet)],
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

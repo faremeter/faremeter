@@ -1,11 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-//
-// Disable checks for no-non-null-assertions until this is
-// production ready.
-//
-
-import type { RequestContext, x402PaymentRequirements } from "@faremeter/types";
-import { createSolPaymentInstruction } from "./solana";
 import {
   type Connection,
   Keypair,
@@ -14,22 +6,22 @@ import {
   TransactionMessage,
   VersionedTransaction,
   sendAndConfirmTransaction,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import * as multisig from "@sqds/multisig";
 import bs58 from "bs58";
-import { createPaymentPayload } from "./header";
 
-export function createSquadsPaymentHandler(
+export async function createSquadsWallet(
   connection: Connection,
   keypair: Keypair,
   multisigPda: PublicKey,
   squadMember: Keypair,
 ) {
-  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
-    // XXX - We need to decide how to filter for possibilities.
-    const requirements = accepts[0]!;
-
-    const exec = async () => {
+  return {
+    publicKey: keypair.publicKey,
+    buildTransaction: async (
+      instructions: TransactionInstruction[],
+    ): Promise<VersionedTransaction> => {
       const [vaultPda] = multisig.getVaultPda({
         multisigPda,
         index: 0,
@@ -45,22 +37,10 @@ export function createSquadsPaymentHandler(
 
       const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-      const paymentRequirements = {
-        amount: Number(requirements.maxAmountRequired),
-        receiver: new PublicKey(requirements.payTo),
-        admin: new PublicKey(requirements.asset),
-        recentBlockhash,
-      };
-
-      const createPaymentInstruction = await createSolPaymentInstruction(
-        paymentRequirements,
-        keypair.publicKey,
-      );
-
       const testTransferMessage = new TransactionMessage({
         payerKey: vaultPda,
         recentBlockhash,
-        instructions: [createPaymentInstruction],
+        instructions,
       });
 
       const createVaultInstruction =
@@ -160,18 +140,7 @@ export function createSquadsPaymentHandler(
         bs58.encode(tx.signatures[0]),
       );
 
-      const payload = createPaymentPayload(keypair.publicKey, tx);
-
-      return {
-        payload,
-      };
-    };
-
-    return [
-      {
-        exec,
-        requirements,
-      },
-    ];
+      return tx;
+    },
   };
 }

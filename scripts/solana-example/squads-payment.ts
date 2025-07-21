@@ -12,7 +12,10 @@ import fs from "fs";
 const { Permission, Permissions } = multisig.types;
 
 import { wrap as wrapFetch } from "@faremeter/fetch";
-import { createSquadsPaymentHandler } from "@faremeter/x402-solana";
+import {
+  createSquadsWallet,
+  createSolPaymentHandler,
+} from "@faremeter/x402-solana";
 
 const transferSol = async (
   connection: Connection,
@@ -93,11 +96,15 @@ async function createSquad() {
 }
 
 const { multisigPda, squadMember } = await createSquad();
+const wallet = await createSquadsWallet(
+  connection,
+  keypair,
+  multisigPda,
+  squadMember,
+);
 
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [
-    createSquadsPaymentHandler(connection, keypair, multisigPda, squadMember),
-  ],
+  handlers: [createSolPaymentHandler(wallet)],
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

@@ -41,6 +41,37 @@ export function headerToX402PaymentPayload(header: string) {
     .to(x402PaymentPayload)(header);
 }
 
+export const x402VerifyRequest = type({
+  x402Version: "number.integer",
+  paymentHeader: "string",
+  paymentRequirements: x402PaymentRequirements,
+});
+
+export type x402VerifyRequest = typeof x402VerifyRequest.infer;
+
+export const x402SettleRequest = x402VerifyRequest;
+export type x402SettleRequest = typeof x402SettleRequest.infer;
+
+export const x402SettleResponse = type({
+  success: "boolean",
+  error: "string | null",
+  txHash: "string | null",
+  networkId: "string | null",
+});
+
+export type x402SettleResponse = typeof x402SettleResponse.infer;
+
+export const x402SupportedResponse = type({
+  kinds: [
+    {
+      scheme: "string",
+      network: "string",
+    },
+  ],
+});
+
+export type x402SupportedResponse = typeof x402SupportedResponse.infer;
+
 export type RequestContext = {
   request: RequestInfo | URL;
 };

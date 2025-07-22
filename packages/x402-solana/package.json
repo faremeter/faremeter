@@ -16,10 +16,10 @@
       "import": "./dist/src/header.js",
       "types": "./dist/src/header.d.ts"
     },
-    "./middleware": {
-      "require": "./dist/src/middleware.js",
-      "import": "./dist/src/middleware.js",
-      "types": "./dist/src/middleware.d.ts"
+    "./facilitator": {
+      "require": "./dist/src/facilitator.js",
+      "import": "./dist/src/facilitator.js",
+      "types": "./dist/src/facilitator.d.ts"
     },
     "./solana": {
       "require": "./dist/src/solana.js",

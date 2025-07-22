@@ -1,6 +1,6 @@
 import { default as express } from "express";
 import type { Request, Response } from "express";
-import { paymentMiddleware } from "@faremeter/x402-solana/middleware";
+import { paymentMiddleware } from "@faremeter/x402-solana/facilitator";
 import { clusterApiUrl, Connection, Keypair } from "@solana/web3.js";
 import fs from "fs";
 

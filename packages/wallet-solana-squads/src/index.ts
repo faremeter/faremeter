@@ -12,12 +12,14 @@ import * as multisig from "@sqds/multisig";
 import bs58 from "bs58";
 
 export async function createSquadsWallet(
+  network: string,
   connection: Connection,
   keypair: Keypair,
   multisigPda: PublicKey,
   squadMember: Keypair,
 ) {
   return {
+    network,
     publicKey: keypair.publicKey,
     buildTransaction: async (
       instructions: TransactionInstruction[],

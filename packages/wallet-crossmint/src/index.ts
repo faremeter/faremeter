@@ -6,6 +6,7 @@ import {
 } from "@crossmint/wallets-sdk";
 
 export async function createCrossmintWallet(
+  network: string,
   crossmintApiKey: string,
   crossmintWalletAddress: string,
 ) {
@@ -26,6 +27,7 @@ export async function createCrossmintWallet(
   const publicKey = new PublicKey(solanaWallet.address);
 
   return {
+    network,
     publicKey,
     sendTransaction: async (tx: VersionedTransaction) => {
       const solTx = await solanaWallet.sendTransaction({

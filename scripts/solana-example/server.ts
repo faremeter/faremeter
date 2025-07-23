@@ -1,6 +1,7 @@
 import { default as express } from "express";
 import type { Request, Response } from "express";
-import { paymentMiddleware } from "@faremeter/x402-solana/facilitator";
+import { createFacilitatorHandler } from "@faremeter/x402-solana/facilitator";
+import { express as middleware } from "@faremeter/middleware";
 import { clusterApiUrl, Connection, Keypair } from "@solana/web3.js";
 import fs from "fs";
 
@@ -17,13 +18,15 @@ const run = async () => {
 
   app.get(
     "/protected",
-    paymentMiddleware(
-      connection,
-      {
-        payTo: Keypair.generate().publicKey,
-        amount: 1000000,
-      },
-      adminKeypair,
+    middleware.createDirectFacilitatorMiddleware(
+      createFacilitatorHandler(
+        connection,
+        {
+          payTo: Keypair.generate().publicKey,
+          amount: 1000000,
+        },
+        adminKeypair,
+      ),
     ),
     (req: Request, res: Response) => {
       res.json({

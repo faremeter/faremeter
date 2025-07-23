@@ -18,16 +18,18 @@ const run = async () => {
 
   app.get(
     "/protected",
-    middleware.createDirectFacilitatorMiddleware(
-      createFacilitatorHandler(
-        connection,
-        {
-          payTo: Keypair.generate().publicKey,
-          amount: 1000000,
-        },
-        adminKeypair,
-      ),
-    ),
+    middleware.createDirectFacilitatorMiddleware({
+      handlers: [
+        createFacilitatorHandler(
+          connection,
+          {
+            payTo: Keypair.generate().publicKey,
+            amount: 1000000,
+          },
+          adminKeypair,
+        ),
+      ],
+    }),
     (req: Request, res: Response) => {
       res.json({
         msg: "success",

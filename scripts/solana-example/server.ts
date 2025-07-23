@@ -2,8 +2,10 @@ import { default as express } from "express";
 import type { Request, Response } from "express";
 import { createFacilitatorHandler } from "@faremeter/x402-solana/facilitator";
 import { express as middleware } from "@faremeter/middleware";
-import { clusterApiUrl, Connection, Keypair } from "@solana/web3.js";
+import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import fs from "fs";
+
+import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 
 const adminKeypair = Keypair.fromSecretKey(
   Uint8Array.from(
@@ -13,6 +15,17 @@ const adminKeypair = Keypair.fromSecretKey(
 
 const network = "devnet";
 const connection = new Connection(clusterApiUrl(network), "confirmed");
+
+const payTo = Keypair.generate();
+const mint = new PublicKey("Hxtm6jXVcA9deMFxJRvMkHewhYJHxCpqsLvH9d1bvxBP");
+
+// Make sure the token receiver exists.
+await getOrCreateAssociatedTokenAccount(
+  connection,
+  adminKeypair,
+  mint,
+  payTo.publicKey,
+);
 
 const run = async () => {
   const app = express();
@@ -25,10 +38,20 @@ const run = async () => {
           network,
           connection,
           {
-            payTo: Keypair.generate().publicKey,
+            payTo: payTo.publicKey,
             amount: 1000000,
           },
           adminKeypair,
+        ),
+        createFacilitatorHandler(
+          network,
+          connection,
+          {
+            payTo: payTo.publicKey,
+            amount: 1000000,
+          },
+          adminKeypair,
+          mint,
         ),
       ],
     }),

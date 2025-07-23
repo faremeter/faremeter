@@ -10,7 +10,7 @@ const keypair = Keypair.fromSecretKey(
   ),
 );
 
-const wallet = await createLocalWallet(keypair);
+const wallet = await createLocalWallet("devnet", keypair);
 
 const fetchWithPayer = wrapFetch(fetch, {
   handlers: [createSolPaymentHandler(wallet)],

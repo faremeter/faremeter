@@ -45,6 +45,7 @@ export const PaymentRequirementsExtra = type({
 export type PaymentRequirementsExtra = typeof PaymentRequirementsExtra.infer;
 
 export type Wallet = {
+  network: string;
   publicKey: PublicKey;
   buildTransaction?: (
     instructions: TransactionInstruction[],

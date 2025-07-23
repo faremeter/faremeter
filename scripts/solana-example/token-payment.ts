@@ -11,7 +11,8 @@ import {
   mintTo,
 } from "@solana/spl-token";
 
-const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+const network = "devnet";
+const connection = new Connection(clusterApiUrl(network), "confirmed");
 const keypair = Keypair.fromSecretKey(
   Uint8Array.from(
     JSON.parse(fs.readFileSync("../keypairs/payer.json", "utf-8")),
@@ -63,7 +64,7 @@ const createTestToken = async (
 
 const mint = await createTestToken(connection, keypair);
 
-const wallet = await createLocalWallet(keypair);
+const wallet = await createLocalWallet(network, keypair);
 const handler = createTokenPaymentHandler(wallet, mint);
 
 const fetchWithPayer = wrapFetch(fetch, {

@@ -12,7 +12,11 @@ if (!crossmintWallet || !crossmintApi) {
   );
 }
 
-const wallet = await createCrossmintWallet(crossmintApi, crossmintWallet);
+const wallet = await createCrossmintWallet(
+  "devnet",
+  crossmintApi,
+  crossmintWallet,
+);
 const fetchWithPayer = wrapFetch(fetch, {
   handlers: [createSolPaymentHandler(wallet)],
 });

@@ -32,7 +32,8 @@ const transferSol = async (
   await sendAndConfirmTransaction(connection, transaction, [sender]);
 };
 
-const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+const network = "devnet";
+const connection = new Connection(clusterApiUrl(network), "confirmed");
 const keypair = Keypair.fromSecretKey(
   Uint8Array.from(
     JSON.parse(fs.readFileSync("../keypairs/payer.json", "utf-8")),
@@ -95,6 +96,7 @@ async function createSquad() {
 
 const { multisigPda, squadMember } = await createSquad();
 const wallet = await createSquadsWallet(
+  network,
   connection,
   keypair,
   multisigPda,

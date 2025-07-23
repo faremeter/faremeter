@@ -1,7 +1,8 @@
 import { Keypair, type VersionedTransaction } from "@solana/web3.js";
 
-export async function createLocalWallet(keypair: Keypair) {
+export async function createLocalWallet(network: string, keypair: Keypair) {
   return {
+    network,
     publicKey: keypair.publicKey,
     updateTransaction: async (tx: VersionedTransaction) => {
       tx.sign([keypair]);

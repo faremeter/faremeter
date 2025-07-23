@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@faremeter/fetch": "workspace:*",
+    "@faremeter/middleware": "workspace:^",
     "@faremeter/types": "workspace:^",
     "@faremeter/wallet-crossmint": "workspace:^",
     "@faremeter/wallet-solana": "workspace:^",

@@ -92,5 +92,7 @@ export type PaymentHandler = (
 
 export type FacilitatorHandler = {
   getRequirements: () => Promise<x402PaymentRequirements[]>;
-  handleSettle: (payment: x402PaymentPayload) => Promise<x402SettleResponse>;
+  handleSettle: (
+    payment: x402PaymentPayload,
+  ) => Promise<x402SettleResponse | null>;
 };

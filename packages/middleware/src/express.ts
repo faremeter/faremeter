@@ -1,5 +1,6 @@
 import {
   type FacilitatorHandler,
+  x402PaymentRequirements,
   headerToX402PaymentPayload,
   isValidationError,
 } from "@faremeter/types";
@@ -20,11 +21,20 @@ function extractPaymentFromHeader(req: Request) {
   return payload;
 }
 
-export function createDirectFacilitatorMiddleware(handler: FacilitatorHandler) {
+type CreateDirectFacilitatorMiddlewareArgs = {
+  handlers: FacilitatorHandler[];
+};
+export function createDirectFacilitatorMiddleware(
+  args: CreateDirectFacilitatorMiddlewareArgs,
+) {
   const sendPaymentRequired = async (res: Response) => {
+    const accepts: x402PaymentRequirements[] = (
+      await Promise.all(args.handlers.flatMap((x) => x.getRequirements()))
+    ).flat();
+
     res.status(402).json({
       x402Version: 1,
-      accepts: await handler.getRequirements(),
+      accepts,
     });
   };
 
@@ -35,12 +45,20 @@ export function createDirectFacilitatorMiddleware(handler: FacilitatorHandler) {
       return sendPaymentRequired(res);
     }
 
-    const settleRes = handler.handleSettle(payment);
+    // XXX - We need a better policy than "first one wins".
+    for (const handler of args.handlers) {
+      const t = await handler.handleSettle(payment);
 
-    if (!settleRes) {
-      return sendPaymentRequired(res);
+      if (t === null) {
+        continue;
+      }
+
+      if (t.success) {
+        next();
+        return;
+      }
     }
 
-    next();
+    return sendPaymentRequired(res);
   };
 }

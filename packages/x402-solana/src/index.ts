@@ -4,4 +4,4 @@ export * as facilitator from "./facilitator";
 export * as solana from "./solana";
 export * as types from "./types";
 
-export { createSolPaymentHandler, createTokenPaymentHandler } from "./payment";
+export { createPaymentHandler } from "./payment";

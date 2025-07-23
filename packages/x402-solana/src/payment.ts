@@ -1,10 +1,6 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-//
-// Disable checks for no-non-null-assertions until this is
-// production ready.
-//
-
+import { type } from "arktype";
 import type { Wallet } from "./types";
+import { x402Scheme } from "./facilitator";
 import {
   PublicKey,
   VersionedTransaction,
@@ -14,6 +10,7 @@ import {
 import {
   type RequestContext,
   type x402PaymentRequirements,
+  type PaymentExecer,
   isValidationError,
   throwValidationError,
 } from "@faremeter/types";
@@ -63,72 +60,110 @@ async function sendTransaction(
 }
 
 export function createSolPaymentHandler(wallet: Wallet) {
-  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
-    const requirements = accepts[0]!;
-    const extra = PaymentRequirementsExtra(requirements.extra);
+  const matcher = type({
+    scheme: `'${x402Scheme}'`,
+    network: `'${wallet.network}'`,
+    asset: "'sol'",
+  });
 
-    if (isValidationError(extra)) {
-      throwValidationError("couldn't validate requirements extra field", extra);
-    }
+  return async (
+    ctx: RequestContext,
+    accepts: x402PaymentRequirements[],
+  ): Promise<PaymentExecer[]> => {
+    const res = accepts
+      .filter((r) => !isValidationError(matcher(r)))
+      .map((requirements) => {
+        const extra = PaymentRequirementsExtra(requirements.extra);
 
-    const exec = async () => {
-      const paymentRequirements = {
-        ...extra,
-        amount: Number(requirements.maxAmountRequired),
-        receiver: new PublicKey(requirements.payTo),
-        admin: new PublicKey(extra.admin),
-      };
+        if (isValidationError(extra)) {
+          throwValidationError(
+            "couldn't validate requirements extra field",
+            extra,
+          );
+        }
 
-      const instructions = [
-        await createSolPaymentInstruction(
-          paymentRequirements,
-          wallet.publicKey,
-        ),
-      ];
-      return await sendTransaction(wallet, instructions, extra.recentBlockhash);
-    };
+        const exec = async () => {
+          const paymentRequirements = {
+            ...extra,
+            amount: Number(requirements.maxAmountRequired),
+            receiver: new PublicKey(requirements.payTo),
+            admin: new PublicKey(extra.admin),
+          };
 
-    return [
-      {
-        exec,
-        requirements,
-      },
-    ];
+          const instructions = [
+            await createSolPaymentInstruction(
+              paymentRequirements,
+              wallet.publicKey,
+            ),
+          ];
+          return await sendTransaction(
+            wallet,
+            instructions,
+            extra.recentBlockhash,
+          );
+        };
+
+        return {
+          exec,
+          requirements,
+        };
+      });
+
+    return res;
   };
 }
 
 export function createTokenPaymentHandler(wallet: Wallet, mint: PublicKey) {
-  return async (ctx: RequestContext, accepts: x402PaymentRequirements[]) => {
-    const requirements = accepts[0]!;
-    const extra = PaymentRequirementsExtra(requirements.extra);
+  const matcher = type({
+    scheme: `'${x402Scheme}'`,
+    network: `'${wallet.network}'`,
+    asset: `'${mint.toBase58()}'`,
+  });
 
-    if (isValidationError(extra)) {
-      throwValidationError("couldn't validate requirements extra field", extra);
-    }
+  return async (
+    ctx: RequestContext,
+    accepts: x402PaymentRequirements[],
+  ): Promise<PaymentExecer[]> => {
+    const res = accepts
+      .filter((r) => !isValidationError(matcher(r)))
+      .map((requirements) => {
+        const extra = PaymentRequirementsExtra(requirements.extra);
 
-    const exec = async () => {
-      const paymentRequirements = {
-        ...extra,
-        amount: Number(requirements.maxAmountRequired),
-        receiver: new PublicKey(requirements.payTo),
-        admin: new PublicKey(extra.admin),
-      };
+        if (isValidationError(extra)) {
+          throwValidationError(
+            "couldn't validate requirements extra field",
+            extra,
+          );
+        }
 
-      const instructions = [
-        await createSplPaymentInstruction(
-          paymentRequirements,
-          mint,
-          wallet.publicKey,
-        ),
-      ];
-      return await sendTransaction(wallet, instructions, extra.recentBlockhash);
-    };
+        const exec = async () => {
+          const paymentRequirements = {
+            ...extra,
+            amount: Number(requirements.maxAmountRequired),
+            receiver: new PublicKey(requirements.payTo),
+            admin: new PublicKey(extra.admin),
+          };
 
-    return [
-      {
-        exec,
-        requirements,
-      },
-    ];
+          const instructions = [
+            await createSplPaymentInstruction(
+              paymentRequirements,
+              mint,
+              wallet.publicKey,
+            ),
+          ];
+          return await sendTransaction(
+            wallet,
+            instructions,
+            extra.recentBlockhash,
+          );
+        };
+
+        return {
+          exec,
+          requirements,
+        };
+      });
+
+    return res;
   };
 }

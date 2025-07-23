@@ -11,7 +11,8 @@ const adminKeypair = Keypair.fromSecretKey(
   ),
 );
 
-const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+const network = "devnet";
+const connection = new Connection(clusterApiUrl(network), "confirmed");
 
 const run = async () => {
   const app = express();
@@ -21,6 +22,7 @@ const run = async () => {
     middleware.createDirectFacilitatorMiddleware({
       handlers: [
         createFacilitatorHandler(
+          network,
           connection,
           {
             payTo: Keypair.generate().publicKey,

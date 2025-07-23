@@ -1,3 +1,4 @@
+import { type } from "arktype";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import {
   type FacilitatorHandler,
@@ -29,7 +30,10 @@ function errorResponse(msg: string): x402SettleResponse {
   };
 }
 
+export const x402Scheme = "@faremeter/x402-solana";
+
 export const createFacilitatorHandler = (
+  network: string,
   connection: Connection,
   paymentRequirements: PaymentRequirements,
   adminKeypair: Keypair,
@@ -40,8 +44,8 @@ export const createFacilitatorHandler = (
 
     return [
       {
-        scheme: "exact",
-        network: "solana",
+        scheme: x402Scheme,
+        network,
         maxAmountRequired: paymentRequirements.amount.toString(),
         resource: "http://whatever.com",
         description: "what else",
@@ -57,7 +61,18 @@ export const createFacilitatorHandler = (
     ];
   };
 
+  const checkTuple = type({
+    scheme: `'${x402Scheme}'`,
+    network: `'${network}'`,
+  });
+
   const handleSettle = async (payment: x402PaymentPayload) => {
+    const tupleMatches = checkTuple(payment);
+
+    if (isValidationError(tupleMatches)) {
+      return null;
+    }
+
     const paymentPayload = PaymentPayload(payment.payload);
 
     if (isValidationError(paymentPayload)) {

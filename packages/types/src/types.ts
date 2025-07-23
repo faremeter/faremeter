@@ -89,3 +89,8 @@ export type PaymentHandler = (
   context: RequestContext,
   requiredResponse: x402PaymentRequirements[],
 ) => Promise<PaymentExecer[]>;
+
+export type FacilitatorHandler = {
+  getRequirements: () => Promise<x402PaymentRequirements[]>;
+  handleSettle: (payment: x402PaymentPayload) => Promise<x402SettleResponse>;
+};

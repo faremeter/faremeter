@@ -59,11 +59,11 @@ async function sendTransaction(
   };
 }
 
-export function createSolPaymentHandler(wallet: Wallet) {
+export function createPaymentHandler(wallet: Wallet, mint?: PublicKey) {
   const matcher = type({
     scheme: `'${x402Scheme}'`,
     network: `'${wallet.network}'`,
-    asset: "'sol'",
+    asset: `'${mint ? mint.toBase58() : "sol"}'`,
   });
 
   return async (
@@ -91,65 +91,16 @@ export function createSolPaymentHandler(wallet: Wallet) {
           };
 
           const instructions = [
-            await createSolPaymentInstruction(
-              paymentRequirements,
-              wallet.publicKey,
-            ),
-          ];
-          return await sendTransaction(
-            wallet,
-            instructions,
-            extra.recentBlockhash,
-          );
-        };
-
-        return {
-          exec,
-          requirements,
-        };
-      });
-
-    return res;
-  };
-}
-
-export function createTokenPaymentHandler(wallet: Wallet, mint: PublicKey) {
-  const matcher = type({
-    scheme: `'${x402Scheme}'`,
-    network: `'${wallet.network}'`,
-    asset: `'${mint.toBase58()}'`,
-  });
-
-  return async (
-    ctx: RequestContext,
-    accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> => {
-    const res = accepts
-      .filter((r) => !isValidationError(matcher(r)))
-      .map((requirements) => {
-        const extra = PaymentRequirementsExtra(requirements.extra);
-
-        if (isValidationError(extra)) {
-          throwValidationError(
-            "couldn't validate requirements extra field",
-            extra,
-          );
-        }
-
-        const exec = async () => {
-          const paymentRequirements = {
-            ...extra,
-            amount: Number(requirements.maxAmountRequired),
-            receiver: new PublicKey(requirements.payTo),
-            admin: new PublicKey(extra.admin),
-          };
-
-          const instructions = [
-            await createSplPaymentInstruction(
-              paymentRequirements,
-              mint,
-              wallet.publicKey,
-            ),
+            mint
+              ? await createSplPaymentInstruction(
+                  paymentRequirements,
+                  mint,
+                  wallet.publicKey,
+                )
+              : await createSolPaymentInstruction(
+                  paymentRequirements,
+                  wallet.publicKey,
+                ),
           ];
           return await sendTransaction(
             wallet,

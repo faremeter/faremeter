@@ -13,7 +13,7 @@ const { Permission, Permissions } = multisig.types;
 
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import { createSquadsWallet } from "@faremeter/wallet-solana-squads";
-import { createSolPaymentHandler } from "@faremeter/x402-solana";
+import { createPaymentHandler } from "@faremeter/x402-solana";
 
 const transferSol = async (
   connection: Connection,
@@ -104,7 +104,7 @@ const wallet = await createSquadsWallet(
 );
 
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [createSolPaymentHandler(wallet)],
+  handlers: [createPaymentHandler(wallet)],
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

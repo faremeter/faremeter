@@ -33,6 +33,7 @@ export const createFacilitatorHandler = (
   connection: Connection,
   paymentRequirements: PaymentRequirements,
   adminKeypair: Keypair,
+  mint?: PublicKey,
 ): FacilitatorHandler => {
   const getRequirements = async () => {
     const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
@@ -46,9 +47,10 @@ export const createFacilitatorHandler = (
         description: "what else",
         mimeType: "what",
         payTo: paymentRequirements.payTo.toString(),
-        asset: adminKeypair.publicKey.toString(),
+        asset: mint ? mint.toBase58() : "sol",
         maxTimeoutSeconds: 5,
         extra: {
+          admin: adminKeypair.publicKey.toString(),
           recentBlockhash,
         },
       },

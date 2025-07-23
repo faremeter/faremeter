@@ -39,6 +39,7 @@ export interface CreatePaymentArgs {
 }
 
 export const PaymentRequirementsExtra = type({
+  admin: "string",
   recentBlockhash: "string",
 });
 

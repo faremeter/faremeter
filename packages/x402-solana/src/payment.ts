@@ -76,7 +76,7 @@ export function createSolPaymentHandler(wallet: Wallet) {
         ...extra,
         amount: Number(requirements.maxAmountRequired),
         receiver: new PublicKey(requirements.payTo),
-        admin: new PublicKey(requirements.asset),
+        admin: new PublicKey(extra.admin),
       };
 
       const instructions = [
@@ -111,7 +111,7 @@ export function createTokenPaymentHandler(wallet: Wallet, mint: PublicKey) {
         ...extra,
         amount: Number(requirements.maxAmountRequired),
         receiver: new PublicKey(requirements.payTo),
-        admin: new PublicKey(requirements.asset),
+        admin: new PublicKey(extra.admin),
       };
 
       const instructions = [

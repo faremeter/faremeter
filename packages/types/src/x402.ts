@@ -71,28 +71,3 @@ export const x402SupportedResponse = type({
 });
 
 export type x402SupportedResponse = typeof x402SupportedResponse.infer;
-
-export type RequestContext = {
-  request: RequestInfo | URL;
-};
-
-export type PaymentExecResult = {
-  payload: object;
-};
-
-export type PaymentExecer = {
-  requirements: x402PaymentRequirements;
-  exec(): Promise<PaymentExecResult>;
-};
-
-export type PaymentHandler = (
-  context: RequestContext,
-  requiredResponse: x402PaymentRequirements[],
-) => Promise<PaymentExecer[]>;
-
-export type FacilitatorHandler = {
-  getRequirements: () => Promise<x402PaymentRequirements[]>;
-  handleSettle: (
-    payment: x402PaymentPayload,
-  ) => Promise<x402SettleResponse | null>;
-};

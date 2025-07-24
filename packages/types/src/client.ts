@@ -15,5 +15,5 @@ export type PaymentExecer = {
 
 export type PaymentHandler = (
   context: RequestContext,
-  requiredResponse: x402PaymentRequirements[],
+  accepts: x402PaymentRequirements[],
 ) => Promise<PaymentExecer[]>;

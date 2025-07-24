@@ -268,15 +268,6 @@ export const createSolPaymentInstruction = async (
   return programInstruction;
 };
 
-export const createPaymentTransaction = async (
-  target: PaymentTargetInfo,
-  payer: PublicKey,
-): Promise<VersionedTransaction> => {
-  const instruction = await createSolPaymentInstruction(target, payer);
-
-  return buildVersionedTransaction(target, [instruction], payer);
-};
-
 export const createSettleTransaction = async (
   connection: Connection,
   settleAuthority: Keypair,
@@ -408,31 +399,4 @@ export const createSplPaymentInstruction = async (
     .instruction();
 
   return programInstruction;
-};
-
-export const createPaymentSplTransaction = async (
-  target: PaymentTargetInfo,
-  mint: PublicKey,
-  payer: PublicKey,
-): Promise<VersionedTransaction> => {
-  const instruction = await createSplPaymentInstruction(target, mint, payer);
-
-  return buildVersionedTransaction(target, [instruction], payer);
-};
-
-const buildVersionedTransaction = async (
-  target: PaymentTargetInfo,
-  instructions: TransactionInstruction[],
-  payer: PublicKey,
-): Promise<VersionedTransaction> => {
-  const { recentBlockhash } = target;
-
-  const message = new TransactionMessage({
-    instructions,
-    payerKey: payer,
-    recentBlockhash,
-  }).compileToV0Message();
-
-  const tx = new VersionedTransaction(message);
-  return tx;
 };

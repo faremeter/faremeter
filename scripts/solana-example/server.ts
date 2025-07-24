@@ -27,6 +27,11 @@ await getOrCreateAssociatedTokenAccount(
   payTo.publicKey,
 );
 
+const protectedRequirements = {
+  payTo: payTo.publicKey,
+  amount: 1000000,
+};
+
 const run = async () => {
   const app = express();
 
@@ -37,19 +42,13 @@ const run = async () => {
         createFacilitatorHandler(
           network,
           connection,
-          {
-            payTo: payTo.publicKey,
-            amount: 1000000,
-          },
+          protectedRequirements,
           adminKeypair,
         ),
         createFacilitatorHandler(
           network,
           connection,
-          {
-            payTo: payTo.publicKey,
-            amount: 1000000,
-          },
+          protectedRequirements,
           adminKeypair,
           mint,
         ),

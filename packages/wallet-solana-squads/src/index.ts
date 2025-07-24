@@ -1,12 +1,12 @@
 import {
   type Connection,
-  Keypair,
-  PublicKey,
+  type Keypair,
+  type PublicKey,
+  type TransactionInstruction,
   Transaction,
   TransactionMessage,
   VersionedTransaction,
   sendAndConfirmTransaction,
-  TransactionInstruction,
 } from "@solana/web3.js";
 import * as multisig from "@sqds/multisig";
 import bs58 from "bs58";

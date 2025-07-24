@@ -1,4 +1,4 @@
-import { Keypair, type VersionedTransaction } from "@solana/web3.js";
+import type { Keypair, VersionedTransaction } from "@solana/web3.js";
 
 export async function createLocalWallet(network: string, keypair: Keypair) {
   return {

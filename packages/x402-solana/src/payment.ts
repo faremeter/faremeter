@@ -15,8 +15,7 @@ import {
   throwValidationError,
 } from "@faremeter/types";
 
-import { PaymentRequirementsExtra } from "./types";
-import { createPaymentPayload } from "./header";
+import { PaymentRequirementsExtra, createPaymentPayload } from "./types";
 import {
   createSolPaymentInstruction,
   createSplPaymentInstruction,

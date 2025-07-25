@@ -27,9 +27,14 @@ await getOrCreateAssociatedTokenAccount(
   payTo.publicKey,
 );
 
+const port = 3000;
+
 const protectedRequirements = {
   payTo: payTo.publicKey,
   amount: 1000000,
+  resource: `http://localhost:${port}/protected`,
+  description: "a protected resource",
+  mimeType: "application/json",
 };
 
 const run = async () => {
@@ -61,7 +66,7 @@ const run = async () => {
     },
   );
 
-  app.listen(3000);
+  app.listen(port);
 };
 
 run();

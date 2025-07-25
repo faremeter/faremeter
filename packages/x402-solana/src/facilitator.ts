@@ -19,6 +19,9 @@ import {
 export type PaymentRequirements = {
   payTo: PublicKey;
   amount: number;
+  resource: string;
+  description: string;
+  mimeType: string;
 };
 
 function errorResponse(msg: string): x402SettleResponse {
@@ -47,9 +50,9 @@ export const createFacilitatorHandler = (
         scheme: x402Scheme,
         network,
         maxAmountRequired: paymentRequirements.amount.toString(),
-        resource: "http://whatever.com",
-        description: "what else",
-        mimeType: "what",
+        resource: paymentRequirements.resource,
+        description: paymentRequirements.description,
+        mimeType: paymentRequirements.mimeType,
         payTo: paymentRequirements.payTo.toString(),
         asset: mint ? mint.toBase58() : "sol",
         maxTimeoutSeconds: 5,

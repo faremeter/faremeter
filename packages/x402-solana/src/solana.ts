@@ -323,40 +323,6 @@ export const createSettleTransaction = async (
   return tx;
 };
 
-export const settleTransaction = async (
-  conneciton: Connection,
-  tx: VersionedTransaction,
-): Promise<
-  | {
-      success: true;
-    }
-  | {
-      success: false;
-      err: string;
-    }
-> => {
-  if (!tx.signatures[0]) {
-    return {
-      success: false,
-      err: "Transaction is missing a signature",
-    };
-  }
-  try {
-    const signature = await processTransaction(conneciton, tx);
-    console.log("Settle signature", signature);
-  } catch (err) {
-    console.log(err);
-    return {
-      success: false,
-      err: "Unable to proccess settlement tx",
-    };
-  }
-
-  return {
-    success: true,
-  };
-};
-
 export const createSplPaymentInstruction = async (
   target: PaymentTargetInfo,
   mint: PublicKey,

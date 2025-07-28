@@ -49,6 +49,13 @@ export const x402VerifyRequest = type({
 
 export type x402VerifyRequest = typeof x402VerifyRequest.infer;
 
+export const x402VerifyResponse = type({
+  isValid: "boolean",
+  "invalidReason?": "string | null",
+});
+
+export type x402VerifyResponse = typeof x402VerifyResponse.infer;
+
 export const x402SettleRequest = x402VerifyRequest;
 export type x402SettleRequest = typeof x402SettleRequest.infer;
 

@@ -34,12 +34,10 @@ export const x402PaymentPayload = type({
 
 export type x402PaymentPayload = typeof x402PaymentPayload.infer;
 
-export function headerToX402PaymentPayload(header: string) {
-  return type("string.base64")
-    .pipe.try((x) => atob(x))
-    .to("string.json.parse")
-    .to(x402PaymentPayload)(header);
-}
+export const x402PaymentHeaderToPayload = type("string.base64")
+  .pipe.try((x) => atob(x))
+  .to("string.json.parse")
+  .to(x402PaymentPayload);
 
 export const x402VerifyRequest = type({
   x402Version: "number.integer",

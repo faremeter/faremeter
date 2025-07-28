@@ -61,7 +61,7 @@ export type x402SettleRequest = typeof x402SettleRequest.infer;
 
 export const x402SettleResponse = type({
   success: "boolean",
-  error: "string | null",
+  "error?": "string | null",
   txHash: "string | null",
   networkId: "string | null",
 });

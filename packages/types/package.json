@@ -9,6 +9,11 @@
       "require": "./dist/src/index.js",
       "import": "./dist/src/index.js",
       "types": "./dist/src/index.d.ts"
+    },
+    "./x402": {
+      "require": "./dist/src/x402.js",
+      "import": "./dist/src/x402.js",
+      "types": "./dist/src/x402.d.ts"
     }
   },
   "packageManager": "pnpm@10.12.1",

@@ -1,7 +1,7 @@
 import {
   type FacilitatorHandler,
   x402PaymentRequirements,
-  headerToX402PaymentPayload,
+  x402PaymentHeaderToPayload,
   isValidationError,
 } from "@faremeter/types";
 import type { NextFunction, Request, Response } from "express";
@@ -12,7 +12,7 @@ function extractPaymentFromHeader(req: Request) {
     return null;
   }
 
-  const payload = headerToX402PaymentPayload(paymentHeader);
+  const payload = x402PaymentHeaderToPayload(paymentHeader);
   if (isValidationError(payload)) {
     console.log("type validation error:", payload.summary);
     return null;

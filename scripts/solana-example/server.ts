@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { default as express } from "express";
 import type { Request, Response } from "express";
 import { createFacilitatorHandler } from "@faremeter/x402-solana/facilitator";
@@ -7,23 +8,31 @@ import fs from "fs";
 
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 
+const { ADMIN_KEYPAIR_PATH, ASSET_ADDRESS } = process.env;
+
+if (!ADMIN_KEYPAIR_PATH) {
+  throw new Error("ADMIN_KEYPAIR_PATH must be set in your environment");
+}
+
+if (!ASSET_ADDRESS) {
+  throw new Error("ASSET_ADDRESS must point at an SPL Token address");
+}
+
 const adminKeypair = Keypair.fromSecretKey(
-  Uint8Array.from(
-    JSON.parse(fs.readFileSync("../keypairs/admin.json", "utf-8")),
-  ),
+  Uint8Array.from(JSON.parse(fs.readFileSync(ADMIN_KEYPAIR_PATH, "utf-8"))),
 );
 
 const network = "devnet";
 const connection = new Connection(clusterApiUrl(network), "confirmed");
 
 const payTo = Keypair.generate();
-const mint = new PublicKey("Hxtm6jXVcA9deMFxJRvMkHewhYJHxCpqsLvH9d1bvxBP");
+const asset = ASSET_ADDRESS;
 
 // Make sure the token receiver exists.
 await getOrCreateAssociatedTokenAccount(
   connection,
   adminKeypair,
-  mint,
+  new PublicKey(asset),
   payTo.publicKey,
 );
 

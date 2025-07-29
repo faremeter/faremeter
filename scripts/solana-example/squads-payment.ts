@@ -1,3 +1,4 @@
+import "dotenv/config";
 import {
   clusterApiUrl,
   Connection,
@@ -14,6 +15,12 @@ const { Permission, Permissions } = multisig.types;
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import { createSquadsWallet } from "@faremeter/wallet-solana-squads";
 import { createPaymentHandler } from "@faremeter/x402-solana";
+
+const { PAYER_KEYPAIR_PATH } = process.env;
+
+if (!PAYER_KEYPAIR_PATH) {
+  throw new Error("PAYER_KEYPAIR_PATH must be set in your environment");
+}
 
 const transferSol = async (
   connection: Connection,
@@ -35,9 +42,7 @@ const transferSol = async (
 const network = "devnet";
 const connection = new Connection(clusterApiUrl(network), "confirmed");
 const keypair = Keypair.fromSecretKey(
-  Uint8Array.from(
-    JSON.parse(fs.readFileSync("../keypairs/payer.json", "utf-8")),
-  ),
+  Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
 );
 
 async function createSquad() {

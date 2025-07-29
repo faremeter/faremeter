@@ -1,4 +1,5 @@
 linkWorkspacePackages: true
 packages:
   - "packages/*"
+  - "apps/*"
   - "scripts"

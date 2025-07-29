@@ -5,8 +5,11 @@ import {
 } from "./x402";
 
 export type FacilitatorHandler = {
-  getRequirements: () => Promise<x402PaymentRequirements[]>;
+  getRequirements: (
+    req: x402PaymentRequirements[],
+  ) => Promise<x402PaymentRequirements[]>;
   handleSettle: (
+    requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
   ) => Promise<x402SettleResponse | null>;
 };

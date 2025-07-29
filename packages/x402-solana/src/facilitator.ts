@@ -2,6 +2,7 @@ import { type } from "arktype";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import {
   type FacilitatorHandler,
+  x402PaymentRequirements,
   x402PaymentPayload,
   x402SettleResponse,
 } from "@faremeter/types";
@@ -15,14 +16,6 @@ import {
   isValidTransferTransaction,
   processTransaction,
 } from "./solana";
-
-export type PaymentRequirements = {
-  payTo: PublicKey;
-  amount: number;
-  resource: string;
-  description: string;
-  mimeType: string;
-};
 
 function errorResponse(msg: string): x402SettleResponse {
   return {
@@ -38,38 +31,39 @@ export const x402Scheme = "@faremeter/x402-solana";
 export const createFacilitatorHandler = (
   network: string,
   connection: Connection,
-  paymentRequirements: PaymentRequirements,
   adminKeypair: Keypair,
   mint?: PublicKey,
 ): FacilitatorHandler => {
-  const getRequirements = async () => {
-    const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-
-    return [
-      {
-        scheme: x402Scheme,
-        network,
-        maxAmountRequired: paymentRequirements.amount.toString(),
-        resource: paymentRequirements.resource,
-        description: paymentRequirements.description,
-        mimeType: paymentRequirements.mimeType,
-        payTo: paymentRequirements.payTo.toString(),
-        asset: mint ? mint.toBase58() : "sol",
-        maxTimeoutSeconds: 5,
-        extra: {
-          admin: adminKeypair.publicKey.toString(),
-          recentBlockhash,
-        },
-      },
-    ];
-  };
-
   const checkTuple = type({
     scheme: `'${x402Scheme}'`,
     network: `'${network}'`,
   });
 
-  const handleSettle = async (payment: x402PaymentPayload) => {
+  const asset = mint ? mint.toBase58() : "sol";
+  const checkTupleAndAsset = checkTuple.and({ asset: `'${asset}'` });
+
+  const getRequirements = async (req: x402PaymentRequirements[]) => {
+    const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+    return req
+      .filter((x) => !isValidationError(checkTupleAndAsset(x)))
+      .map((x) => {
+        return {
+          ...x,
+          asset: mint ? mint.toBase58() : "sol",
+          maxTimeoutSeconds: 5,
+          extra: {
+            admin: adminKeypair.publicKey.toString(),
+            recentBlockhash,
+          },
+        };
+      });
+  };
+
+  const handleSettle = async (
+    requirements: x402PaymentRequirements,
+    payment: x402PaymentPayload,
+  ) => {
     const tupleMatches = checkTuple(payment);
 
     if (isValidationError(tupleMatches)) {
@@ -108,7 +102,10 @@ export const createFacilitatorHandler = (
       return errorResponse("could not extract transfer data");
     }
 
-    if (Number(transactionData.data.amount) !== paymentRequirements.amount) {
+    if (
+      Number(transactionData.data.amount) !==
+      Number(requirements.maxAmountRequired)
+    ) {
       console.log("payments didn't match amount");
       return errorResponse("payments didn't match amount");
     }

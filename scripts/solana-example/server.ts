@@ -38,12 +38,15 @@ await getOrCreateAssociatedTokenAccount(
 
 const port = 3000;
 
-const protectedRequirements = {
-  payTo: payTo.publicKey,
-  amount: 1000000,
+const paymentRequired = {
+  scheme: "@faremeter/x402-solana",
+  network,
+  payTo: payTo.publicKey.toBase58(),
+  maxAmountRequired: "1000000",
   resource: `http://localhost:${port}/protected`,
   description: "a protected resource",
   mimeType: "application/json",
+  maxTimeoutSeconds: 5,
 };
 
 const run = async () => {
@@ -52,19 +55,25 @@ const run = async () => {
   app.get(
     "/protected",
     middleware.createDirectFacilitatorMiddleware({
+      accepts: [
+        // Native Solana
+        {
+          ...paymentRequired,
+          asset: "sol",
+        },
+        // Our custom mint
+        {
+          ...paymentRequired,
+          asset,
+        },
+      ],
       handlers: [
+        createFacilitatorHandler(network, connection, adminKeypair),
         createFacilitatorHandler(
           network,
           connection,
-          protectedRequirements,
           adminKeypair,
-        ),
-        createFacilitatorHandler(
-          network,
-          connection,
-          protectedRequirements,
-          adminKeypair,
-          mint,
+          new PublicKey(asset),
         ),
       ],
     }),

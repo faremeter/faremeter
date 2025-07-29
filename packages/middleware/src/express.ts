@@ -23,13 +23,16 @@ function extractPaymentFromHeader(req: Request) {
 
 type CreateDirectFacilitatorMiddlewareArgs = {
   handlers: FacilitatorHandler[];
+  accepts: x402PaymentRequirements[];
 };
 export function createDirectFacilitatorMiddleware(
   args: CreateDirectFacilitatorMiddlewareArgs,
 ) {
   const sendPaymentRequired = async (res: Response) => {
     const accepts: x402PaymentRequirements[] = (
-      await Promise.all(args.handlers.flatMap((x) => x.getRequirements()))
+      await Promise.all(
+        args.handlers.flatMap((x) => x.getRequirements(args.accepts)),
+      )
     ).flat();
 
     res.status(402).json({
@@ -45,9 +48,19 @@ export function createDirectFacilitatorMiddleware(
       return sendPaymentRequired(res);
     }
 
+    // XXX - This is naive, and doesn't consider `asset` because that information
+    // isn't available here.
+    const paymentRequirements = args.accepts.filter(
+      (x) => x.network === payment.network && x.scheme === payment.scheme,
+    )[0];
+
+    if (!paymentRequirements) {
+      return sendPaymentRequired(res);
+    }
+
     // XXX - We need a better policy than "first one wins".
     for (const handler of args.handlers) {
-      const t = await handler.handleSettle(payment);
+      const t = await handler.handleSettle(paymentRequirements, payment);
 
       if (t === null) {
         continue;

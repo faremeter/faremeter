@@ -1,7 +1,6 @@
 import "dotenv/config";
 import { default as express } from "express";
 import type { Request, Response } from "express";
-import { createFacilitatorHandler } from "@faremeter/x402-solana/facilitator";
 import { express as middleware } from "@faremeter/middleware";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import fs from "fs";
@@ -54,7 +53,8 @@ const run = async () => {
 
   app.get(
     "/protected",
-    middleware.createDirectFacilitatorMiddleware({
+    await middleware.createMiddleware({
+      facilitatorURL: "http://localhost:4000",
       accepts: [
         // Native Solana
         {
@@ -66,15 +66,6 @@ const run = async () => {
           ...paymentRequired,
           asset,
         },
-      ],
-      handlers: [
-        createFacilitatorHandler(network, connection, adminKeypair),
-        createFacilitatorHandler(
-          network,
-          connection,
-          adminKeypair,
-          new PublicKey(asset),
-        ),
       ],
     }),
     (req: Request, res: Response) => {

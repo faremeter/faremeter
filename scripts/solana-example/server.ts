@@ -7,9 +7,9 @@ import fs from "fs";
 
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 
-const { ADMIN_KEYPAIR_PATH, ASSET_ADDRESS } = process.env;
+const { PAYTO_KEYPAIR_PATH, ASSET_ADDRESS } = process.env;
 
-if (!ADMIN_KEYPAIR_PATH) {
+if (!PAYTO_KEYPAIR_PATH) {
   throw new Error("ADMIN_KEYPAIR_PATH must be set in your environment");
 }
 
@@ -18,7 +18,7 @@ if (!ASSET_ADDRESS) {
 }
 
 const adminKeypair = Keypair.fromSecretKey(
-  Uint8Array.from(JSON.parse(fs.readFileSync(ADMIN_KEYPAIR_PATH, "utf-8"))),
+  Uint8Array.from(JSON.parse(fs.readFileSync(PAYTO_KEYPAIR_PATH, "utf-8"))),
 );
 
 const network = "devnet";

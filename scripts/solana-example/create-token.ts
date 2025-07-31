@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import fs from "fs";
 
@@ -7,13 +8,18 @@ import {
   mintTo,
 } from "@solana/spl-token";
 
+const { PAYER_KEYPAIR_PATH } = process.env;
+
+if (!PAYER_KEYPAIR_PATH) {
+  throw new Error("PAYER_KEYPAIR_PATH must be set in your environment");
+}
+
+const keypair = Keypair.fromSecretKey(
+  Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
+);
+
 const network = "devnet";
 const connection = new Connection(clusterApiUrl(network), "confirmed");
-const keypair = Keypair.fromSecretKey(
-  Uint8Array.from(
-    JSON.parse(fs.readFileSync("../keypairs/payer.json", "utf-8")),
-  ),
-);
 
 const createTestToken = async (
   connection: Connection,

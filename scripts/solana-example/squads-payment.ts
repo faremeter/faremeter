@@ -14,7 +14,7 @@ const { Permission, Permissions } = multisig.types;
 
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import { createSquadsWallet } from "@faremeter/wallet-solana-squads";
-import { createPaymentHandler } from "@faremeter/x402-solana";
+import { createPaymentHandler } from "@faremeter/x-solana-settlement";
 
 const { PAYER_KEYPAIR_PATH } = process.env;
 

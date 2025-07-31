@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Keypair } from "@solana/web3.js";
 import { createLocalWallet } from "@faremeter/wallet-solana";
-import { createPaymentHandler } from "@faremeter/x402-solana";
+import { createPaymentHandler } from "@faremeter/x-solana-settlement";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import fs from "fs";
 

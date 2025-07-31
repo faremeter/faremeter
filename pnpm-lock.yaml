@@ -310,64 +310,6 @@ importers:
         specifier: ^4.3.4
         version: 4.3.4
 
-  packages/x402-solana:
-    dependencies:
-      '@coral-xyz/anchor':
-        specifier: ^0.31.1
-        version: 0.31.1(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      '@faremeter/types':
-        specifier: workspace:^
-        version: link:../types
-      '@solana/spl-token':
-        specifier: ^0.4.13
-        version: 0.4.13(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      '@solana/web3.js':
-        specifier: ^1.98.2
-        version: 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      arktype:
-        specifier: ^2.1.20
-        version: 2.1.20
-      bn.js:
-        specifier: ^5.2.2
-        version: 5.2.2
-      bs58:
-        specifier: ^6.0.0
-        version: 6.0.0
-    devDependencies:
-      '@eslint/js':
-        specifier: ^9.28.0
-        version: 9.28.0
-      '@faremeter/fetch':
-        specifier: workspace:*
-        version: link:../fetch
-      '@tapjs/asserts':
-        specifier: ^4.0.1
-        version: 4.0.1(@tapjs/core@4.0.1(@types/node@24.0.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@types/bn.js':
-        specifier: ^5.2.0
-        version: 5.2.0
-      '@types/express':
-        specifier: ^5.0.3
-        version: 5.0.3
-      eslint:
-        specifier: ^9.28.0
-        version: 9.28.0
-      prettier:
-        specifier: ^3.5.3
-        version: 3.5.3
-      tap:
-        specifier: ^21.1.0
-        version: 21.1.0(@types/node@24.0.3)(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      typescript:
-        specifier: ^5.8.3
-        version: 5.8.3
-      typescript-eslint:
-        specifier: ^8.34.0
-        version: 8.34.0(eslint@9.28.0)(typescript@5.8.3)
-      typescript-language-server:
-        specifier: ^4.3.4
-        version: 4.3.4
-
   scripts:
     dependencies:
       '@faremeter/fetch':

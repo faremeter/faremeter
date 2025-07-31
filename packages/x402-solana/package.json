@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/x402-solana",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "license": "GPL-3.0-only",
   "type": "module",
   "main": "dist/src/index.js",

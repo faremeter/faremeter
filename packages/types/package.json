@@ -16,6 +16,9 @@
       "types": "./dist/src/x402.d.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
   "packageManager": "pnpm@10.12.1",
   "devDependencies": {
     "@eslint/js": "^9.28.0",

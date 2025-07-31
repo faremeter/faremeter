@@ -38,7 +38,7 @@ await getOrCreateAssociatedTokenAccount(
 const port = 3000;
 
 const paymentRequired = {
-  scheme: "@faremeter/x402-solana",
+  scheme: "@faremeter/x-solana-settlement",
   network,
   payTo: payTo.publicKey.toBase58(),
   maxAmountRequired: "1000000",

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { default as express } from "express";
-import { createFacilitatorHandler } from "@faremeter/x402-solana/facilitator";
+import { createFacilitatorHandler } from "@faremeter/x-solana-settlement/facilitator";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createFacilitatorRouter } from "./routes";
 import fs from "fs";

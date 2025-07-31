@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createCrossmintWallet } from "@faremeter/wallet-crossmint";
-import { createPaymentHandler } from "@faremeter/x402-solana";
+import { createPaymentHandler } from "@faremeter/x-solana-settlement";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 
 // Address of your crossmint wallet

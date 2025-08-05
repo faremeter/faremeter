@@ -8,7 +8,17 @@ Here's a quick way to get the Faremeter tooling up and running. The following wi
 
 From inside the `faremeter` git repository, run the following:
 
-## 0. Setup your environment
+## 0. Install tooling
+
+Install developer tooling:
+
+- [Node.js](https://nodejs.org/en/download)
+- [Solana CLI](https://solana.com/docs/intro/installation)
+- [pnpm](https://pnpm.io/installation)
+
+NOTE: These tools may also be available from your favorite package manager (e.g. [Homebrew](https://brew.sh).
+
+## 1. Setup your environment
 
 ```
 pnpm install -r
@@ -16,7 +26,7 @@ solana config set -u devnet
 make
 ```
 
-## 1. Generate some keypairs, if you don't already have them
+## 2. Generate some keypairs, if you don't already have them
 
 - Payer
 - PayTo
@@ -29,11 +39,11 @@ solana-keygen new --no-bip39-passphrase -o keypairs/payto.json
 solana-keygen new --no-bip39-passphrase -o keypairs/admin.json
 ```
 
-## 2. Fund all of the keypairs with some SOL on `devnet`.
+## 3. Fund all of the keypairs with some SOL on `devnet`.
 
 You can use `solana airdrop` or use your browser to visit the [Solana Faucet](https://faucet.solana.com).
 
-## 3. Setup the configuration
+## 4. Setup the configuration
 
 ```
 cat > apps/facilitator/.env <<EOF
@@ -50,7 +60,7 @@ EOF
 
 NOTE: To use an SPL Token, you'll need to fund the above keypairs with tokens from the `ASSET_ADDRESS` you provide.
 
-## 4. Start the facilitator
+## 5. Start the facilitator
 
 In a separate terminal, run:
 
@@ -58,7 +68,7 @@ In a separate terminal, run:
 (cd apps/facilitator && pnpm tsx src )
 ```
 
-## 5. Start the resource server
+## 6. Start the resource server
 
 In a separate terminal, run:
 
@@ -66,7 +76,7 @@ In a separate terminal, run:
 (cd scripts && pnpm tsx solana-example/server.ts)
 ```
 
-## 6. Run a test client
+## 7. Run a test client
 
 ### Pay Using
 
@@ -114,7 +124,7 @@ You should see:
 
 ... as the client output. At the same time, the facilitator will log the processing of the payment.
 
-## 7. (Optional) Mint A New SPL Token
+## 8. (Optional) Mint A New SPL Token
 
 If you wish to mint a new token, to experiment with and use as the `ASSET_ADDRESS` above, you can run:
 

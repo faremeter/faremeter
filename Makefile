@@ -12,13 +12,13 @@ format:
 	pnpm prettier -w .
 
 packages/%: FORCE
-	cd $@ && rm -rf dist && tsc
+	cd $@ && rm -rf dist && pnpm tsc
 
 apps/%: FORCE
-	cd $@ && rm -rf dist && tsc
+	cd $@ && rm -rf dist && pnpm tsc
 
 scripts: FORCE
-	cd scripts && rm -rf dist && tsc
+	cd scripts && rm -rf dist && pnpm tsc
 
 .PHONY: all lint test
 FORCE:

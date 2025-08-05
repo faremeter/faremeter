@@ -13,6 +13,7 @@ From inside the `faremeter` git repository, run the following:
 ```
 pnpm install -r
 solana config set -u devnet
+make
 ```
 
 ## 1. Generate some keypairs, if you don't already have them

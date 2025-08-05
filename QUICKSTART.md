@@ -41,7 +41,7 @@ ASSET_ADDRESS=Hxtm6jXVcA9deMFxJRvMkHewhYJHxCpqsLvH9d1bvxBP
 ADMIN_KEYPAIR_PATH=../../keypairs/admin.json
 EOF
 
-cat > scripts/solana-example/.env <<EOF
+cat > scripts/.env <<EOF
 ASSET_ADDRESS=Hxtm6jXVcA9deMFxJRvMkHewhYJHxCpqsLvH9d1bvxBP
 PAYER_KEYPAIR_PATH=../keypairs/payer.json
 PAYTO_KEYPAIR_PATH=../keypairs/payto.json

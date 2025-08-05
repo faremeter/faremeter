@@ -26,6 +26,8 @@ Faremeter aims to be compatible with the emerging industry standards:
 - Cloudflare's Pay-Per-Crawl - https://www.cloudflare.com/paypercrawl-signup/
 - L402 - https://www.l402.org
 
+Please see our [compatibility document](./COMPATIBILITY.md) for more information.
+
 We've started development, primarily focusing on x402 and supporting the Solana ecosystem. We're currently under active development, producing:
 
 - A pluggable [client library](./packages/fetch)

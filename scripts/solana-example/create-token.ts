@@ -14,54 +14,47 @@ if (!PAYER_KEYPAIR_PATH) {
   throw new Error("PAYER_KEYPAIR_PATH must be set in your environment");
 }
 
-const keypair = Keypair.fromSecretKey(
+const payer = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
 );
+
+const decimals = 6;
 
 const network = "devnet";
 const connection = new Connection(clusterApiUrl(network), "confirmed");
 
-const createTestToken = async (
-  connection: Connection,
-  payer: Keypair,
-  decimals = 6,
-): Promise<PublicKey> => {
-  try {
-    const mint = await createMint(
-      connection,
-      payer,
-      payer.publicKey,
-      payer.publicKey,
-      decimals,
-    );
+const mint = await createMint(
+  connection,
+  payer,
+  payer.publicKey,
+  payer.publicKey,
+  decimals,
+);
 
-    console.log(`Created new test token: ${mint.toString()}`);
+console.log(`Created new test token: ${mint.toString()}`);
 
-    const tokenAccount = await getOrCreateAssociatedTokenAccount(
-      connection,
-      payer,
-      mint,
-      payer.publicKey,
-    );
+async function sendMint(publicKey: PublicKey, amountToMint: number) {
+  const tokenAccount = await getOrCreateAssociatedTokenAccount(
+    connection,
+    payer,
+    mint,
+    publicKey,
+  );
 
-    const amountToMint = 1000000 * Math.pow(10, decimals);
-    await mintTo(
-      connection,
-      payer,
-      mint,
-      tokenAccount.address,
-      payer.publicKey,
-      amountToMint,
-    );
+  await mintTo(
+    connection,
+    payer,
+    mint,
+    tokenAccount.address,
+    payer.publicKey,
+    amountToMint,
+  );
 
-    console.log(
-      `Minted ${1000000} tokens to ${tokenAccount.address.toString()}`,
-    );
-    return mint;
-  } catch (error) {
-    console.error("Error creating test token:", error);
-    throw error;
-  }
-};
+  console.log(
+    `Minted ${1000000} tokens for ${publicKey.toString()} to ${tokenAccount.address.toString()}`,
+  );
+}
 
-await createTestToken(connection, keypair);
+const amountToMint = 1000000 * Math.pow(10, decimals);
+
+sendMint(payer.publicKey, amountToMint);

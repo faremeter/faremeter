@@ -109,12 +109,14 @@ async function getPaymentRequiredResponse(args: CreateMiddlewareArgs) {
 }
 
 export async function createMiddleware(args: CreateMiddlewareArgs) {
-  const cachedPaymentRequirements = await getPaymentRequiredResponse(args);
-  const sendPaymentRequired = async (res: Response) => {
-    res.status(402).json(cachedPaymentRequirements);
-  };
-
   return async (req: Request, res: Response, next: NextFunction) => {
+    // XXX - Temporarily request this every time.  This will be
+    // cached in future.
+    const paymentRequiredResponse = await getPaymentRequiredResponse(args);
+    const sendPaymentRequired = async (res: Response) => {
+      res.status(402).json(paymentRequiredResponse);
+    };
+
     const paymentHeader = req.header("X-PAYMENT");
     if (!paymentHeader) {
       return sendPaymentRequired(res);
@@ -128,7 +130,7 @@ export async function createMiddleware(args: CreateMiddlewareArgs) {
 
     // XXX - This is naive, and doesn't consider `asset` because that information
     // isn't available here.
-    const paymentRequirements = cachedPaymentRequirements.accepts.filter(
+    const paymentRequirements = paymentRequiredResponse.accepts.filter(
       (x) => x.network === payload.network && x.scheme === payload.scheme,
     )[0];
 

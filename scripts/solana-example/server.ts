@@ -24,7 +24,6 @@ const payToKeypair = Keypair.fromSecretKey(
 const network = "devnet";
 const connection = new Connection(clusterApiUrl(network), "confirmed");
 
-const payTo = Keypair.generate();
 const asset = ASSET_ADDRESS;
 
 // Make sure the token receiver exists.
@@ -32,7 +31,7 @@ await getOrCreateAssociatedTokenAccount(
   connection,
   payToKeypair,
   new PublicKey(asset),
-  payTo.publicKey,
+  payToKeypair.publicKey,
 );
 
 const port = 3000;
@@ -40,7 +39,7 @@ const port = 3000;
 const paymentRequired = {
   scheme: "@faremeter/x-solana-settlement",
   network,
-  payTo: payTo.publicKey.toBase58(),
+  payTo: payToKeypair.publicKey.toBase58(),
   maxAmountRequired: "1000000",
   resource: `http://localhost:${port}/protected`,
   description: "a protected resource",

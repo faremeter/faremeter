@@ -84,7 +84,7 @@ type CreateMiddlewareArgs = {
   facilitatorURL: string;
 };
 
-export async function createMiddleware(args: CreateMiddlewareArgs) {
+async function getPaymentRequiredResponse(args: CreateMiddlewareArgs) {
   const t = await fetch(`${args.facilitatorURL}/accepts`, {
     method: "POST",
     headers: {
@@ -97,14 +97,19 @@ export async function createMiddleware(args: CreateMiddlewareArgs) {
     }),
   });
 
-  const cachedPaymentRequirements = x402PaymentRequiredResponse(await t.json());
+  const response = x402PaymentRequiredResponse(await t.json());
 
-  if (isValidationError(cachedPaymentRequirements)) {
+  if (isValidationError(response)) {
     throw new Error(
-      `invalid payment requirements from facilitator: ${cachedPaymentRequirements.summary}`,
+      `invalid payment requirements from facilitator: ${response.summary}`,
     );
   }
 
+  return response;
+}
+
+export async function createMiddleware(args: CreateMiddlewareArgs) {
+  const cachedPaymentRequirements = await getPaymentRequiredResponse(args);
   const sendPaymentRequired = async (res: Response) => {
     res.status(402).json(cachedPaymentRequirements);
   };

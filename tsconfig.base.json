@@ -19,7 +19,7 @@
     "declarationMap": true,
 
     "composite": true,
-    "module": "preserve",
+    "module": "es2022",
     "noEmit": true,
 
     "lib": ["es2022"]

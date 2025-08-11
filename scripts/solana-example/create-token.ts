@@ -18,6 +18,16 @@ const payer = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
 );
 
+const { PAYTO_KEYPAIR_PATH } = process.env;
+
+if (!PAYTO_KEYPAIR_PATH) {
+  throw new Error("PAYTO_KEYPAIR_PATH must be set in your environment");
+}
+
+const payTo = Keypair.fromSecretKey(
+  Uint8Array.from(JSON.parse(fs.readFileSync(PAYTO_KEYPAIR_PATH, "utf-8"))),
+);
+
 const decimals = 6;
 
 const network = "devnet";
@@ -58,3 +68,4 @@ async function sendMint(publicKey: PublicKey, amountToMint: number) {
 const amountToMint = 1000000 * Math.pow(10, decimals);
 
 sendMint(payer.publicKey, amountToMint);
+sendMint(payTo.publicKey, amountToMint);

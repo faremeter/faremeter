@@ -17,7 +17,7 @@ if (!ASSET_ADDRESS) {
   throw new Error("ASSET_ADDRESS must point at an SPL Token address");
 }
 
-const adminKeypair = Keypair.fromSecretKey(
+const payToKeypair = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYTO_KEYPAIR_PATH, "utf-8"))),
 );
 
@@ -30,7 +30,7 @@ const asset = ASSET_ADDRESS;
 // Make sure the token receiver exists.
 await getOrCreateAssociatedTokenAccount(
   connection,
-  adminKeypair,
+  payToKeypair,
   new PublicKey(asset),
   payTo.publicKey,
 );

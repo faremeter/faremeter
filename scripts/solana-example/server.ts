@@ -2,10 +2,8 @@ import "dotenv/config";
 import { default as express } from "express";
 import type { Request, Response } from "express";
 import { express as middleware } from "@faremeter/middleware";
-import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair } from "@solana/web3.js";
 import fs from "fs";
-
-import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 
 const { PAYTO_KEYPAIR_PATH, ASSET_ADDRESS } = process.env;
 
@@ -22,17 +20,8 @@ const payToKeypair = Keypair.fromSecretKey(
 );
 
 const network = "devnet";
-const connection = new Connection(clusterApiUrl(network), "confirmed");
 
 const asset = ASSET_ADDRESS;
-
-// Make sure the token receiver exists.
-await getOrCreateAssociatedTokenAccount(
-  connection,
-  payToKeypair,
-  new PublicKey(asset),
-  payToKeypair.publicKey,
-);
 
 const port = 3000;
 

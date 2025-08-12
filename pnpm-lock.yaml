@@ -40,13 +40,13 @@ importers:
         version: link:../../packages/types
       '@faremeter/x-solana-settlement':
         specifier: ^0.1.1
-        version: 0.1.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)
+        version: 0.1.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@solana/spl-token':
         specifier: ^0.4.13
-        version: 0.4.13(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)
+        version: 0.4.13(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@solana/web3.js':
         specifier: ^1.98.2
-        version: 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
+        version: 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
       arktype:
         specifier: ^2.1.20
         version: 2.1.20
@@ -59,13 +59,13 @@ importers:
     devDependencies:
       '@tapjs/tsx':
         specifier: ^3.0.1
-        version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.0.3)(react@18.3.1))
+        version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.0.3))
       '@types/express':
         specifier: ^5.0.3
         version: 5.0.3
       tap:
         specifier: ^21.1.0
-        version: 21.1.0(@types/node@24.0.3)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.5.4)(utf-8-validate@5.0.10)
+        version: 21.1.0(@types/node@24.0.3)(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
       tsx:
         specifier: ^4.19.4
         version: 4.19.4
@@ -353,16 +353,19 @@ importers:
         version: link:../packages/wallet-solana-squads
       '@faremeter/x-solana-settlement':
         specifier: ^0.1.1
-        version: 0.1.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 0.1.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)
+      '@hono/node-server':
+        specifier: ^1.18.1
+        version: 1.18.1(hono@4.9.0)
       '@solana/spl-token':
         specifier: ^0.4.13
-        version: 0.4.13(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 0.4.13(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)
       '@solana/web3.js':
         specifier: ^1.98.2
-        version: 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
       '@sqds/multisig':
         specifier: ^2.1.4
-        version: 2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)
       bs58:
         specifier: ^6.0.0
         version: 6.0.0
@@ -372,16 +375,19 @@ importers:
       express:
         specifier: ^5.1.0
         version: 5.1.0
+      hono:
+        specifier: ^4.9.0
+        version: 4.9.0
     devDependencies:
       '@tapjs/tsx':
         specifier: ^3.0.1
-        version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.0.3))
+        version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.0.3)(react@18.3.1))
       '@types/express':
         specifier: ^5.0.3
         version: 5.0.3
       tap:
         specifier: ^21.1.0
-        version: 21.1.0(@types/node@24.0.3)(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 21.1.0(@types/node@24.0.3)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.5.4)(utf-8-validate@5.0.10)
       tsx:
         specifier: ^4.19.4
         version: 4.19.4
@@ -642,6 +648,12 @@ packages:
   '@hey-api/client-fetch@0.8.1':
     resolution: {integrity: sha512-AaVNVLBl7N9Fun7QDnb00YDubAFjB9ICi5U6kmzcJSnnQTQGRMsuBBRupQV5ERdMMFt71zjSDym7Z+gLVe8m3A==}
     deprecated: Starting with v0.73.0, this package is bundled directly inside @hey-api/openapi-ts.
+
+  '@hono/node-server@1.18.1':
+    resolution: {integrity: sha512-O3puG/b7owYYmoQ2XPBf3SxBz6Dhk5VmWFhbaBU8/5wcUaXUPS0goxaI2Zfyg+Cu14ILJHEU7IFRw7miFxuXxg==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -3304,6 +3316,10 @@ snapshots:
 
   '@hey-api/client-fetch@0.8.1': {}
 
+  '@hono/node-server@1.18.1(hono@4.9.0)':
+    dependencies:
+      hono: 4.9.0
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.6':
@@ -3379,6 +3395,19 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@metaplex-foundation/beet-solana@0.4.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@metaplex-foundation/beet': 0.7.1
+      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
+      bs58: 5.0.0
+      debug: 4.4.1
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - supports-color
+      - typescript
+      - utf-8-validate
 
   '@metaplex-foundation/beet-solana@0.4.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)':
     dependencies:
@@ -3772,12 +3801,12 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - typescript
 
-  '@solana/spl-token@0.3.11(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)':
+  '@solana/spl-token@0.3.11(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)':
     dependencies:
       '@solana/buffer-layout': 4.0.1
-      '@solana/buffer-layout-utils': 0.2.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      '@solana/spl-token-metadata': 0.1.6(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      '@solana/buffer-layout-utils': 0.2.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
+      '@solana/spl-token-metadata': 0.1.6(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
+      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
       buffer: 6.0.3
     transitivePeerDependencies:
       - bufferutil
@@ -3898,13 +3927,13 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@sqds/multisig@2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)':
+  '@sqds/multisig@2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)':
     dependencies:
       '@metaplex-foundation/beet': 0.7.1
-      '@metaplex-foundation/beet-solana': 0.4.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      '@metaplex-foundation/beet-solana': 0.4.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
       '@metaplex-foundation/cusper': 0.0.2
-      '@solana/spl-token': 0.3.11(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      '@solana/spl-token': 0.3.11(@solana/web3.js@1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)
+      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
       '@types/bn.js': 5.2.0
       assert: 2.1.0
       bn.js: 5.2.2

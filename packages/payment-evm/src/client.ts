@@ -7,9 +7,13 @@ import type {
 import type { x402PaymentRequirements } from "@faremeter/types";
 import type { Hex } from "viem";
 import { isAddress } from "viem";
-
-const X402_EXACT_SCHEME = "exact";
-const USDC_BASE_SEPOLIA = "0x036cbd53842c5426634e7929541ec2318f3dcf7e";
+import {
+  X402_EXACT_SCHEME,
+  USDC_BASE_SEPOLIA,
+  EIP712_TYPES,
+  type X402ExactPayload,
+  type EIP3009Authorization,
+} from "./constants";
 
 interface WalletForPayment {
   network: string;
@@ -49,7 +53,7 @@ export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
         const validBefore = now + requirements.maxTimeoutSeconds;
 
         // Create the authorization parameters for EIP-3009
-        const authorization = {
+        const authorization: EIP3009Authorization = {
           from: wallet.address,
           to: payToAddress,
           value: requirements.maxAmountRequired, // String value of amount
@@ -75,16 +79,7 @@ export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
           })(),
         } as const;
 
-        const types = {
-          TransferWithAuthorization: [
-            { name: "from", type: "address" },
-            { name: "to", type: "address" },
-            { name: "value", type: "uint256" },
-            { name: "validAfter", type: "uint256" },
-            { name: "validBefore", type: "uint256" },
-            { name: "nonce", type: "bytes32" },
-          ],
-        } as const;
+        const types = EIP712_TYPES;
 
         // Message for EIP-712 signing (using BigInt for signing)
         const message = {
@@ -105,7 +100,7 @@ export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
         });
 
         // Create the x402 exact scheme payload
-        const payload = {
+        const payload: X402ExactPayload = {
           signature: signature,
           authorization: authorization,
         };

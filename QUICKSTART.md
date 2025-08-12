@@ -73,7 +73,7 @@ In a separate terminal, run:
 In a separate terminal, run:
 
 ```
-(cd scripts && pnpm tsx solana-example/server.ts)
+(cd scripts && pnpm tsx solana-example/server-express.ts)
 ```
 
 ## 7. Run a test client

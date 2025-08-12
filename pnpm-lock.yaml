@@ -146,6 +146,9 @@ importers:
       eslint:
         specifier: ^9.28.0
         version: 9.28.0
+      hono:
+        specifier: ^4.9.0
+        version: 4.9.0
       prettier:
         specifier: ^3.5.3
         version: 3.5.3
@@ -1852,6 +1855,10 @@ packages:
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
+
+  hono@4.9.0:
+    resolution: {integrity: sha512-JAUc4Sqi3lhby2imRL/67LMcJFKiCu7ZKghM7iwvltVZzxEC5bVJCsAa4NTnSfmWGb+N2eOVtFE586R+K3fejA==}
+    engines: {node: '>=16.9.0'}
 
   hosted-git-info@7.0.2:
     resolution: {integrity: sha512-puUZAUKT5m8Zzvs72XWy3HtvVbTWljRE66cP60bxJzAqf2DgICo7lYTY2IHUmLnNpjYvw5bvmoHvPc0QO2a62w==}
@@ -5559,6 +5566,8 @@ snapshots:
   hasown@2.0.2:
     dependencies:
       function-bind: 1.1.2
+
+  hono@4.9.0: {}
 
   hosted-git-info@7.0.2:
     dependencies:

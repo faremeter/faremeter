@@ -11,8 +11,10 @@
     "@faremeter/middleware": "workspace:^",
     "@faremeter/types": "workspace:^",
     "@faremeter/wallet-crossmint": "workspace:^",
+    "@faremeter/wallet-evm": "workspace:^",
     "@faremeter/wallet-solana": "workspace:^",
     "@faremeter/wallet-solana-squads": "workspace:^",
+    "@faremeter/payment-evm": "workspace:^",
     "@faremeter/x-solana-settlement": "^0.1.1",
     "@hono/node-server": "^1.18.1",
     "@solana/spl-token": "^0.4.13",
@@ -21,6 +23,7 @@
     "bs58": "^6.0.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "viem": "^2.21.0",
     "hono": "^4.9.0"
   },
   "devDependencies": {

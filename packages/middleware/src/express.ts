@@ -7,6 +7,7 @@ import {
   x402PaymentHeaderToPayload,
   isValidationError,
 } from "@faremeter/types";
+import { findMatchingPaymentRequirements } from "./utils";
 import type { NextFunction, Request, Response } from "express";
 
 function extractPaymentFromHeader(req: Request) {
@@ -51,11 +52,10 @@ export function createDirectFacilitatorMiddleware(
       return sendPaymentRequired(res);
     }
 
-    // XXX - This is naive, and doesn't consider `asset` because that information
-    // isn't available here.
-    const paymentRequirements = args.accepts.filter(
-      (x) => x.network === payment.network && x.scheme === payment.scheme,
-    )[0];
+    const paymentRequirements = findMatchingPaymentRequirements(
+      args.accepts,
+      payment,
+    );
 
     if (!paymentRequirements) {
       return sendPaymentRequired(res);
@@ -128,11 +128,10 @@ export async function createMiddleware(args: CreateMiddlewareArgs) {
       return sendPaymentRequired(res);
     }
 
-    // XXX - This is naive, and doesn't consider `asset` because that information
-    // isn't available here.
-    const paymentRequirements = paymentRequiredResponse.accepts.filter(
-      (x) => x.network === payload.network && x.scheme === payload.scheme,
-    )[0];
+    const paymentRequirements = findMatchingPaymentRequirements(
+      paymentRequiredResponse.accepts,
+      payload,
+    );
 
     if (!paymentRequirements) {
       return sendPaymentRequired(res);

@@ -101,3 +101,11 @@ export const X402_EXACT_PAYLOAD_SCHEMA = {
     nonce: "string",
   },
 } as const;
+
+// Arktype schema for EIP-712 domain parameters in requirements.extra
+export const EIP712_DOMAIN_SCHEMA = {
+  name: "string?",
+  version: "string?",
+  chainId: "number?",
+  verifyingContract: "string?",
+} as const;

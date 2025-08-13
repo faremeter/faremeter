@@ -11,9 +11,14 @@ import {
   X402_EXACT_SCHEME,
   USDC_BASE_SEPOLIA,
   EIP712_TYPES,
+  EIP712_DOMAIN_SCHEMA,
   type X402ExactPayload,
   type EIP3009Authorization,
 } from "./constants";
+import { type } from "arktype";
+
+// Create validator at module level for reuse
+const validateEIP712Domain = type(EIP712_DOMAIN_SCHEMA);
 
 interface WalletForPayment {
   network: string;
@@ -62,16 +67,23 @@ export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
           nonce: nonce,
         };
 
-        // EIP-712 domain for USDC on Base Sepolia
-        const extra = requirements.extra as
-          | { name?: string; version?: string }
-          | undefined;
+        // Validate and extract EIP-712 domain parameters from requirements.extra
+        const extraResult = validateEIP712Domain(requirements.extra ?? {});
+        if (extraResult instanceof type.errors) {
+          throw new Error(
+            `Invalid EIP-712 domain parameters: ${extraResult.summary}`,
+          );
+        }
+
         const domain = {
-          name: extra?.name || "USD Coin",
-          version: extra?.version || "2",
-          chainId: 84532,
+          name: extraResult.name ?? "USDC",
+          version: extraResult.version ?? "2",
+          chainId: extraResult.chainId ?? 84532,
           verifyingContract: (() => {
-            const asset = requirements.asset || USDC_BASE_SEPOLIA;
+            const asset =
+              extraResult.verifyingContract ??
+              requirements.asset ??
+              USDC_BASE_SEPOLIA;
             if (!isAddress(asset)) {
               throw new Error(`Invalid asset address: ${asset}`);
             }

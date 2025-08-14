@@ -28,12 +28,13 @@ Faremeter aims to be compatible with the emerging industry standards:
 
 Please see our [compatibility document](./COMPATIBILITY.md) for more information.
 
-We've started development, primarily focusing on x402 and supporting the Solana ecosystem. We're currently under active development, producing:
+We've started development, primarily focusing on x402 and supporting both the Solana and EVM ecosystems. We're currently under active development, producing:
 
 - A pluggable [client library](./packages/fetch)
 - A configurable [middleware](./packages/middleware).
-- Support for various wallet SDKs.
+- Support for various wallet SDKs (Solana, EVM).
 - A payment facilitator and legacy service proxy.
+- EIP-3009 gasless USDC transfers on Base Sepolia for EVM chains.
 
 ## Sponsorship
 

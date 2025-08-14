@@ -3,8 +3,9 @@
 Here's a quick way to get the Faremeter tooling up and running. The following will:
 
 - Setup a test environment using Faremeter infrastructure
-- Use `devnet` for transactions.
-- Use the experimental [@faremeter/x-solana-settlement](https://github.com/faremeter/x-solana-settlement) payment scheme.
+- Use `devnet` for Solana transactions and Base Sepolia for EVM transactions
+- Use the experimental [@faremeter/x-solana-settlement](https://github.com/faremeter/x-solana-settlement) payment scheme for Solana
+- Use EIP-3009 gasless USDC transfers for EVM payments
 
 From inside the `faremeter` git repository, run the following:
 
@@ -26,7 +27,9 @@ solana config set -u devnet
 make
 ```
 
-## 2. Generate some keypairs, if you don't already have them
+## 2. Generate keypairs/wallets
+
+### For Solana
 
 - Payer
 - PayTo
@@ -39,11 +42,36 @@ solana-keygen new --no-bip39-passphrase -o keypairs/payto.json
 solana-keygen new --no-bip39-passphrase -o keypairs/admin.json
 ```
 
-## 3. Fund all of the keypairs with some SOL on `devnet`.
+### For EVM
 
-You can use `solana airdrop` or use your browser to visit the [Solana Faucet](https://faucet.solana.com).
+Generate EVM private keys for testing:
+
+```
+# Generate a new EVM wallet
+(cd scripts && pnpm tsx evm-example/gen-wallet.ts)
+
+# Save the generated private key and address for use in step 4
+```
+
+## 3. Fund your wallets
+
+### For Solana
+
+Fund all keypairs with SOL on `devnet`:
+
+- Use `solana airdrop`
+- Or visit the [Solana Faucet](https://faucet.solana.com)
+
+### For EVM
+
+Fund your Base Sepolia wallets:
+
+- Get Base Sepolia ETH from [Base Sepolia Faucet](https://www.alchemy.com/faucets/base-sepolia)
+- Get test USDC from [Circle Faucet](https://faucet.circle.com/) (select Base Sepolia network)
 
 ## 4. Setup the configuration
+
+### Solana Configuration
 
 ```
 cat > apps/facilitator/.env <<EOF
@@ -60,6 +88,29 @@ EOF
 
 NOTE: To use an SPL Token, you'll need to fund the above keypairs with tokens from the `ASSET_ADDRESS` you provide.
 
+### EVM Configuration
+
+To enable EVM support for Base Sepolia USDC payments:
+
+```
+# Add to apps/facilitator/.env
+cat >> apps/facilitator/.env <<EOF
+EVM_PRIVATE_KEY=0xYOUR_FACILITATOR_PRIVATE_KEY_HERE
+EVM_RECEIVING_ADDRESS=0xYOUR_RECEIVING_ADDRESS_HERE
+EOF
+
+# Add to scripts/.env
+cat >> scripts/.env <<EOF
+EVM_PRIVATE_KEY=0xYOUR_CLIENT_PRIVATE_KEY_HERE
+EOF
+```
+
+NOTE: For EVM payments, you'll need:
+
+- USDC tokens on Base Sepolia in your client wallet for making payments
+- ETH on Base Sepolia in your facilitator wallet for paying gas fees
+- Both EVM_PRIVATE_KEY and EVM_RECEIVING_ADDRESS are required for the facilitator
+
 ## 5. Start the facilitator
 
 In a separate terminal, run:
@@ -72,13 +123,21 @@ In a separate terminal, run:
 
 In a separate terminal, run:
 
+For Solana payments:
+
 ```
 (cd scripts && pnpm tsx solana-example/server-express.ts)
 ```
 
+For EVM payments:
+
+```
+(cd scripts && pnpm tsx evm-example/server-express.ts)
+```
+
 ## 7. Run a test client
 
-### Pay Using
+### Solana Payments
 
 #### Sol Payment Using Local Keypair
 
@@ -114,12 +173,40 @@ NOTE: To pay using Crossmint, you must have your `CROSSMINT_WALLET` address and 
 
 NOTE: Your payer keypair must be funded with tokens using the above provided `ASSET_ADDRESS` for this method to work.
 
-### Result
+### EVM Payments
 
-You should see:
+#### USDC Payment on Base Sepolia
+
+Using EIP-3009 gasless transfers (client signs, facilitator pays gas):
 
 ```
-{ msg: 'success' }
+(cd scripts && pnpm tsx evm-example/base-sepolia-payment.ts)
+```
+
+You can also specify a custom port and endpoint:
+
+```
+(cd scripts && pnpm tsx evm-example/base-sepolia-payment.ts 4021 premium/content)
+```
+
+NOTE: Your client wallet must be funded with USDC on Base Sepolia for this to work.
+
+### Result
+
+For Solana payments, you should see:
+
+```json
+{ "msg": "success" }
+```
+
+For EVM payments, you should see:
+
+```json
+{
+  "temperature": 72,
+  "conditions": "sunny",
+  "message": "Thanks for your payment!"
+}
 ```
 
 ... as the client output. At the same time, the facilitator will log the processing of the payment.

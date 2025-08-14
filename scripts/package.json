@@ -16,6 +16,7 @@
     "@faremeter/wallet-solana-squads": "workspace:^",
     "@faremeter/payment-evm": "workspace:^",
     "@faremeter/x-solana-settlement": "^0.1.1",
+    "@faremeter/payment-solana-exact": "workspace:^",
     "@hono/node-server": "^1.18.1",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",

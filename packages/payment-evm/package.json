@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@faremeter/types": "workspace:^",
+    "arktype": "^2.1.20",
     "viem": "^2.21.0"
   }
 }

@@ -19,10 +19,10 @@ const adminKeypair = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(ADMIN_KEYPAIR_PATH, "utf-8"))),
 );
 
-const network = "devnet";
+const network = "solana-devnet";
 const listenPort = 4000;
 
-const connection = new Connection(clusterApiUrl(network), "confirmed");
+const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
 const mint = new PublicKey(ASSET_ADDRESS);
 

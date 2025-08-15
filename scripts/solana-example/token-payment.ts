@@ -15,7 +15,7 @@ if (!ASSET_ADDRESS) {
   throw new Error("ASSET_ADDRESS must point at an SPL Token address");
 }
 
-const network = "devnet";
+const network = "solana-devnet";
 const keypair = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
 );

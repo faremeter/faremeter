@@ -19,7 +19,7 @@ const payToKeypair = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYTO_KEYPAIR_PATH, "utf-8"))),
 );
 
-const network = "devnet";
+const network = "solana-devnet";
 
 const asset = ASSET_ADDRESS;
 

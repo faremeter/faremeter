@@ -15,7 +15,7 @@ const keypair = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
 );
 
-const wallet = await createLocalWallet("devnet", keypair);
+const wallet = await createLocalWallet("solana-devnet", keypair);
 
 const fetchWithPayer = wrapFetch(fetch, {
   handlers: [createPaymentHandler(wallet)],

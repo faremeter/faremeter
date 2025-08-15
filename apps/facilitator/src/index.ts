@@ -1,9 +1,14 @@
 import "dotenv/config";
 import { default as express } from "express";
 import { createFacilitatorHandler } from "@faremeter/x-solana-settlement/facilitator";
+import {
+  createFacilitatorHandler as createFacilitatorHandlerExact,
+  lookupX402Network,
+} from "@faremeter/payment-solana-exact";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createFacilitatorRouter } from "./routes";
 import fs from "fs";
+import { createSolanaRpc } from "@solana/kit";
 
 const { ADMIN_KEYPAIR_PATH, ASSET_ADDRESS } = process.env;
 
@@ -20,9 +25,11 @@ const adminKeypair = Keypair.fromSecretKey(
 );
 
 const network = "devnet";
+const apiUrl = clusterApiUrl(network);
 const listenPort = 4000;
 
-const connection = new Connection(clusterApiUrl(network), "confirmed");
+const connection = new Connection(apiUrl, "confirmed");
+const rpc = createSolanaRpc(apiUrl);
 
 const mint = new PublicKey(ASSET_ADDRESS);
 
@@ -35,6 +42,13 @@ app.use(
       createFacilitatorHandler(network, connection, adminKeypair),
       // Our Private Mint Above
       createFacilitatorHandler(network, connection, adminKeypair, mint),
+      // Out Private Mint with exact scheme
+      createFacilitatorHandlerExact(
+        lookupX402Network(network),
+        rpc,
+        adminKeypair,
+        mint,
+      ),
     ],
   }),
 );

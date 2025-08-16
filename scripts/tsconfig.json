@@ -4,5 +4,5 @@
     "noEmit": false,
     "outDir": "dist"
   },
-  "include": ["*.ts", "solana-example/*.ts", "eth-example/*.ts"]
+  "include": ["*.ts", "solana-example/*.ts", "evm-example/*.ts"]
 }

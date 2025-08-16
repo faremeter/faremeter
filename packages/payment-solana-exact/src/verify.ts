@@ -117,38 +117,26 @@ export async function isValidTransaction(
 
   if (instructions.length === 3) {
     // Make typescript happy...
-    if (!instructions[0] || !instructions[1] || !instructions[2]) {
+    const [ix0, ix1, ix2] = instructions;
+    if (!ix0 || !ix1 || !ix2) {
       return false;
     }
 
     return (
-      verifyComputeUnitLimitInstruction(instructions[0]) &&
-      verifyComputeUnitPriceInstruction(instructions[1]) &&
-      (await verifyTransferInstruction(
-        instructions[2],
-        paymentRequirements,
-        destination,
-      ))
+      verifyComputeUnitLimitInstruction(ix0) &&
+      verifyComputeUnitPriceInstruction(ix1) &&
+      (await verifyTransferInstruction(ix2, paymentRequirements, destination))
     );
   } else if (instructions.length === 4) {
-    if (
-      !instructions[0] ||
-      !instructions[1] ||
-      !instructions[2] ||
-      !instructions[3]
-    ) {
+    const [ix0, ix1, ix2, ix3] = instructions;
+    if (!ix0 || !ix1 || !ix2 || !ix3) {
       return false;
     }
-
     return (
-      verifyComputeUnitLimitInstruction(instructions[0]) &&
-      verifyComputeUnitPriceInstruction(instructions[1]) &&
-      verifyCreateATAInstruction(instructions[2]) &&
-      (await verifyTransferInstruction(
-        instructions[3],
-        paymentRequirements,
-        destination,
-      ))
+      verifyComputeUnitLimitInstruction(ix0) &&
+      verifyComputeUnitPriceInstruction(ix1) &&
+      verifyCreateATAInstruction(ix2) &&
+      (await verifyTransferInstruction(ix3, paymentRequirements, destination))
     );
   }
 

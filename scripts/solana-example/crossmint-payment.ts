@@ -14,7 +14,7 @@ if (!crossmintWallet || !crossmintApi) {
 }
 
 const wallet = await createCrossmintWallet(
-  "devnet",
+  "solana-devnet",
   crossmintApi,
   crossmintWallet,
 );

@@ -25,6 +25,7 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { type } from "arktype";
+import { PaymentRequirementsExtra, x402Scheme } from "./facilitator";
 
 export type Wallet = {
   network: string;
@@ -39,17 +40,13 @@ export type Wallet = {
   sendTransaction?: (tx: VersionedTransaction) => Promise<string>;
 };
 
-export const PaymentRequirementsExtra = type({
-  feePayer: "string",
-});
-
 export function createPaymentHandler(
   wallet: Wallet,
   mint: PublicKey,
   connection: Connection,
 ): PaymentHandler {
   const matcher = type({
-    scheme: `'${"exact"}'`,
+    scheme: `'${x402Scheme}'`,
     network: `'${wallet.network}'`,
     asset: `'${mint ? mint.toBase58() : "sol"}'`,
   });

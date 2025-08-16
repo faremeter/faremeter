@@ -8,8 +8,10 @@
   ],
   "dependencies": {
     "@faremeter/fetch": "workspace:*",
+    "@faremeter/payment-solana-exact": "workspace:^",
     "@faremeter/types": "workspace:^",
     "@faremeter/x-solana-settlement": "^0.1.1",
+    "@solana/kit": "^2.3.0",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",
     "arktype": "^2.1.20",

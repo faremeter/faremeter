@@ -8,7 +8,7 @@ import fs from "fs";
 const { PAYTO_KEYPAIR_PATH, ASSET_ADDRESS } = process.env;
 
 if (!PAYTO_KEYPAIR_PATH) {
-  throw new Error("ADMIN_KEYPAIR_PATH must be set in your environment");
+  throw new Error("PAYTO_KEYPAIR_PATH must be set in your environment");
 }
 
 if (!ASSET_ADDRESS) {
@@ -26,10 +26,10 @@ const asset = ASSET_ADDRESS;
 const port = 3000;
 
 const paymentRequired = {
-  scheme: "@faremeter/x-solana-settlement",
+  scheme: "exact",
   network,
   payTo: payToKeypair.publicKey.toBase58(),
-  maxAmountRequired: "1000000",
+  maxAmountRequired: "100",
   resource: `http://localhost:${port}/protected`,
   description: "a protected resource",
   mimeType: "application/json",
@@ -44,11 +44,6 @@ const run = async () => {
     await middleware.createMiddleware({
       facilitatorURL: "http://localhost:4000",
       accepts: [
-        // Native Solana
-        {
-          ...paymentRequired,
-          asset: "sol",
-        },
         // Our custom mint
         {
           ...paymentRequired,

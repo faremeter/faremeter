@@ -29,6 +29,6 @@ const fetchWithPayer = wrapFetch(fetch, {
   handlers: [createPaymentHandler(wallet, mint, connection)],
 });
 
-const req = await fetchWithPayer("http://127.0.0.1:4021/weather");
+const req = await fetchWithPayer("http://127.0.0.1:3000/protected");
 
 console.log(await req.json());

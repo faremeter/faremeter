@@ -39,8 +39,8 @@ const transferSol = async (
   await sendAndConfirmTransaction(connection, transaction, [sender]);
 };
 
-const network = "devnet";
-const connection = new Connection(clusterApiUrl(network), "confirmed");
+const network = "solana-devnet";
+const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 const keypair = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
 );

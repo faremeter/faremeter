@@ -6,53 +6,65 @@ import {
   lookupX402Network,
 } from "@faremeter/payment-solana-exact";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { createSolanaRpc } from "@solana/kit";
 import { createFacilitatorRouter } from "./routes";
 import fs from "fs";
-import { createSolanaRpc } from "@solana/kit";
+import type { FacilitatorHandler } from "@faremeter/types";
 
 const { ADMIN_KEYPAIR_PATH, ASSET_ADDRESS } = process.env;
 
-if (!ADMIN_KEYPAIR_PATH) {
-  throw new Error("ADMIN_KEYPAIR_PATH must be set in your environment");
+const handlers: FacilitatorHandler[] = [];
+
+// Solana configuration
+if (ADMIN_KEYPAIR_PATH && ASSET_ADDRESS) {
+  const adminKeypair = Keypair.fromSecretKey(
+    Uint8Array.from(JSON.parse(fs.readFileSync(ADMIN_KEYPAIR_PATH, "utf-8"))),
+  );
+  const network = "devnet";
+  const apiUrl = clusterApiUrl(network);
+  const connection = new Connection(apiUrl, "confirmed");
+  const rpc = createSolanaRpc(apiUrl);
+  const mint = new PublicKey(ASSET_ADDRESS);
+
+  // Add Solana handlers
+  handlers.push(
+    // SOL
+    createFacilitatorHandler(network, connection, adminKeypair),
+    // SPL Token
+    createFacilitatorHandler(network, connection, adminKeypair, mint),
+    // SPL Token with exact scheme
+    createFacilitatorHandlerExact(
+      lookupX402Network(network),
+      rpc,
+      adminKeypair,
+      mint,
+    ),
+  );
+  console.log("Solana handlers configured for devnet");
 }
 
-if (!ASSET_ADDRESS) {
-  throw new Error("ASSET_ADDRESS must point at an SPL Token address");
+if (handlers.length === 0) {
+  console.error(
+    "ERROR: No payment handlers configured.\n" +
+      "   Set ADMIN_KEYPAIR_PATH and ASSET_ADDRESS for Solana",
+  );
+  process.exit(1);
 }
 
-const adminKeypair = Keypair.fromSecretKey(
-  Uint8Array.from(JSON.parse(fs.readFileSync(ADMIN_KEYPAIR_PATH, "utf-8"))),
-);
-
-const network = "devnet";
-const apiUrl = clusterApiUrl(network);
-const listenPort = 4000;
-
-const connection = new Connection(apiUrl, "confirmed");
-const rpc = createSolanaRpc(apiUrl);
-
-const mint = new PublicKey(ASSET_ADDRESS);
+const listenPort = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 
 const app = express();
 app.use(
   "/",
   createFacilitatorRouter({
-    handlers: [
-      // SOL
-      createFacilitatorHandler(network, connection, adminKeypair),
-      // Our Private Mint Above
-      createFacilitatorHandler(network, connection, adminKeypair, mint),
-      // Out Private Mint with exact scheme
-      createFacilitatorHandlerExact(
-        lookupX402Network(network),
-        rpc,
-        adminKeypair,
-        mint,
-      ),
-    ],
+    handlers,
   }),
 );
 
 app.listen(listenPort, () => {
-  console.log(`server listening on ${listenPort}`);
+  console.log(`Facilitator server listening on port ${listenPort}`);
+  console.log(`Active payment handlers: ${handlers.length}`);
+  if (ADMIN_KEYPAIR_PATH && ASSET_ADDRESS) {
+    console.log("   - Solana (SOL & SPL Token)");
+  }
 });

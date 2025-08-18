@@ -141,7 +141,7 @@ export const createFacilitatorHandler = (
     payment: x402PaymentPayload,
   ) => {
     if (isValidationError(checkTuple(payment))) {
-      return errorResponse("error validating");
+      return null;
     }
 
     const paymentPayload = PaymentPayload(payment.payload);

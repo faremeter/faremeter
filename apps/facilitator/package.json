@@ -8,15 +8,18 @@
   ],
   "dependencies": {
     "@faremeter/fetch": "workspace:*",
+    "@faremeter/payment-evm": "workspace:^",
     "@faremeter/payment-solana-exact": "workspace:^",
     "@faremeter/types": "workspace:^",
+    "@faremeter/wallet-evm": "workspace:^",
     "@faremeter/x-solana-settlement": "^0.1.1",
     "@solana/kit": "^2.3.0",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",
     "arktype": "^2.1.20",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "viem": "^2.21.0"
   },
   "devDependencies": {
     "@tapjs/tsx": "^3.0.1",

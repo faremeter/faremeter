@@ -179,6 +179,9 @@ importers:
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
+      arktype:
+        specifier: ^2.1.20
+        version: 2.1.20
       viem:
         specifier: ^2.21.0
         version: 2.23.6(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4)

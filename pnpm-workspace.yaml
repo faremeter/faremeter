@@ -1,5 +1,17 @@
-linkWorkspacePackages: true
 packages:
-  - "packages/*"
-  - "apps/*"
-  - "scripts"
+  - packages/*
+  - apps/*
+  - scripts
+
+ignoredBuiltDependencies:
+  - bigint-buffer
+  - bufferutil
+  - esbuild
+  - utf-8-validate
+
+linkWorkspacePackages: true
+
+onlyBuiltDependencies:
+  - keccak
+  - node-hid
+  - usb

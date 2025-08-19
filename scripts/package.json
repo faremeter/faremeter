@@ -12,6 +12,7 @@
     "@faremeter/types": "workspace:^",
     "@faremeter/wallet-crossmint": "workspace:^",
     "@faremeter/wallet-evm": "workspace:^",
+    "@faremeter/wallet-ledger": "workspace:*",
     "@faremeter/wallet-solana": "workspace:^",
     "@faremeter/wallet-solana-squads": "workspace:^",
     "@faremeter/payment-evm": "workspace:^",

@@ -6,7 +6,7 @@ build: packages/types $(wildcard packages/*) scripts apps/facilitator
 
 lint:
 	pnpm prettier -c .
-	pnpm eslint .
+	pnpm eslint --cache .
 
 test:
 

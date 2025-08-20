@@ -13,5 +13,11 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/consistent-type-definitions": 0,
     },
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   },
 );

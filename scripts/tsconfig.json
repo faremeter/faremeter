@@ -8,6 +8,7 @@
     "*.ts",
     "solana-example/*.ts",
     "solana-exact-example/*.ts",
-    "evm-example/*.ts"
+    "evm-example/*.ts",
+    "nestjs-example/*.ts"
   ]
 }

@@ -19,6 +19,9 @@
     "@faremeter/x-solana-settlement": "^0.1.1",
     "@faremeter/payment-solana-exact": "workspace:^",
     "@hono/node-server": "^1.18.1",
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/platform-express": "^10.0.0",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",
     "@sqds/multisig": "^2.1.4",
@@ -26,7 +29,9 @@
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "viem": "^2.21.0",
-    "hono": "^4.9.0"
+    "hono": "^4.9.0",
+    "reflect-metadata": "^0.1.14",
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@tapjs/tsx": "^3.0.1",

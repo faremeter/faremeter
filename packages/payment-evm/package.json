@@ -12,9 +12,6 @@
     ".": "./dist/src/index.js",
     "./client": "./dist/src/client.js"
   },
-  "scripts": {
-    "tsc-esm-fix": "tsc-esm-fix --in dist --out dist"
-  },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
     "@tapjs/asserts": "^4.0.1",

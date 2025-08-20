@@ -7,7 +7,7 @@ import { globalIgnores } from "eslint/config";
 export default tseslint.config(
   eslint.configs.recommended,
   tseslint.configs.strict,
-  tseslint.configs.stylistic,
+  tseslint.configs.stylisticTypeChecked,
   globalIgnores(["**/idl_type.ts", "**/dist/**"]),
   {
     rules: {

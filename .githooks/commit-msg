@@ -7,7 +7,7 @@ MSGFILE=$1
 shift
 LINE=0
 
-line-error () {
+line-error() {
 	log::fatal "$LINE: $*"
 }
 

@@ -8,3 +8,4 @@ tsconfig.tsbuildinfo
 keypairs
 .env
 .env-checked
+.eslintcache

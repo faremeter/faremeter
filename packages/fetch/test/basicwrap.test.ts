@@ -50,7 +50,7 @@ t.test("basicWrap", async (t) => {
       );
     },
     async (input, init?: RequestInit) => {
-      if (init === undefined || init.headers === undefined) {
+      if (init?.headers === undefined) {
         throw new Error("didn't get back request headers");
       }
 

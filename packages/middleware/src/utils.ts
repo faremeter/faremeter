@@ -9,7 +9,7 @@ export function findMatchingPaymentRequirements(
 ) {
   // XXX - This is naive, and doesn't consider `asset` because that information
   // isn't available here.
-  return accepts.filter(
+  return accepts.find(
     (x) => x.network === payload.network && x.scheme === payload.scheme,
-  )[0];
+  );
 }

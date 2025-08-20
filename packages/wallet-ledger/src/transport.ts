@@ -15,7 +15,7 @@ const LEDGER_ERRORS: Record<string, string> = {
 export function translateLedgerError(error: unknown): Error {
   const message = String(error instanceof Error ? error.message : error);
 
-  const hexMatch = message.match(/0x[0-9a-fA-F]{4}/);
+  const hexMatch = /0x[0-9a-fA-F]{4}/.exec(message);
 
   if (hexMatch && LEDGER_ERRORS[hexMatch[0]]) {
     return new Error(LEDGER_ERRORS[hexMatch[0]]);
@@ -74,5 +74,5 @@ export async function createTransport(maxRetries = 3): Promise<Transport> {
     }
   }
 
-  throw lastError || new Error("Failed to connect to Ledger device");
+  throw lastError ?? new Error("Failed to connect to Ledger device");
 }

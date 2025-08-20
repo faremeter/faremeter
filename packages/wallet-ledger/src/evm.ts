@@ -158,7 +158,7 @@ export async function createLedgerEvmWallet(
 
         // Calculate hashes using viem
         const domainSeparator = hashDomain({
-          domain: (domain as TypedDataDomain) || {},
+          domain: domain ?? {},
           types: typesWithDomain,
         });
 

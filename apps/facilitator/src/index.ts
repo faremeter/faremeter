@@ -78,7 +78,7 @@ if (EVM_RECEIVING_ADDRESS && EVM_PRIVATE_KEY) {
     process.exit(1);
   }
 
-  const transport = http(EVM_RPC_URL || "https://sepolia.base.org");
+  const transport = http(EVM_RPC_URL ?? "https://sepolia.base.org");
 
   const publicClient = createPublicClient({
     chain: baseSepolia,

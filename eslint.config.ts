@@ -1,10 +1,10 @@
 // @ts-check
 
-import eslint from "@eslint/js";
-import tseslint from "typescript-eslint";
+import * as eslint from "@eslint/js";
+import * as tseslint from "typescript-eslint";
 import { globalIgnores } from "eslint/config";
 
-export default tseslint.config(
+const config: tseslint.Config = tseslint.config(
   eslint.configs.recommended,
   tseslint.configs.strict,
   tseslint.configs.stylisticTypeChecked,
@@ -21,3 +21,5 @@ export default tseslint.config(
     },
   },
 );
+
+export default config;

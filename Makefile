@@ -21,6 +21,7 @@ apps/%: FORCE
 
 scripts: FORCE
 	cd scripts && rm -rf dist && pnpm tsc
+	cd scripts/nestjs-example && rm -rf dist && pnpm tsc -p nestjs-example/tsconfig.json
 
 clean:
 	rm -f .env-checked

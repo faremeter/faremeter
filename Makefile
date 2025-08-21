@@ -1,3 +1,5 @@
+export PATH		:=		$(PWD)/bin:$(PATH)
+
 all: lint build test
 
 build: packages/types $(wildcard packages/*) scripts apps/facilitator

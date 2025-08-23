@@ -1,7 +1,7 @@
 import { type } from "arktype";
 
-export function isValidationError<T>(
-  possibleErrors: T | type.errors,
+export function isValidationError(
+  possibleErrors: unknown,
 ): possibleErrors is type.errors {
   return possibleErrors instanceof type.errors;
 }

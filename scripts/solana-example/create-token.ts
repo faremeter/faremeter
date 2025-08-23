@@ -61,11 +61,11 @@ async function sendMint(publicKey: PublicKey, amountToMint: number) {
   );
 
   console.log(
-    `Minted ${1000000} tokens for ${publicKey.toString()} to ${tokenAccount.address.toString()}`,
+    `Minted ${amountToMint} tokens for ${publicKey.toString()} to ${tokenAccount.address.toString()}`,
   );
 }
 
 const amountToMint = 1000000 * Math.pow(10, decimals);
 
-sendMint(payer.publicKey, amountToMint);
-sendMint(payTo.publicKey, amountToMint);
+await sendMint(payer.publicKey, amountToMint);
+await sendMint(payTo.publicKey, amountToMint);

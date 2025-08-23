@@ -32,8 +32,8 @@ const usedNonces = new Set<string>();
 
 function parseSignature(signature: string): { v: number; r: Hex; s: Hex } {
   const sig = signature.slice(2); // Remove 0x
-  const r = `0x${sig.slice(0, 64)}` as Hex;
-  const s = `0x${sig.slice(64, 128)}` as Hex;
+  const r = `0x${sig.slice(0, 64)}` as const;
+  const s = `0x${sig.slice(64, 128)}` as const;
   const v = parseInt(sig.slice(128, 130), 16);
   return { v, r, s };
 }
@@ -54,14 +54,13 @@ export function createFacilitatorHandler(
   if (!isAddress(asset)) {
     throw new Error(`Invalid asset address: ${asset}`);
   }
-  const assetAddress = asset as Hex;
 
   const checkTuple = type({
     scheme: `'${X402_EXACT_SCHEME}'`,
     network: `'${network}'`,
   });
 
-  const checkTupleAndAsset = checkTuple.and({ asset: `'${assetAddress}'` });
+  const checkTupleAndAsset = checkTuple.and({ asset: `'${asset}'` });
 
   const getRequirements = async (
     req: x402PaymentRequirements[],
@@ -70,7 +69,7 @@ export function createFacilitatorHandler(
       .filter((x) => !isValidationError(checkTupleAndAsset(x)))
       .map((x) => ({
         ...x,
-        asset: assetAddress,
+        asset,
         maxTimeoutSeconds: 300,
         payTo: receivingAddress,
         // Provide EIP-712 domain parameters for client signing
@@ -78,7 +77,7 @@ export function createFacilitatorHandler(
           name: "USDC",
           version: "2",
           chainId: BASE_SEPOLIA_CHAIN_ID,
-          verifyingContract: assetAddress,
+          verifyingContract: asset,
         },
       }));
   };
@@ -139,7 +138,7 @@ export function createFacilitatorHandler(
     let onChainUsed: boolean;
     try {
       onChainUsed = await publicClient.readContract({
-        address: assetAddress,
+        address: asset,
         abi: TRANSFER_WITH_AUTHORIZATION_ABI,
         functionName: "authorizationState",
         args: [authorization.from, authorization.nonce],
@@ -161,15 +160,15 @@ export function createFacilitatorHandler(
     try {
       [tokenName, tokenVersion, chainId] = await Promise.all([
         publicClient.readContract({
-          address: assetAddress,
+          address: asset,
           abi: TRANSFER_WITH_AUTHORIZATION_ABI,
           functionName: "name",
-        }) as Promise<string>,
+        }),
         publicClient.readContract({
-          address: assetAddress,
+          address: asset,
           abi: TRANSFER_WITH_AUTHORIZATION_ABI,
           functionName: "version",
-        }) as Promise<string>,
+        }),
         publicClient.getChainId(),
       ]);
     } catch (error) {
@@ -182,7 +181,7 @@ export function createFacilitatorHandler(
       name: tokenName,
       version: tokenVersion ?? "2",
       chainId,
-      verifyingContract: assetAddress,
+      verifyingContract: asset,
     };
 
     const types = EIP712_TYPES;
@@ -220,7 +219,7 @@ export function createFacilitatorHandler(
     // Verify contract supports EIP-712
     try {
       await publicClient.readContract({
-        address: assetAddress,
+        address: asset,
         abi: TRANSFER_WITH_AUTHORIZATION_ABI,
         functionName: "DOMAIN_SEPARATOR",
       });
@@ -258,7 +257,7 @@ export function createFacilitatorHandler(
     // Build and send the transaction
     try {
       const request = await walletClient.prepareTransactionRequest({
-        to: assetAddress,
+        to: asset,
         data,
         account: acct,
         chain: baseSepolia,

@@ -113,7 +113,7 @@ export async function createMiddleware(args: CreateMiddlewareArgs) {
     // XXX - Temporarily request this every time.  This will be
     // cached in future.
     const paymentRequiredResponse = await getPaymentRequiredResponse(args);
-    const sendPaymentRequired = async (res: Response) => {
+    const sendPaymentRequired = (res: Response) => {
       res.status(402).json(paymentRequiredResponse);
     };
 
@@ -151,8 +151,7 @@ export async function createMiddleware(args: CreateMiddlewareArgs) {
       },
       body: JSON.stringify(settleRequest),
     });
-    const v = await t.json();
-    const settlementResponse = x402SettleResponse(v);
+    const settlementResponse = x402SettleResponse(await t.json());
 
     if (isValidationError(settlementResponse)) {
       throw new Error(

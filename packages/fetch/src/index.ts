@@ -66,13 +66,12 @@ export function wrap(wrappedFetch: typeof fetch, options: WrapOptions) {
     };
 
     const xPaymentHeader = btoa(JSON.stringify(payload));
+    const headers = new Headers(init.headers);
+    headers.set("X-PAYMENT", xPaymentHeader);
 
     const newInit: RequestInit = {
       ...init,
-      headers: {
-        ...(init.headers ?? {}),
-        "X-PAYMENT": xPaymentHeader,
-      },
+      headers,
     };
 
     const secondResponse = await wrappedFetch(input, newInit);

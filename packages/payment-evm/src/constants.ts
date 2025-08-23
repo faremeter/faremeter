@@ -1,11 +1,11 @@
 import { type } from "arktype";
-import { toHex, type Hex, isHex } from "viem";
+import { toHex, isHex } from "viem";
 
 const prefixedHexString = type("string").pipe.try((x) => {
   if (isHex(x)) {
-    return x as Hex;
+    return x;
   }
-  return toHex(x) as Hex;
+  return toHex(x);
 });
 
 export const X402_EXACT_SCHEME = "exact";

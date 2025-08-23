@@ -157,7 +157,7 @@ export const createFacilitatorHandler = (
         compiledTransactionMessage,
       );
 
-      if (!isValidTransaction(transactionMessage, requirements)) {
+      if (!(await isValidTransaction(transactionMessage, requirements))) {
         console.log("Invalid transaction");
         return errorResponse("Invalid transaction");
       }

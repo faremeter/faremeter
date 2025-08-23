@@ -66,4 +66,4 @@ const run = async () => {
   app.listen(port);
 };
 
-run();
+await run();

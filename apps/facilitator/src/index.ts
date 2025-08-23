@@ -103,7 +103,7 @@ if (EVM_RECEIVING_ADDRESS && EVM_PRIVATE_KEY) {
     transport,
   });
 
-  const account = privateKeyToAccount(EVM_PRIVATE_KEY as `0x${string}`);
+  const account = privateKeyToAccount(EVM_PRIVATE_KEY);
   const walletClient = createWalletClient({
     account,
     chain: baseSepolia,
@@ -116,7 +116,7 @@ if (EVM_RECEIVING_ADDRESS && EVM_PRIVATE_KEY) {
       // @ts-expect-error - TypeScript version mismatch: x-solana-settlement uses TS 5.5.4, needs update to 5.8.3
       publicClient,
       walletClient,
-      EVM_RECEIVING_ADDRESS as `0x${string}`,
+      EVM_RECEIVING_ADDRESS,
       EVM_ASSET_ADDRESS,
     ),
   );

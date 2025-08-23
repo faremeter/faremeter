@@ -49,7 +49,7 @@ export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
         const payToAddress = requirements.payTo;
 
         // Generate nonce for EIP-3009 authorization (32 bytes hex with 0x prefix)
-        const nonce = `0x${randomBytes(32).toString("hex")}` as Hex;
+        const nonce = `0x${randomBytes(32).toString("hex")}` as const;
         const now = Math.floor(Date.now() / 1000);
         const validAfter = now - 60; // Valid from 60 seconds ago
         const validBefore = now + requirements.maxTimeoutSeconds;

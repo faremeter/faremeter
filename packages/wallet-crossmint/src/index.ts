@@ -31,7 +31,7 @@ export async function createCrossmintWallet(
     publicKey,
     sendTransaction: async (tx: VersionedTransaction) => {
       const solTx = await solanaWallet.sendTransaction({
-        transaction: tx as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        transaction: tx as any, // eslint-disable-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
       });
 
       return solTx.hash;

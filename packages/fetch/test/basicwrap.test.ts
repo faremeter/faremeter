@@ -2,11 +2,11 @@
 
 import t from "tap";
 import * as fmFetch from "../src/index";
-import * as fmTypes from "../src/types";
+import * as fmTypes from "@faremeter/types";
 
 import { responseFeeder } from "./mockfetch";
 
-t.test("basicWrap", async (t) => {
+await t.test("basicWrap", async (t) => {
   const expectedAccepts = [
     {
       scheme: "exact",
@@ -25,11 +25,17 @@ t.test("basicWrap", async (t) => {
     t.equal(required.length, 1);
     t.matchOnly(required, expectedAccepts);
 
+    const requirements = required[0];
+
+    if (requirements === undefined) {
+      throw new Error("expected to get at least 1 requirement");
+    }
+
     const execers: fmTypes.PaymentExecer[] = [
       {
-        requirements: required[0],
+        requirements,
         exec: async () => ({
-          headers: { "X-PAYMENT": "heresmypayment" },
+          payload: { key: "data" },
         }),
       },
     ];
@@ -54,9 +60,12 @@ t.test("basicWrap", async (t) => {
         throw new Error("didn't get back request headers");
       }
 
-      const headers = init.headers;
+      const headers = new Headers(init.headers);
+      const paymentPayload = fmTypes.x402PaymentHeaderToPayload.assert(
+        headers.get("X-PAYMENT"),
+      );
 
-      t.match(headers["X-PAYMENT"], "heresmypayment");
+      t.match(paymentPayload.payload, { key: "data" });
 
       return new Response("mypayload");
     },

@@ -30,6 +30,8 @@ const {
   EVM_ASSET_ADDRESS,
 } = process.env;
 
+const USDC_MINT_ADDRESS = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"; // USDC devnet
+
 const handlers: FacilitatorHandler[] = [];
 
 // Solana configuration
@@ -42,6 +44,7 @@ if (ADMIN_KEYPAIR_PATH && ASSET_ADDRESS) {
   const connection = new Connection(apiUrl, "confirmed");
   const rpc = createSolanaRpc(apiUrl);
   const mint = new PublicKey(ASSET_ADDRESS);
+  const usdcMint = new PublicKey(USDC_MINT_ADDRESS);
 
   // Add Solana handlers
   handlers.push(
@@ -57,6 +60,21 @@ if (ADMIN_KEYPAIR_PATH && ASSET_ADDRESS) {
       mint,
     ),
   );
+
+  if (!mint.equals(usdcMint)) {
+    handlers.push(
+      // USDC SPL Token
+      createSolanaHandler(network, connection, adminKeypair, usdcMint),
+      // USDC with exact scheme
+      createFacilitatorHandlerExact(
+        lookupX402Network(network),
+        rpc,
+        adminKeypair,
+        usdcMint,
+      ),
+    );
+  }
+
   console.log("Solana handlers configured for devnet");
 }
 

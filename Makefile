@@ -1,4 +1,5 @@
-export PATH		:=		$(PWD)/bin:$(PATH)
+export PATH			:=		$(PWD)/bin:$(PATH)
+export INSIDE_STAGING_DIR	:=		false
 
 all: lint build test
 

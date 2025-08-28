@@ -24,12 +24,8 @@ const fetchWithPayer = wrapFetch(fetch, {
 });
 
 console.log(`Making payment request to ${url}...`);
-try {
-  const req = await fetchWithPayer(url);
-  console.log("Status:", req.status);
-  console.log("Headers:", Object.fromEntries(req.headers));
-  const response = await req.json();
-  console.log("Response:", response);
-} catch (error) {
-  console.error("Error:", error);
-}
+const req = await fetchWithPayer(url);
+console.log("Status:", req.status);
+console.log("Headers:", Object.fromEntries(req.headers));
+const response = await req.json();
+console.log("Response:", response);

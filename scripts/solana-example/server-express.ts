@@ -26,7 +26,6 @@ const asset = ASSET_ADDRESS;
 const port = 3000;
 
 const paymentRequired = {
-  scheme: "@faremeter/x-solana-settlement",
   network,
   payTo: payToKeypair.publicKey.toBase58(),
   maxAmountRequired: "1000000",
@@ -47,11 +46,20 @@ const run = async () => {
         // Native Solana
         {
           ...paymentRequired,
+          scheme: "@faremeter/x-solana-settlement",
           asset: "sol",
         },
         // Our custom mint
         {
           ...paymentRequired,
+          scheme: "@faremeter/x-solana-settlement",
+          asset,
+        },
+        // Exact payment with our custom mint
+        {
+          ...paymentRequired,
+          network: `solana-${network}`,
+          scheme: "exact",
           asset,
         },
       ],

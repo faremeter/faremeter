@@ -16,7 +16,7 @@ The implication of this is:
 - Blockchains with specific behaviors and needs can be supported without forcing a one-size-fits-all approach.
 - Wallets and other infrastructure can be connected to Faremeter without "official" support.
 
-To get started with the tooling, take a look at the [quickstart guide](./QUICKSTART.md).
+To get started with the tooling, take a look at the [quickstart guide](./QUICKSTART.md). To start developing, take a look at the [developer notes](./DEV.md).
 
 ## Roadmap
 

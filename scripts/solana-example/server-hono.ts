@@ -46,11 +46,20 @@ app.get(
       // Native Solana
       {
         ...paymentRequired,
+        scheme: "@faremeter/x-solana-settlement",
         asset: "sol",
       },
       // Our custom mint
       {
         ...paymentRequired,
+        scheme: "@faremeter/x-solana-settlement",
+        asset,
+      },
+      // Exact payment with our custom mint
+      {
+        ...paymentRequired,
+        network: `solana-${network}`,
+        scheme: "exact",
         asset,
       },
     ],

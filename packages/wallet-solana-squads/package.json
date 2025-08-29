@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/wallet-solana-squads",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "LGPL-3.0-only",
   "type": "module",
   "main": "dist/src/index.js",

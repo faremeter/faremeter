@@ -83,3 +83,50 @@ await t.test("basicWrap", async (t) => {
   t.pass();
   t.end();
 });
+
+await t.test("failedPhase1", async (t) => {
+  const phase1Fetch = responseFeeder([
+    async () => {
+      return new Response("the service is on fire", {
+        status: 503,
+      });
+    },
+    async () => {
+      return new Response("it's all good", {
+        status: 200,
+      });
+    },
+  ]);
+
+  const phase2fetch = responseFeeder([
+    async () => {
+      return new Response("you should never see this", {
+        status: 500,
+      });
+    },
+  ]);
+
+  const wrappedFetch = fmFetch.wrap(phase2fetch, {
+    phase1Fetch,
+    handlers: [],
+  });
+
+  {
+    const res = await wrappedFetch("http://somewhere/something/protected");
+
+    t.equal(res.status, 503);
+    const body = await res.text();
+    t.matchOnly(body, "the service is on fire");
+  }
+
+  {
+    const res = await wrappedFetch("http://somewhere/something/protected");
+
+    const body = await res.text();
+    t.equal(res.status, 200);
+    t.matchOnly(body, "it's all good");
+  }
+
+  t.pass();
+  t.end();
+});

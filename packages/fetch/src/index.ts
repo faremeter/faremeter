@@ -11,6 +11,7 @@ import {
 type WrapOptions = {
   handlers: PaymentHandler[];
   payerChooser?: (execer: PaymentExecer[]) => Promise<PaymentExecer>;
+  phase1Fetch?: typeof fetch;
 };
 
 export function chooseFirstAvailable(
@@ -29,9 +30,9 @@ export function chooseFirstAvailable(
   return payer;
 }
 
-export function wrap(wrappedFetch: typeof fetch, options: WrapOptions) {
+export function wrap(phase2Fetch: typeof fetch, options: WrapOptions) {
   return async (input: RequestInfo | URL, init: RequestInit = {}) => {
-    const response = await fetch(input, init);
+    const response = await (options.phase1Fetch ?? phase2Fetch)(input, init);
 
     if (response.status !== 402) {
       return response;
@@ -74,7 +75,7 @@ export function wrap(wrappedFetch: typeof fetch, options: WrapOptions) {
       headers,
     };
 
-    const secondResponse = await wrappedFetch(input, newInit);
+    const secondResponse = await phase2Fetch(input, newInit);
     return secondResponse;
   };
 }

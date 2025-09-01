@@ -25,7 +25,7 @@ scripts: FORCE
 	cd scripts/nestjs-example && rm -rf dist && pnpm tsc -p nestjs-example/tsconfig.json
 
 clean:
-	rm -f .env-checked
+	rm -f .env-checked .eslintcache
 
 .env-checked: bin/check-env
 	./bin/check-env

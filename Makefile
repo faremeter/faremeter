@@ -3,7 +3,11 @@ export INSIDE_STAGING_DIR	:=		false
 
 all: lint build test
 
-build: packages/types $(wildcard packages/*) scripts apps/facilitator
+pre-build: FORCE
+	rm -f .eslintcache .build-finished
+
+build: pre-build packages/types $(wildcard packages/*) scripts apps/facilitator
+	touch .build-finished
 
 lint:
 	pnpm prettier -c .
@@ -25,7 +29,7 @@ scripts: FORCE
 	cd scripts/nestjs-example && rm -rf dist && pnpm tsc -p nestjs-example/tsconfig.json
 
 clean:
-	rm -f .env-checked .eslintcache
+	rm -f .env-checked .eslintcache .build-finished
 
 .env-checked: bin/check-env
 	./bin/check-env

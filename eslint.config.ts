@@ -4,16 +4,14 @@ import * as eslint from "@eslint/js";
 import * as tseslint from "typescript-eslint";
 import { globalIgnores } from "eslint/config";
 
-const insideStagingDir = process.env.INSIDE_STAGING_DIR == "true";
+const checkTypes = process.env.INSIDE_STAGING_DIR !== "true";
 
 const config: tseslint.Config = tseslint.config(
   eslint.configs.recommended,
-  insideStagingDir
-    ? tseslint.configs.strict
-    : tseslint.configs.strictTypeChecked,
-  insideStagingDir
-    ? tseslint.configs.stylistic
-    : tseslint.configs.stylisticTypeChecked,
+  checkTypes ? tseslint.configs.strictTypeChecked : tseslint.configs.strict,
+  checkTypes
+    ? tseslint.configs.stylisticTypeChecked
+    : tseslint.configs.stylistic,
   globalIgnores(["**/idl_type.ts", "**/dist/**"]),
   {
     rules: {

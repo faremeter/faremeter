@@ -3,8 +3,14 @@
 import * as eslint from "@eslint/js";
 import * as tseslint from "typescript-eslint";
 import { globalIgnores } from "eslint/config";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
-const checkTypes = process.env.INSIDE_STAGING_DIR !== "true";
+const buildFinished = ".build-finished";
+
+const checkTypes =
+  process.env.INSIDE_STAGING_DIR !== "true" &&
+  fs.existsSync(path.join(import.meta.dirname, buildFinished));
 
 const config: tseslint.Config = tseslint.config(
   eslint.configs.recommended,

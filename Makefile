@@ -30,6 +30,7 @@ scripts: FORCE
 
 clean:
 	rm -f .env-checked .eslintcache .build-finished
+	find . -type d -name "dist" -a ! -path '*/node_modules/*' | xargs rm -rf
 
 .env-checked: bin/check-env
 	./bin/check-env

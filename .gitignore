@@ -9,3 +9,4 @@ keypairs
 .env
 .env-checked
 .eslintcache
+.build-finished

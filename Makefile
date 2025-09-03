@@ -14,6 +14,7 @@ lint:
 	pnpm eslint --cache .
 
 test:
+	pnpm tap --disable-coverage
 
 format:
 	pnpm prettier -w .

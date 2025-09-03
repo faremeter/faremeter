@@ -116,6 +116,9 @@ importers:
       prettier:
         specifier: 'catalog:'
         version: 3.6.2
+      tap:
+        specifier: 'catalog:'
+        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.9.2)(utf-8-validate@5.0.10)
       tsx:
         specifier: 'catalog:'
         version: 4.20.5
@@ -148,16 +151,16 @@ importers:
         version: link:../../packages/wallet-evm
       '@faremeter/x-solana-settlement':
         specifier: 'catalog:'
-        version: 0.1.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)
+        version: 0.1.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@solana/kit':
         specifier: 'catalog:'
-        version: 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@solana/spl-token':
         specifier: 'catalog:'
-        version: 0.4.14(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)
+        version: 0.4.14(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@solana/web3.js':
         specifier: 'catalog:'
-        version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
+        version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
       arktype:
         specifier: 'catalog:'
         version: 2.1.21
@@ -169,7 +172,7 @@ importers:
         version: 5.1.0
       viem:
         specifier: 'catalog:'
-        version: 2.37.2(bufferutil@4.0.9)(typescript@5.5.4)(utf-8-validate@5.0.10)(zod@3.22.4)
+        version: 2.37.2(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.22.4)
     devDependencies:
       '@tapjs/tsx':
         specifier: 'catalog:'
@@ -179,7 +182,7 @@ importers:
         version: 5.0.3
       tap:
         specifier: 'catalog:'
-        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.5.4)(utf-8-validate@5.0.10)
+        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.9.2)(utf-8-validate@5.0.10)
       tsx:
         specifier: 'catalog:'
         version: 4.20.5
@@ -247,7 +250,7 @@ importers:
         version: 9.34.0
       '@tapjs/tsx':
         specifier: 'catalog:'
-        version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
+        version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))
       '@types/express':
         specifier: 'catalog:'
         version: 5.0.3
@@ -268,7 +271,7 @@ importers:
         version: 3.6.2
       tap:
         specifier: 'catalog:'
-        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
+        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.9.2)(utf-8-validate@5.0.10)
       tsc-esm-fix:
         specifier: 'catalog:'
         version: 3.1.2
@@ -578,7 +581,7 @@ importers:
         version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@sqds/multisig':
         specifier: ^2.1.4
-        version: 2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
+        version: 2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
       bs58:
         specifier: 'catalog:'
         version: 6.0.0
@@ -694,13 +697,13 @@ importers:
     devDependencies:
       '@tapjs/tsx':
         specifier: 'catalog:'
-        version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
+        version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))
       '@types/express':
         specifier: 'catalog:'
         version: 5.0.3
       tap:
         specifier: 'catalog:'
-        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
+        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.9.2)(utf-8-validate@5.0.10)
       tsx:
         specifier: 'catalog:'
         version: 4.20.5
@@ -4194,27 +4197,6 @@ snapshots:
 
   '@coral-xyz/anchor-errors@0.31.1': {}
 
-  '@coral-xyz/anchor@0.31.1(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@coral-xyz/anchor-errors': 0.31.1
-      '@coral-xyz/borsh': 0.31.1(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))
-      '@noble/hashes': 1.8.0
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
-      bn.js: 5.2.2
-      bs58: 4.0.1
-      buffer-layout: 1.2.2
-      camelcase: 6.3.0
-      cross-fetch: 3.2.0(encoding@0.1.13)
-      eventemitter3: 4.0.7
-      pako: 2.1.0
-      superstruct: 0.15.5
-      toml: 3.0.0
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - typescript
-      - utf-8-validate
-
   '@coral-xyz/anchor@0.31.1(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)':
     dependencies:
       '@coral-xyz/anchor-errors': 0.31.1
@@ -4235,12 +4217,6 @@ snapshots:
       - encoding
       - typescript
       - utf-8-validate
-
-  '@coral-xyz/borsh@0.31.1(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
-      bn.js: 5.2.2
-      buffer-layout: 1.2.2
 
   '@coral-xyz/borsh@0.31.1(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10))':
     dependencies:
@@ -4540,22 +4516,6 @@ snapshots:
   '@faremeter/types@0.1.1':
     dependencies:
       arktype: 2.1.21
-
-  '@faremeter/x-solana-settlement@0.1.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@coral-xyz/anchor': 0.31.1(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
-      '@faremeter/types': 0.1.1
-      '@solana/spl-token': 0.4.14(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
-      arktype: 2.1.21
-      bn.js: 5.2.2
-      bs58: 6.0.0
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - fastestsmallesttextencoderdecoder
-      - typescript
-      - utf-8-validate
 
   '@faremeter/x-solana-settlement@0.1.2(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)':
     dependencies:
@@ -5036,18 +4996,6 @@ snapshots:
     dependencies:
       '@solana/kit': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
 
-  '@solana/accounts@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-strings': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-spec': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
   '@solana/accounts@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
       '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
@@ -5057,17 +5005,6 @@ snapshots:
       '@solana/rpc-spec': 2.3.0(typescript@5.9.2)
       '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
       typescript: 5.9.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
-  '@solana/addresses@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/assertions': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-strings': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/nominal-types': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
@@ -5082,27 +5019,10 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/assertions@2.3.0(typescript@5.5.4)':
-    dependencies:
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-
   '@solana/assertions@2.3.0(typescript@5.9.2)':
     dependencies:
       '@solana/errors': 2.3.0(typescript@5.9.2)
       typescript: 5.9.2
-
-  '@solana/buffer-layout-utils@0.2.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@solana/buffer-layout': 4.0.1
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
-      bigint-buffer: 1.1.5
-      bignumber.js: 9.3.1
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - typescript
-      - utf-8-validate
 
   '@solana/buffer-layout-utils@0.2.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)':
     dependencies:
@@ -5120,32 +5040,15 @@ snapshots:
     dependencies:
       buffer: 6.0.3
 
-  '@solana/codecs-core@2.0.0-rc.1(typescript@5.5.4)':
-    dependencies:
-      '@solana/errors': 2.0.0-rc.1(typescript@5.5.4)
-      typescript: 5.5.4
-
   '@solana/codecs-core@2.0.0-rc.1(typescript@5.9.2)':
     dependencies:
       '@solana/errors': 2.0.0-rc.1(typescript@5.9.2)
       typescript: 5.9.2
 
-  '@solana/codecs-core@2.3.0(typescript@5.5.4)':
-    dependencies:
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-
   '@solana/codecs-core@2.3.0(typescript@5.9.2)':
     dependencies:
       '@solana/errors': 2.3.0(typescript@5.9.2)
       typescript: 5.9.2
-
-  '@solana/codecs-data-structures@2.0.0-rc.1(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/errors': 2.0.0-rc.1(typescript@5.5.4)
-      typescript: 5.5.4
 
   '@solana/codecs-data-structures@2.0.0-rc.1(typescript@5.9.2)':
     dependencies:
@@ -5154,13 +5057,6 @@ snapshots:
       '@solana/errors': 2.0.0-rc.1(typescript@5.9.2)
       typescript: 5.9.2
 
-  '@solana/codecs-data-structures@2.3.0(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.3.0(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-
   '@solana/codecs-data-structures@2.3.0(typescript@5.9.2)':
     dependencies:
       '@solana/codecs-core': 2.3.0(typescript@5.9.2)
@@ -5168,37 +5064,17 @@ snapshots:
       '@solana/errors': 2.3.0(typescript@5.9.2)
       typescript: 5.9.2
 
-  '@solana/codecs-numbers@2.0.0-rc.1(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/errors': 2.0.0-rc.1(typescript@5.5.4)
-      typescript: 5.5.4
-
   '@solana/codecs-numbers@2.0.0-rc.1(typescript@5.9.2)':
     dependencies:
       '@solana/codecs-core': 2.0.0-rc.1(typescript@5.9.2)
       '@solana/errors': 2.0.0-rc.1(typescript@5.9.2)
       typescript: 5.9.2
 
-  '@solana/codecs-numbers@2.3.0(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-
   '@solana/codecs-numbers@2.3.0(typescript@5.9.2)':
     dependencies:
       '@solana/codecs-core': 2.3.0(typescript@5.9.2)
       '@solana/errors': 2.3.0(typescript@5.9.2)
       typescript: 5.9.2
-
-  '@solana/codecs-strings@2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/errors': 2.0.0-rc.1(typescript@5.5.4)
-      fastestsmallesttextencoderdecoder: 1.0.22
-      typescript: 5.5.4
 
   '@solana/codecs-strings@2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
@@ -5208,14 +5084,6 @@ snapshots:
       fastestsmallesttextencoderdecoder: 1.0.22
       typescript: 5.9.2
 
-  '@solana/codecs-strings@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.3.0(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      fastestsmallesttextencoderdecoder: 1.0.22
-      typescript: 5.5.4
-
   '@solana/codecs-strings@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
       '@solana/codecs-core': 2.3.0(typescript@5.9.2)
@@ -5223,17 +5091,6 @@ snapshots:
       '@solana/errors': 2.3.0(typescript@5.9.2)
       fastestsmallesttextencoderdecoder: 1.0.22
       typescript: 5.9.2
-
-  '@solana/codecs@2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/codecs-data-structures': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/codecs-strings': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/options': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
 
   '@solana/codecs@2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
@@ -5243,28 +5100,6 @@ snapshots:
       '@solana/codecs-strings': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
       '@solana/options': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
       typescript: 5.9.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
-  '@solana/codecs@2.0.0-rc.1(typescript@5.9.2)':
-    dependencies:
-      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.9.2)
-      '@solana/codecs-data-structures': 2.0.0-rc.1(typescript@5.9.2)
-      '@solana/codecs-numbers': 2.0.0-rc.1(typescript@5.9.2)
-      '@solana/codecs-strings': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
-      '@solana/options': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
-      typescript: 5.9.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
-  '@solana/codecs@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-data-structures': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-strings': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/options': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
@@ -5279,23 +5114,11 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/errors@2.0.0-rc.1(typescript@5.5.4)':
-    dependencies:
-      chalk: 5.6.0
-      commander: 12.1.0
-      typescript: 5.5.4
-
   '@solana/errors@2.0.0-rc.1(typescript@5.9.2)':
     dependencies:
       chalk: 5.6.0
       commander: 12.1.0
       typescript: 5.9.2
-
-  '@solana/errors@2.3.0(typescript@5.5.4)':
-    dependencies:
-      chalk: 5.6.0
-      commander: 14.0.0
-      typescript: 5.5.4
 
   '@solana/errors@2.3.0(typescript@5.9.2)':
     dependencies:
@@ -5303,44 +5126,19 @@ snapshots:
       commander: 14.0.0
       typescript: 5.9.2
 
-  '@solana/fast-stable-stringify@2.3.0(typescript@5.5.4)':
-    dependencies:
-      typescript: 5.5.4
-
   '@solana/fast-stable-stringify@2.3.0(typescript@5.9.2)':
     dependencies:
       typescript: 5.9.2
 
-  '@solana/functional@2.3.0(typescript@5.5.4)':
-    dependencies:
-      typescript: 5.5.4
-
   '@solana/functional@2.3.0(typescript@5.9.2)':
     dependencies:
       typescript: 5.9.2
-
-  '@solana/instructions@2.3.0(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
 
   '@solana/instructions@2.3.0(typescript@5.9.2)':
     dependencies:
       '@solana/codecs-core': 2.3.0(typescript@5.9.2)
       '@solana/errors': 2.3.0(typescript@5.9.2)
       typescript: 5.9.2
-
-  '@solana/keys@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/assertions': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-strings': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/nominal-types': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
 
   '@solana/keys@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
@@ -5352,31 +5150,6 @@ snapshots:
       typescript: 5.9.2
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
-
-  '@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@solana/accounts': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/codecs': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/functional': 2.3.0(typescript@5.5.4)
-      '@solana/instructions': 2.3.0(typescript@5.5.4)
-      '@solana/keys': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/programs': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc-parsed-types': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-spec-types': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-subscriptions': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/signers': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/sysvars': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/transaction-confirmation': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@solana/transaction-messages': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/transactions': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - ws
 
   '@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
@@ -5403,24 +5176,9 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - ws
 
-  '@solana/nominal-types@2.3.0(typescript@5.5.4)':
-    dependencies:
-      typescript: 5.5.4
-
   '@solana/nominal-types@2.3.0(typescript@5.9.2)':
     dependencies:
       typescript: 5.9.2
-
-  '@solana/options@2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/codecs-data-structures': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.0.0-rc.1(typescript@5.5.4)
-      '@solana/codecs-strings': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.0.0-rc.1(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
 
   '@solana/options@2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
@@ -5430,17 +5188,6 @@ snapshots:
       '@solana/codecs-strings': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
       '@solana/errors': 2.0.0-rc.1(typescript@5.9.2)
       typescript: 5.9.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
-  '@solana/options@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-data-structures': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-strings': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
@@ -5455,14 +5202,6 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/programs@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
   '@solana/programs@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
       '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
@@ -5471,30 +5210,9 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/promises@2.3.0(typescript@5.5.4)':
-    dependencies:
-      typescript: 5.5.4
-
   '@solana/promises@2.3.0(typescript@5.9.2)':
     dependencies:
       typescript: 5.9.2
-
-  '@solana/rpc-api@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-strings': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/keys': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc-parsed-types': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-spec': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-transformers': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/transaction-messages': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/transactions': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
 
   '@solana/rpc-api@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
@@ -5513,46 +5231,19 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/rpc-parsed-types@2.3.0(typescript@5.5.4)':
-    dependencies:
-      typescript: 5.5.4
-
   '@solana/rpc-parsed-types@2.3.0(typescript@5.9.2)':
     dependencies:
       typescript: 5.9.2
 
-  '@solana/rpc-spec-types@2.3.0(typescript@5.5.4)':
-    dependencies:
-      typescript: 5.5.4
-
   '@solana/rpc-spec-types@2.3.0(typescript@5.9.2)':
     dependencies:
       typescript: 5.9.2
-
-  '@solana/rpc-spec@2.3.0(typescript@5.5.4)':
-    dependencies:
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-spec-types': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
 
   '@solana/rpc-spec@2.3.0(typescript@5.9.2)':
     dependencies:
       '@solana/errors': 2.3.0(typescript@5.9.2)
       '@solana/rpc-spec-types': 2.3.0(typescript@5.9.2)
       typescript: 5.9.2
-
-  '@solana/rpc-subscriptions-api@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/keys': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc-subscriptions-spec': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-transformers': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/transaction-messages': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/transactions': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
 
   '@solana/rpc-subscriptions-api@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
@@ -5567,15 +5258,6 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/rpc-subscriptions-channel-websocket@2.3.0(typescript@5.5.4)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/functional': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-subscriptions-spec': 2.3.0(typescript@5.5.4)
-      '@solana/subscribable': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-
   '@solana/rpc-subscriptions-channel-websocket@2.3.0(typescript@5.9.2)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
       '@solana/errors': 2.3.0(typescript@5.9.2)
@@ -5585,14 +5267,6 @@ snapshots:
       typescript: 5.9.2
       ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
 
-  '@solana/rpc-subscriptions-spec@2.3.0(typescript@5.5.4)':
-    dependencies:
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/promises': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-spec-types': 2.3.0(typescript@5.5.4)
-      '@solana/subscribable': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-
   '@solana/rpc-subscriptions-spec@2.3.0(typescript@5.9.2)':
     dependencies:
       '@solana/errors': 2.3.0(typescript@5.9.2)
@@ -5600,24 +5274,6 @@ snapshots:
       '@solana/rpc-spec-types': 2.3.0(typescript@5.9.2)
       '@solana/subscribable': 2.3.0(typescript@5.9.2)
       typescript: 5.9.2
-
-  '@solana/rpc-subscriptions@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/fast-stable-stringify': 2.3.0(typescript@5.5.4)
-      '@solana/functional': 2.3.0(typescript@5.5.4)
-      '@solana/promises': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-spec-types': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-subscriptions-api': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc-subscriptions-channel-websocket': 2.3.0(typescript@5.5.4)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@solana/rpc-subscriptions-spec': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-transformers': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/subscribable': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - ws
 
   '@solana/rpc-subscriptions@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
@@ -5637,17 +5293,6 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - ws
 
-  '@solana/rpc-transformers@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/functional': 2.3.0(typescript@5.5.4)
-      '@solana/nominal-types': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-spec-types': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
   '@solana/rpc-transformers@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
       '@solana/errors': 2.3.0(typescript@5.9.2)
@@ -5659,14 +5304,6 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/rpc-transport-http@2.3.0(typescript@5.5.4)':
-    dependencies:
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-spec': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-spec-types': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-      undici-types: 7.15.0
-
   '@solana/rpc-transport-http@2.3.0(typescript@5.9.2)':
     dependencies:
       '@solana/errors': 2.3.0(typescript@5.9.2)
@@ -5674,18 +5311,6 @@ snapshots:
       '@solana/rpc-spec-types': 2.3.0(typescript@5.9.2)
       typescript: 5.9.2
       undici-types: 7.15.0
-
-  '@solana/rpc-types@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-strings': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/nominal-types': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
 
   '@solana/rpc-types@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
@@ -5696,21 +5321,6 @@ snapshots:
       '@solana/errors': 2.3.0(typescript@5.9.2)
       '@solana/nominal-types': 2.3.0(typescript@5.9.2)
       typescript: 5.9.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
-  '@solana/rpc@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/fast-stable-stringify': 2.3.0(typescript@5.5.4)
-      '@solana/functional': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-api': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc-spec': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-spec-types': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-transformers': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc-transport-http': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
@@ -5729,20 +5339,6 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/signers@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/instructions': 2.3.0(typescript@5.5.4)
-      '@solana/keys': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/nominal-types': 2.3.0(typescript@5.5.4)
-      '@solana/transaction-messages': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/transactions': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
   '@solana/signers@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
       '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
@@ -5757,26 +5353,10 @@ snapshots:
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
-  '@solana/spl-token-group@0.0.7(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - typescript
-
   '@solana/spl-token-group@0.0.7(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
       '@solana/codecs': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
       '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - typescript
-
-  '@solana/spl-token-metadata@0.1.6(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/codecs': 2.0.0-rc.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
       - typescript
@@ -5789,49 +5369,12 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - typescript
 
-  '@solana/spl-token-metadata@0.1.6(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10))(typescript@5.9.2)':
-    dependencies:
-      '@solana/codecs': 2.0.0-rc.1(typescript@5.9.2)
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - typescript
-
   '@solana/spl-token@0.3.11(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)':
     dependencies:
       '@solana/buffer-layout': 4.0.1
       '@solana/buffer-layout-utils': 0.2.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@solana/spl-token-metadata': 0.1.6(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
       '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
-      buffer: 6.0.3
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - fastestsmallesttextencoderdecoder
-      - typescript
-      - utf-8-validate
-
-  '@solana/spl-token@0.3.11(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@solana/buffer-layout': 4.0.1
-      '@solana/buffer-layout-utils': 0.2.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
-      '@solana/spl-token-metadata': 0.1.6(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10))(typescript@5.9.2)
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
-      buffer: 6.0.3
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - fastestsmallesttextencoderdecoder
-      - typescript
-      - utf-8-validate
-
-  '@solana/spl-token@0.4.14(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@solana/buffer-layout': 4.0.1
-      '@solana/buffer-layout-utils': 0.2.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
-      '@solana/spl-token-group': 0.0.7(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/spl-token-metadata': 0.1.6(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)
       buffer: 6.0.3
     transitivePeerDependencies:
       - bufferutil
@@ -5855,25 +5398,10 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@solana/subscribable@2.3.0(typescript@5.5.4)':
-    dependencies:
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      typescript: 5.5.4
-
   '@solana/subscribable@2.3.0(typescript@5.9.2)':
     dependencies:
       '@solana/errors': 2.3.0(typescript@5.9.2)
       typescript: 5.9.2
-
-  '@solana/sysvars@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/accounts': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/codecs': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
 
   '@solana/sysvars@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
@@ -5884,23 +5412,6 @@ snapshots:
       typescript: 5.9.2
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
-
-  '@solana/transaction-confirmation@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/codecs-strings': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/keys': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/promises': 2.3.0(typescript@5.5.4)
-      '@solana/rpc': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/rpc-subscriptions': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/transaction-messages': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/transactions': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - ws
 
   '@solana/transaction-confirmation@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
@@ -5919,21 +5430,6 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - ws
 
-  '@solana/transaction-messages@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-data-structures': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.3.0(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/functional': 2.3.0(typescript@5.5.4)
-      '@solana/instructions': 2.3.0(typescript@5.5.4)
-      '@solana/nominal-types': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
   '@solana/transaction-messages@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
       '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
@@ -5946,24 +5442,6 @@ snapshots:
       '@solana/nominal-types': 2.3.0(typescript@5.9.2)
       '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
       typescript: 5.9.2
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
-  '@solana/transactions@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)':
-    dependencies:
-      '@solana/addresses': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/codecs-core': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-data-structures': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-numbers': 2.3.0(typescript@5.5.4)
-      '@solana/codecs-strings': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/errors': 2.3.0(typescript@5.5.4)
-      '@solana/functional': 2.3.0(typescript@5.5.4)
-      '@solana/instructions': 2.3.0(typescript@5.5.4)
-      '@solana/keys': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/nominal-types': 2.3.0(typescript@5.5.4)
-      '@solana/rpc-types': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      '@solana/transaction-messages': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)
-      typescript: 5.5.4
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
 
@@ -6005,29 +5483,6 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - encoding
-      - utf-8-validate
-
-  '@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.5.4)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@babel/runtime': 7.28.3
-      '@noble/curves': 1.9.7
-      '@noble/hashes': 1.8.0
-      '@solana/buffer-layout': 4.0.1
-      '@solana/codecs-numbers': 2.3.0(typescript@5.5.4)
-      agentkeepalive: 4.6.0
-      bn.js: 5.2.2
-      borsh: 0.7.0
-      bs58: 4.0.1
-      buffer: 6.0.3
-      fast-stable-stringify: 1.0.0
-      jayson: 4.2.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      node-fetch: 2.7.0(encoding@0.1.13)
-      rpc-websockets: 9.1.3
-      superstruct: 2.0.2
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - typescript
       - utf-8-validate
 
   '@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)':
@@ -6073,26 +5528,6 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@sqds/multisig@2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@metaplex-foundation/beet': 0.7.1
-      '@metaplex-foundation/beet-solana': 0.4.0(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
-      '@metaplex-foundation/cusper': 0.0.2
-      '@solana/spl-token': 0.3.11(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
-      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
-      '@types/bn.js': 5.2.0
-      assert: 2.1.0
-      bn.js: 5.2.2
-      buffer: 6.0.3
-      invariant: 2.2.4
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - fastestsmallesttextencoderdecoder
-      - supports-color
-      - typescript
-      - utf-8-validate
-
   '@swc/helpers@0.5.17':
     dependencies:
       tslib: 2.8.1
@@ -6112,11 +5547,6 @@ snapshots:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
       function-loop: 4.0.0
 
-  '@tapjs/after-each@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      function-loop: 4.0.0
-
   '@tapjs/after@3.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6130,11 +5560,6 @@ snapshots:
   '@tapjs/after@3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
-      is-actual-promise: 1.0.2
-
-  '@tapjs/after@3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
       is-actual-promise: 1.0.2
 
   '@tapjs/asserts@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
@@ -6170,17 +5595,6 @@ snapshots:
       - react
       - react-dom
 
-  '@tapjs/asserts@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      '@tapjs/stack': 4.0.0
-      is-actual-promise: 1.0.2
-      tcompare: 9.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      trivial-deferred: 2.0.0
-    transitivePeerDependencies:
-      - react
-      - react-dom
-
   '@tapjs/before-each@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6194,11 +5608,6 @@ snapshots:
   '@tapjs/before-each@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
-      function-loop: 4.0.0
-
-  '@tapjs/before-each@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
       function-loop: 4.0.0
 
   '@tapjs/before@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
@@ -6216,11 +5625,6 @@ snapshots:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
       is-actual-promise: 1.0.2
 
-  '@tapjs/before@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      is-actual-promise: 1.0.2
-
   '@tapjs/chdir@3.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6233,24 +5637,20 @@ snapshots:
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
 
-  '@tapjs/chdir@3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-
-  '@tapjs/config@5.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+  '@tapjs/config@5.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1)
       chalk: 5.6.0
       jackspeak: 4.1.1
       polite-json: 5.0.0
       tap-yaml: 4.0.0
       walk-up-path: 4.0.0
 
-  '@tapjs/config@5.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+  '@tapjs/config@5.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1)
       chalk: 5.6.0
       jackspeak: 4.1.1
       polite-json: 5.0.0
@@ -6267,42 +5667,11 @@ snapshots:
       tap-yaml: 4.0.0
       walk-up-path: 4.0.0
 
-  '@tapjs/config@5.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)
-      chalk: 5.6.0
-      jackspeak: 4.1.1
-      polite-json: 5.0.0
-      tap-yaml: 4.0.0
-      walk-up-path: 4.0.0
-
   '@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tapjs/processinfo': 3.1.8
       '@tapjs/stack': 4.0.0
       '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      async-hook-domain: 4.0.1
-      diff: 5.2.0
-      is-actual-promise: 1.0.2
-      minipass: 7.1.2
-      signal-exit: 4.1.0
-      tap-parser: 18.0.0
-      tap-yaml: 4.0.0
-      tcompare: 9.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      trivial-deferred: 2.0.0
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - react
-      - react-dom
-
-  '@tapjs/core@4.0.1(@types/node@24.3.0)':
-    dependencies:
-      '@tapjs/processinfo': 3.1.8
-      '@tapjs/stack': 4.0.0
-      '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)
       async-hook-domain: 4.0.1
       diff: 5.2.0
       is-actual-promise: 1.0.2
@@ -6377,10 +5746,6 @@ snapshots:
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
 
-  '@tapjs/filter@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-
   '@tapjs/fixture@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6396,12 +5761,6 @@ snapshots:
   '@tapjs/fixture@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
-      mkdirp: 3.0.1
-      rimraf: 6.0.1
-
-  '@tapjs/fixture@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
       mkdirp: 3.0.1
       rimraf: 6.0.1
 
@@ -6421,12 +5780,6 @@ snapshots:
     dependencies:
       '@tapjs/after': 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
-      '@tapjs/stack': 4.0.0
-
-  '@tapjs/intercept@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/after': 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
       '@tapjs/stack': 4.0.0
 
   '@tapjs/mock@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
@@ -6453,14 +5806,6 @@ snapshots:
       resolve-import: 2.0.0
       walk-up-path: 4.0.0
 
-  '@tapjs/mock@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/after': 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      '@tapjs/stack': 4.0.0
-      resolve-import: 2.0.0
-      walk-up-path: 4.0.0
-
   '@tapjs/node-serialize@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6482,13 +5827,6 @@ snapshots:
       '@tapjs/stack': 4.0.0
       tap-parser: 18.0.0
 
-  '@tapjs/node-serialize@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      '@tapjs/error-serdes': 4.0.0
-      '@tapjs/stack': 4.0.0
-      tap-parser: 18.0.0
-
   '@tapjs/processinfo@3.1.8':
     dependencies:
       pirates: 4.0.7
@@ -6496,9 +5834,9 @@ snapshots:
       signal-exit: 4.1.0
       uuid: 8.3.2
 
-  '@tapjs/reporter@4.0.2(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(utf-8-validate@5.0.10)':
+  '@tapjs/reporter@4.0.2(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1))(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(utf-8-validate@5.0.10)':
     dependencies:
-      '@tapjs/config': 5.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+      '@tapjs/config': 5.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1))
       '@tapjs/core': 4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tapjs/stack': 4.0.0
       chalk: 5.6.0
@@ -6520,9 +5858,9 @@ snapshots:
       - react-dom
       - utf-8-validate
 
-  '@tapjs/reporter@4.0.2(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(utf-8-validate@5.0.10)':
+  '@tapjs/reporter@4.0.2(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1))(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(utf-8-validate@5.0.10)':
     dependencies:
-      '@tapjs/config': 5.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+      '@tapjs/config': 5.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1))
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tapjs/stack': 4.0.0
       chalk: 5.6.0
@@ -6568,38 +5906,14 @@ snapshots:
       - react-dom
       - utf-8-validate
 
-  '@tapjs/reporter@4.0.2(@tapjs/core@4.0.1(@types/node@24.3.0))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0))(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@tapjs/config': 5.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0))
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      '@tapjs/stack': 4.0.0
-      chalk: 5.6.0
-      ink: 5.2.1(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@5.0.10)
-      minipass: 7.1.2
-      ms: 2.1.3
-      patch-console: 2.0.0
-      prismjs-terminal: 1.2.3
-      react: 18.3.1
-      string-length: 6.0.0
-      tap-parser: 18.0.0
-      tap-yaml: 4.0.0
-      tcompare: 9.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    transitivePeerDependencies:
-      - '@tapjs/test'
-      - '@types/react'
-      - bufferutil
-      - react-devtools-core
-      - react-dom
-      - utf-8-validate
-
   '@tapjs/run@4.0.2(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(utf-8-validate@5.0.10)':
     dependencies:
       '@tapjs/after': 3.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@tapjs/before': 4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
-      '@tapjs/config': 5.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+      '@tapjs/config': 5.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1))
       '@tapjs/core': 4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tapjs/processinfo': 3.1.8
-      '@tapjs/reporter': 4.0.2(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(utf-8-validate@5.0.10)
+      '@tapjs/reporter': 4.0.2(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1))(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(utf-8-validate@5.0.10)
       '@tapjs/spawn': 4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@tapjs/stdin': 4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6640,10 +5954,10 @@ snapshots:
     dependencies:
       '@tapjs/after': 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@tapjs/before': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
-      '@tapjs/config': 5.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+      '@tapjs/config': 5.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1))
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tapjs/processinfo': 3.1.8
-      '@tapjs/reporter': 4.0.2(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(utf-8-validate@5.0.10)
+      '@tapjs/reporter': 4.0.2(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1))(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(utf-8-validate@5.0.10)
       '@tapjs/spawn': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@tapjs/stdin': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6724,50 +6038,6 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@tapjs/run@4.0.2(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@tapjs/after': 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/before': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/config': 5.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0))
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      '@tapjs/processinfo': 3.1.8
-      '@tapjs/reporter': 4.0.2(@tapjs/core@4.0.1(@types/node@24.3.0))(@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0))(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      '@tapjs/spawn': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/stdin': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)
-      c8: 10.1.3
-      chalk: 5.6.0
-      chokidar: 3.6.0
-      foreground-child: 3.3.1
-      glob: 11.0.3
-      minipass: 7.1.2
-      mkdirp: 3.0.1
-      opener: 1.5.2
-      pacote: 18.0.6
-      path-scurry: 2.0.0
-      resolve-import: 2.0.0
-      rimraf: 6.0.1
-      semver: 7.7.2
-      signal-exit: 4.1.0
-      tap-parser: 18.0.0
-      tap-yaml: 4.0.0
-      tcompare: 9.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      trivial-deferred: 2.0.0
-      which: 4.0.0
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - '@types/react'
-      - bluebird
-      - bufferutil
-      - monocart-coverage-reports
-      - react
-      - react-devtools-core
-      - react-dom
-      - supports-color
-      - utf-8-validate
-
   '@tapjs/snapshot@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6798,16 +6068,6 @@ snapshots:
       - react
       - react-dom
 
-  '@tapjs/snapshot@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      is-actual-promise: 1.0.2
-      tcompare: 9.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      trivial-deferred: 2.0.0
-    transitivePeerDependencies:
-      - react
-      - react-dom
-
   '@tapjs/spawn@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6819,10 +6079,6 @@ snapshots:
   '@tapjs/spawn@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
-
-  '@tapjs/spawn@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
 
   '@tapjs/stack@4.0.0': {}
 
@@ -6837,10 +6093,6 @@ snapshots:
   '@tapjs/stdin@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
-
-  '@tapjs/stdin@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
 
   '@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -6956,44 +6208,6 @@ snapshots:
       - react
       - react-dom
 
-  '@tapjs/test@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)':
-    dependencies:
-      '@isaacs/ts-node-temp-fork-for-pr-2009': 10.9.7(@types/node@24.3.0)(typescript@5.5.4)
-      '@tapjs/after': 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/after-each': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/asserts': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/before': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/before-each': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/chdir': 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      '@tapjs/filter': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/fixture': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/intercept': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/mock': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/node-serialize': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/snapshot': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/spawn': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/stdin': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/typescript': 3.1.0(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)(typescript@5.5.4)
-      '@tapjs/worker': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      glob: 11.0.3
-      jackspeak: 4.1.1
-      mkdirp: 3.0.1
-      package-json-from-dist: 1.0.1
-      resolve-import: 2.0.0
-      rimraf: 6.0.1
-      sync-content: 2.0.1
-      tap-parser: 18.0.0
-      tshy: 3.0.2
-      typescript: 5.5.4
-      walk-up-path: 4.0.0
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - react
-      - react-dom
-
   '@tapjs/tsx@3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -7002,11 +6216,6 @@ snapshots:
   '@tapjs/tsx@3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
-      tsx: 4.20.5
-
-  '@tapjs/tsx@3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
       tsx: 4.20.5
 
   '@tapjs/typescript@3.1.0(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@20.19.11)(typescript@5.5.4)':
@@ -7059,20 +6268,10 @@ snapshots:
       - '@types/node'
       - typescript
 
-  '@tapjs/typescript@3.1.0(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)(typescript@5.5.4)':
-    dependencies:
-      '@isaacs/ts-node-temp-fork-for-pr-2009': 10.9.7(@types/node@24.3.0)(typescript@5.5.4)
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - typescript
-
-  '@tapjs/typescript@3.1.0(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)(typescript@5.9.2)':
+  '@tapjs/typescript@3.1.0(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(typescript@5.9.2)':
     dependencies:
       '@isaacs/ts-node-temp-fork-for-pr-2009': 10.9.7(@types/node@24.3.0)(typescript@5.9.2)
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
+      '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
     transitivePeerDependencies:
       - '@swc/core'
       - '@swc/wasm'
@@ -7090,10 +6289,6 @@ snapshots:
   '@tapjs/worker@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))':
     dependencies:
       '@tapjs/core': 4.0.1(@types/node@24.3.0)(react@18.3.1)
-
-  '@tapjs/worker@4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))':
-    dependencies:
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
 
   '@tokenizer/inflate@0.2.7':
     dependencies:
@@ -7295,11 +6490,6 @@ snapshots:
   abitype@1.0.8(typescript@5.9.2)(zod@3.22.4):
     optionalDependencies:
       typescript: 5.9.2
-      zod: 3.22.4
-
-  abitype@1.1.0(typescript@5.5.4)(zod@3.22.4):
-    optionalDependencies:
-      typescript: 5.5.4
       zod: 3.22.4
 
   abitype@1.1.0(typescript@5.9.2)(zod@3.22.4):
@@ -8823,21 +8013,6 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
-  ox@0.9.3(typescript@5.5.4)(zod@3.22.4):
-    dependencies:
-      '@adraffy/ens-normalize': 1.11.0
-      '@noble/ciphers': 1.3.0
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.1.0(typescript@5.5.4)(zod@3.22.4)
-      eventemitter3: 5.0.1
-    optionalDependencies:
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - zod
-
   ox@0.9.3(typescript@5.9.2)(zod@3.22.4):
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
@@ -9446,7 +8621,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  tap@21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.5.4)(utf-8-validate@5.0.10):
+  tap@21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.9.2)(utf-8-validate@5.0.10):
     dependencies:
       '@tapjs/after': 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))
       '@tapjs/after-each': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))
@@ -9465,45 +8640,8 @@ snapshots:
       '@tapjs/spawn': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))
       '@tapjs/stdin': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))
       '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(react@18.3.1)
-      '@tapjs/typescript': 3.1.0(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(typescript@5.5.4)
+      '@tapjs/typescript': 3.1.0(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))(@types/node@24.3.0)(typescript@5.9.2)
       '@tapjs/worker': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))
-      resolve-import: 2.0.0
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - '@types/react'
-      - bluebird
-      - bufferutil
-      - monocart-coverage-reports
-      - react
-      - react-devtools-core
-      - react-dom
-      - supports-color
-      - typescript
-      - utf-8-validate
-
-  tap@21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10):
-    dependencies:
-      '@tapjs/after': 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/after-each': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/asserts': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/before': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/before-each': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/chdir': 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/core': 4.0.1(@types/node@24.3.0)
-      '@tapjs/filter': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/fixture': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/intercept': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/mock': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/node-serialize': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/run': 4.0.2(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      '@tapjs/snapshot': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/spawn': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/stdin': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
-      '@tapjs/test': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)
-      '@tapjs/typescript': 3.1.0(@tapjs/core@4.0.1(@types/node@24.3.0))(@types/node@24.3.0)(typescript@5.9.2)
-      '@tapjs/worker': 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0))
       resolve-import: 2.0.0
     transitivePeerDependencies:
       - '@swc/core'
@@ -9753,23 +8891,6 @@ snapshots:
       ws: 8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     optionalDependencies:
       typescript: 5.9.2
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-      - zod
-
-  viem@2.37.2(bufferutil@4.0.9)(typescript@5.5.4)(utf-8-validate@5.0.10)(zod@3.22.4):
-    dependencies:
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.1.0(typescript@5.5.4)(zod@3.22.4)
-      isows: 1.0.7(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      ox: 0.9.3(typescript@5.5.4)(zod@3.22.4)
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-    optionalDependencies:
-      typescript: 5.5.4
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate

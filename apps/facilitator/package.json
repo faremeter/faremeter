@@ -12,21 +12,21 @@
     "@faremeter/payment-solana-exact": "workspace:^",
     "@faremeter/types": "workspace:^",
     "@faremeter/wallet-evm": "workspace:^",
-    "@faremeter/x-solana-settlement": "^0.1.1",
-    "@solana/kit": "^2.3.0",
-    "@solana/spl-token": "^0.4.13",
-    "@solana/web3.js": "^1.98.2",
-    "arktype": "^2.1.20",
-    "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "viem": "^2.21.0"
+    "@faremeter/x-solana-settlement": "catalog:",
+    "@solana/kit": "catalog:",
+    "@solana/spl-token": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "arktype": "catalog:",
+    "dotenv": "catalog:",
+    "express": "catalog:",
+    "viem": "catalog:"
   },
   "devDependencies": {
-    "@tapjs/tsx": "^3.0.1",
-    "@types/express": "^5.0.3",
-    "tap": "^21.1.0",
-    "tsx": "^4.19.4",
-    "typescript-language-server": "^4.3.4"
+    "@tapjs/tsx": "catalog:",
+    "@types/express": "catalog:",
+    "tap": "catalog:",
+    "tsx": "catalog:",
+    "typescript-language-server": "catalog:"
   },
   "tap": {
     "plugin": [

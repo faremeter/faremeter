@@ -13,25 +13,25 @@
     "./client": "./dist/src/client.js"
   },
   "devDependencies": {
-    "@eslint/js": "^9.28.0",
-    "@tapjs/asserts": "^4.0.1",
-    "@types/node": "^20.14.0",
-    "eslint": "^9.28.0",
-    "prettier": "^3.5.3",
-    "tap": "^21.1.0",
-    "tsc-esm-fix": "^3.1.2",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.34.0",
-    "typescript-language-server": "^4.3.4"
+    "@eslint/js": "catalog:",
+    "@tapjs/asserts": "catalog:",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "tap": "catalog:",
+    "tsc-esm-fix": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "typescript-language-server": "catalog:"
   },
   "dependencies": {
     "@faremeter/types": "workspace:^",
-    "@solana-program/compute-budget": "^0.8.0",
-    "@solana-program/token": "^0.5.1",
-    "@solana/kit": "^2.3.0",
-    "@solana/spl-token": "^0.4.13",
-    "@solana/transactions": "^2.3.0",
-    "@solana/web3.js": "^1.98.2",
-    "arktype": "^2.1.20"
+    "@solana-program/compute-budget": "catalog:",
+    "@solana-program/token": "catalog:",
+    "@solana/kit": "catalog:",
+    "@solana/spl-token": "catalog:",
+    "@solana/transactions": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "arktype": "catalog:"
   }
 }

@@ -3,6 +3,39 @@ packages:
   - apps/*
   - scripts
 
+catalog:
+  "@eslint/js": ^9.34.0
+  "@faremeter/x-solana-settlement": ^0.1.1
+  "@hono/node-server": ^1.19.1
+  "@solana-program/compute-budget": ^0.8.0
+  "@solana-program/token": ^0.5.1
+  "@solana/kit": ^2.3.0
+  "@solana/spl-token": ^0.4.13
+  "@solana/transactions": ^2.3.0
+  "@solana/web3.js": ^1.98.4
+  "@tapjs/asserts": ^4.0.1
+  "@tapjs/tsx": ^3.0.1
+  "@types/express": ^5.0.3
+  "@types/node": ^20.19.11
+  "@types/web": ^0.0.246
+  "@typescript/lib-dom": npm:@types/web@^0.0.246
+  arktype: ^2.1.21
+  bs58: ^6.0.0
+  dotenv: ^17.2.2
+  eslint: ^9.34.0
+  express: ^5.1.0
+  hono: ^4.9.0
+  jiti: ^2.5.1
+  prettier: ^3.6.2
+  tap: 21.1.0
+  tsc-esm-fix: ^3.1.2
+  tsx: ^4.20.5
+  typescript-eslint: ^8.42.0
+  typescript-language-server: ^4.4.0
+  typescript: ^5.9.2
+  viem: ^2.37.2
+  zx: ^8.8.1
+
 ignoredBuiltDependencies:
   - bigint-buffer
   - bufferutil

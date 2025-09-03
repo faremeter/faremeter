@@ -2,7 +2,7 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "target": "es2022",
+    "target": "ESNext",
     "allowJs": true,
     "resolveJsonModule": true,
     "moduleDetection": "force",
@@ -19,9 +19,9 @@
     "declarationMap": true,
 
     "composite": true,
-    "module": "es2022",
+    "module": "ESNext",
     "noEmit": true,
 
-    "lib": ["es2022"]
+    "lib": ["ESNext"]
   }
 }

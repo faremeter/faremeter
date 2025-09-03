@@ -10,21 +10,21 @@
   ],
   "packageManager": "pnpm@10.12.1",
   "devDependencies": {
-    "@eslint/js": "^9.28.0",
-    "@faremeter/fetch": "workspace:*",
-    "@tapjs/asserts": "^4.0.1",
-    "eslint": "^9.28.0",
-    "prettier": "^3.5.3",
-    "tap": "^21.1.0",
-    "tsc-esm-fix": "^3.1.2",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.34.0",
-    "typescript-language-server": "^4.3.4"
+    "@eslint/js": "catalog:",
+    "@faremeter/fetch": "workspace:",
+    "@tapjs/asserts": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "tap": "catalog:",
+    "tsc-esm-fix": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "typescript-language-server": "catalog:"
   },
   "dependencies": {
     "@faremeter/types": "workspace:^",
-    "@solana/web3.js": "^1.98.2",
+    "@solana/web3.js": "catalog:",
     "@sqds/multisig": "^2.1.4",
-    "bs58": "^6.0.0"
+    "bs58": "catalog:"
   }
 }

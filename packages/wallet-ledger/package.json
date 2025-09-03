@@ -10,12 +10,12 @@
     "@ledgerhq/hw-transport": "^6.31.0",
     "@ledgerhq/hw-transport-webusb": "^6.29.0",
     "@ledgerhq/hw-transport-node-hid": "^6.29.0",
-    "@solana/web3.js": "^1.95.0",
-    "arktype": "^2.1.20",
-    "viem": "^2.23.6"
+    "@solana/web3.js": "catalog:",
+    "arktype": "catalog:",
+    "viem": "catalog:"
   },
   "devDependencies": {
-    "typescript": "^5.5.4",
-    "tsc-esm-fix": "^3.1.2"
+    "typescript": "catalog:",
+    "tsc-esm-fix": "catalog:"
   }
 }

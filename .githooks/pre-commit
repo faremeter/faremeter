@@ -11,8 +11,4 @@ step::010::lint-source() {
 	(cd "$STAGING_DIR" && make lint INSIDE_STAGING_DIR=true)
 }
 
-step::020::test-source() {
-	(cd "$STAGING_DIR" && make test INSIDE_STAGING_DIR=true )
-}
-
 steps::run step

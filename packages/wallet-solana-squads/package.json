@@ -11,7 +11,7 @@
   "packageManager": "pnpm@10.12.1",
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@faremeter/fetch": "workspace:",
+    "@faremeter/fetch": "workspace:^",
     "@tapjs/asserts": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",

@@ -1,6 +1,7 @@
 import {
   isValidationError,
   throwValidationError,
+  caseInsensitiveLiteral,
   type PaymentExecer,
   type PaymentHandler,
   type RequestContext,
@@ -46,9 +47,9 @@ export function createPaymentHandler(
   connection: Connection,
 ): PaymentHandler {
   const matcher = type({
-    scheme: `'${x402Scheme}'`,
-    network: `'${wallet.network}'`,
-    asset: `'${mint ? mint.toBase58() : "sol"}'`,
+    scheme: caseInsensitiveLiteral(x402Scheme),
+    network: caseInsensitiveLiteral(wallet.network),
+    asset: caseInsensitiveLiteral(mint ? mint.toBase58() : "sol"),
   });
 
   return async (

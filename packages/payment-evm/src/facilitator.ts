@@ -4,6 +4,7 @@ import {
   type x402PaymentPayload,
   type x402SettleResponse,
   isValidationError,
+  caseInsensitiveLiteral,
 } from "@faremeter/types";
 import { type } from "arktype";
 import type { PublicClient, Hex, WalletClient, Account } from "viem";
@@ -56,11 +57,13 @@ export function createFacilitatorHandler(
   }
 
   const checkTuple = type({
-    scheme: `'${X402_EXACT_SCHEME}'`,
-    network: `'${network}'`,
+    scheme: caseInsensitiveLiteral(X402_EXACT_SCHEME),
+    network: caseInsensitiveLiteral(network),
   });
 
-  const checkTupleAndAsset = checkTuple.and({ asset: `'${asset}'` });
+  const checkTupleAndAsset = checkTuple.and({
+    asset: caseInsensitiveLiteral(asset),
+  });
 
   const getRequirements = async (
     req: x402PaymentRequirements[],

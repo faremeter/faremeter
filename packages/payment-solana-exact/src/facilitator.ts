@@ -3,6 +3,7 @@ import {
   x402PaymentPayload,
   x402PaymentRequirements,
   x402SettleResponse,
+  caseInsensitiveLiteral,
   type FacilitatorHandler,
 } from "@faremeter/types";
 import { fetchMint } from "@solana-program/token";
@@ -111,10 +112,12 @@ export const createFacilitatorHandler = (
   retryDelayMs = 1000,
 ): FacilitatorHandler => {
   const checkTuple = type({
-    scheme: `'${x402Scheme}'`,
-    network: `'${network}'`,
+    scheme: caseInsensitiveLiteral(x402Scheme),
+    network: caseInsensitiveLiteral(network),
   });
-  const checkTupleAndAsset = checkTuple.and({ asset: `'${mint.toBase58()}'` });
+  const checkTupleAndAsset = checkTuple.and({
+    asset: caseInsensitiveLiteral(mint.toBase58()),
+  });
 
   const getRequirements = async (req: x402PaymentRequirements[]) => {
     const recentBlockhash = (await rpc.getLatestBlockhash().send()).value

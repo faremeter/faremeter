@@ -36,6 +36,8 @@ catalog:
   viem: ^2.37.2
   zx: ^8.8.1
 
+catalogMode: prefer
+
 ignoredBuiltDependencies:
   - bigint-buffer
   - bufferutil

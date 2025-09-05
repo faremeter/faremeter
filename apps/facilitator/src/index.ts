@@ -18,7 +18,7 @@ import {
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { createFacilitatorRoutes } from "./routes";
+import { createFacilitatorRoutes } from "@faremeter/facilitator";
 import fs from "fs";
 import type { FacilitatorHandler } from "@faremeter/types";
 

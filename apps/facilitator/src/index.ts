@@ -1,5 +1,6 @@
 import "dotenv/config";
-import { default as express } from "express";
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
 import { createFacilitatorHandler as createSolanaHandler } from "@faremeter/x-solana-settlement/facilitator";
 import {
   createFacilitatorHandler as createFacilitatorHandlerExact,
@@ -17,7 +18,7 @@ import {
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { createFacilitatorRouter } from "./routes";
+import { createFacilitatorRoutes } from "./routes";
 import fs from "fs";
 import type { FacilitatorHandler } from "@faremeter/types";
 
@@ -134,16 +135,16 @@ if (handlers.length === 0) {
 
 const listenPort = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 
-const app = express();
-app.use(
+const app = new Hono();
+app.route(
   "/",
-  createFacilitatorRouter({
+  createFacilitatorRoutes({
     handlers,
   }),
 );
 
-app.listen(listenPort, () => {
-  console.log(`Facilitator server listening on port ${listenPort}`);
+serve({ fetch: app.fetch, port: listenPort }, (info) => {
+  console.log(`Facilitator server listening on port ${info.port}`);
   console.log(`Active payment handlers: ${handlers.length}`);
   if (ADMIN_KEYPAIR_PATH && ASSET_ADDRESS) {
     console.log("   - Solana (SOL & SPL Token)");

@@ -13,17 +13,17 @@
     "@faremeter/types": "workspace:^",
     "@faremeter/wallet-evm": "workspace:^",
     "@faremeter/x-solana-settlement": "catalog:",
+    "@hono/node-server": "catalog:",
     "@solana/kit": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/web3.js": "catalog:",
     "arktype": "catalog:",
     "dotenv": "catalog:",
-    "express": "catalog:",
+    "hono": "catalog:",
     "viem": "catalog:"
   },
   "devDependencies": {
     "@tapjs/tsx": "catalog:",
-    "@types/express": "catalog:",
     "tap": "catalog:",
     "tsx": "catalog:",
     "typescript-language-server": "catalog:"

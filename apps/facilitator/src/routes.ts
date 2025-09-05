@@ -1,4 +1,4 @@
-import { default as express } from "express";
+import { Hono, type Context } from "hono";
 import * as x from "@faremeter/types/x402";
 import { isValidationError, type FacilitatorHandler } from "@faremeter/types";
 
@@ -6,39 +6,28 @@ type CreateFacilitatorRoutesArgs = {
   handlers: FacilitatorHandler[];
 };
 
-export function createFacilitatorRouter(
-  args: CreateFacilitatorRoutesArgs,
-): express.Router {
-  const router = express.Router();
-  router.use(express.json());
+export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
+  const router = new Hono();
 
-  function sendError(res: express.Response, msg: string) {
-    res.setHeader("Content-Type", "application/json");
-    res.end(
-      JSON.stringify({
-        isValid: false,
-        invalidReason: msg,
-      }),
-    );
+  function sendError(c: Context, msg: string) {
+    return c.json({
+      isValid: false,
+      invalidReason: msg,
+    });
   }
 
-  function sendResponse(res: express.Response, obj: object) {
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(obj));
-  }
-
-  router.post("/settle", async (req, res) => {
-    const x402Req = x.x402SettleRequest(req.body);
+  router.post("/settle", async (c) => {
+    const x402Req = x.x402SettleRequest(await c.req.json());
 
     if (isValidationError(x402Req)) {
-      return sendError(res, `couldn't validate request: ${x402Req.summary}`);
+      return sendError(c, `couldn't validate request: ${x402Req.summary}`);
     }
 
     const paymentPayload = x.x402PaymentHeaderToPayload(x402Req.paymentHeader);
 
     if (isValidationError(paymentPayload)) {
       return sendError(
-        res,
+        c,
         `couldn't validate x402 payload: ${paymentPayload.summary}`,
       );
     }
@@ -53,17 +42,17 @@ export function createFacilitatorRouter(
         continue;
       }
 
-      return sendResponse(res, t);
+      return c.json(t);
     }
-    sendError(res, "no matching payment handler found");
+    sendError(c, "no matching payment handler found");
   });
 
-  router.post("/accepts", async (req, res) => {
-    const x402Req = x.x402PaymentRequiredResponse(req.body);
+  router.post("/accepts", async (c) => {
+    const x402Req = x.x402PaymentRequiredResponse(await c.req.json());
 
     if (isValidationError(x402Req)) {
       return sendError(
-        res,
+        c,
         `couldn't parse required response: ${x402Req.summary}`,
       );
     }
@@ -75,7 +64,8 @@ export function createFacilitatorRouter(
     ).flat();
 
     // XXX - This is not exactly standard.
-    res.status(402).json({
+    c.status(402);
+    return c.json({
       x402Version: 1,
       accepts,
     });

@@ -129,7 +129,6 @@ export const createFacilitatorHandler = (
         return {
           ...x,
           asset: mint.toBase58(),
-          maxTimeoutSeconds: 5,
           extra: {
             feePayer: feePayerKeypair.publicKey.toString(),
             decimals: mintInfo.data.decimals,

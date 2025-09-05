@@ -134,6 +134,9 @@ importers:
 
   apps/facilitator:
     dependencies:
+      '@faremeter/facilitator':
+        specifier: workspace:^
+        version: link:../../packages/facilitator
       '@faremeter/fetch':
         specifier: workspace:*
         version: link:../../packages/fetch
@@ -186,6 +189,52 @@ importers:
       tsx:
         specifier: 'catalog:'
         version: 4.20.5
+      typescript-language-server:
+        specifier: 'catalog:'
+        version: 4.4.0
+
+  packages/facilitator:
+    dependencies:
+      '@faremeter/types':
+        specifier: workspace:^
+        version: link:../types
+      hono:
+        specifier: 'catalog:'
+        version: 4.9.5
+    devDependencies:
+      '@eslint/js':
+        specifier: 'catalog:'
+        version: 9.34.0
+      '@tapjs/tsx':
+        specifier: 'catalog:'
+        version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react@18.3.1))
+      '@types/express':
+        specifier: 'catalog:'
+        version: 5.0.3
+      '@types/web':
+        specifier: 'catalog:'
+        version: 0.0.246
+      '@typescript/lib-dom':
+        specifier: 'catalog:'
+        version: '@types/web@0.0.246'
+      eslint:
+        specifier: 'catalog:'
+        version: 9.34.0(jiti@2.5.1)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
+      tap:
+        specifier: 'catalog:'
+        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.9.2)(utf-8-validate@5.0.10)
+      tsc-esm-fix:
+        specifier: 'catalog:'
+        version: 3.1.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.2
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.42.0(eslint@9.34.0(jiti@2.5.1))(typescript@5.9.2)
       typescript-language-server:
         specifier: 'catalog:'
         version: 4.4.0

@@ -1,128 +1,15 @@
 import "dotenv/config";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { createFacilitatorHandler as createSolanaHandler } from "@faremeter/x-solana-settlement/facilitator";
-import {
-  createFacilitatorHandler as createFacilitatorHandlerExact,
-  lookupX402Network,
-} from "@faremeter/payment-solana-exact";
-import { createFacilitatorHandler as createEvmHandler } from "@faremeter/payment-evm";
-import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { createSolanaRpc } from "@solana/kit";
-import {
-  createPublicClient,
-  http,
-  createWalletClient,
-  isAddress,
-  isHex,
-} from "viem";
-import { baseSepolia } from "viem/chains";
-import { privateKeyToAccount } from "viem/accounts";
 import { createFacilitatorRoutes } from "@faremeter/facilitator";
-import fs from "fs";
-import type { FacilitatorHandler } from "@faremeter/types";
 
-const {
-  ADMIN_KEYPAIR_PATH,
-  ASSET_ADDRESS,
-  EVM_RECEIVING_ADDRESS,
-  EVM_PRIVATE_KEY,
-  EVM_RPC_URL,
-  EVM_ASSET_ADDRESS,
-} = process.env;
+import * as solana from "./solana";
+import * as evm from "./evm";
 
-const USDC_MINT_ADDRESS = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"; // USDC devnet
+const solanaHandlers = solana.createHandlers();
+const evmHandlers = evm.createHandlers();
 
-const handlers: FacilitatorHandler[] = [];
-
-// Solana configuration
-if (ADMIN_KEYPAIR_PATH && ASSET_ADDRESS) {
-  const adminKeypair = Keypair.fromSecretKey(
-    Uint8Array.from(JSON.parse(fs.readFileSync(ADMIN_KEYPAIR_PATH, "utf-8"))),
-  );
-  const network = "devnet";
-  const apiUrl = clusterApiUrl(network);
-  const connection = new Connection(apiUrl, "confirmed");
-  const rpc = createSolanaRpc(apiUrl);
-  const mint = new PublicKey(ASSET_ADDRESS);
-  const usdcMint = new PublicKey(USDC_MINT_ADDRESS);
-
-  // Add Solana handlers
-  handlers.push(
-    // SOL
-    createSolanaHandler(network, connection, adminKeypair),
-    // SPL Token
-    createSolanaHandler(network, connection, adminKeypair, mint),
-    // SPL Token with exact scheme
-    createFacilitatorHandlerExact(
-      lookupX402Network(network),
-      rpc,
-      adminKeypair,
-      mint,
-    ),
-  );
-
-  if (!mint.equals(usdcMint)) {
-    handlers.push(
-      // USDC SPL Token
-      createSolanaHandler(network, connection, adminKeypair, usdcMint),
-      // USDC with exact scheme
-      createFacilitatorHandlerExact(
-        lookupX402Network(network),
-        rpc,
-        adminKeypair,
-        usdcMint,
-      ),
-    );
-  }
-
-  console.log("Solana handlers configured for devnet");
-}
-
-// EVM configuration (Base Sepolia)
-if (EVM_RECEIVING_ADDRESS && EVM_PRIVATE_KEY) {
-  // Validate private key format
-  if (!isHex(EVM_PRIVATE_KEY) || EVM_PRIVATE_KEY.length !== 66) {
-    console.error(
-      "ERROR: EVM_PRIVATE_KEY must be a 32-byte hex string (64 chars + 0x prefix)",
-    );
-    process.exit(1);
-  }
-
-  // Validate receiving address format
-  if (!isAddress(EVM_RECEIVING_ADDRESS)) {
-    console.error(
-      "ERROR: EVM_RECEIVING_ADDRESS must be a valid Ethereum address",
-    );
-    process.exit(1);
-  }
-
-  const transport = http(EVM_RPC_URL ?? "https://sepolia.base.org");
-
-  const publicClient = createPublicClient({
-    chain: baseSepolia,
-    transport,
-  });
-
-  const account = privateKeyToAccount(EVM_PRIVATE_KEY);
-  const walletClient = createWalletClient({
-    account,
-    chain: baseSepolia,
-    transport,
-  });
-
-  handlers.push(
-    createEvmHandler(
-      "base-sepolia",
-      // @ts-expect-error - TypeScript version mismatch: x-solana-settlement uses TS 5.5.4, needs update to 5.8.3
-      publicClient,
-      walletClient,
-      EVM_RECEIVING_ADDRESS,
-      EVM_ASSET_ADDRESS,
-    ),
-  );
-  console.log("EVM handler configured for Base Sepolia");
-}
+const handlers = [...solanaHandlers, ...evmHandlers];
 
 if (handlers.length === 0) {
   console.error(
@@ -146,10 +33,10 @@ app.route(
 serve({ fetch: app.fetch, port: listenPort }, (info) => {
   console.log(`Facilitator server listening on port ${info.port}`);
   console.log(`Active payment handlers: ${handlers.length}`);
-  if (ADMIN_KEYPAIR_PATH && ASSET_ADDRESS) {
+  if (solanaHandlers.length > 0) {
     console.log("   - Solana (SOL & SPL Token)");
   }
-  if (EVM_RECEIVING_ADDRESS && EVM_PRIVATE_KEY) {
+  if (evmHandlers.length > 0) {
     console.log("   - EVM (Base Sepolia)");
   }
 });

@@ -38,6 +38,14 @@ const NETWORK_CONFIGS = new Map<string, NetworkConfig>([
   ],
 ]);
 
+export function lookupNetworkConfig(network: string) {
+  return NETWORK_CONFIGS.get(network);
+}
+
+export function isValidPrivateKey(privateKey: string): privateKey is Hex {
+  return isHex(privateKey) && privateKey.length == 66;
+}
+
 export interface EvmWallet {
   network: string;
   address: Hex;
@@ -49,14 +57,14 @@ export async function createLocalWallet(
   network: string,
   privateKey: string,
 ): Promise<EvmWallet> {
-  const config = NETWORK_CONFIGS.get(network);
+  const config = lookupNetworkConfig(network);
   if (!config) {
     throw new Error(
       `Unsupported network: ${network}. Supported networks: ${Array.from(NETWORK_CONFIGS.keys()).join(", ")}`,
     );
   }
 
-  if (!isHex(privateKey) || privateKey.length !== 66) {
+  if (!isValidPrivateKey(privateKey)) {
     throw new Error(
       `Invalid private key format. Expected 64-character hex string with '0x' prefix, got: ${privateKey.slice(0, 10)}...`,
     );

@@ -3,11 +3,20 @@ import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { createFacilitatorRoutes } from "@faremeter/facilitator";
 
+import { argsFromEnv } from "./utils";
 import * as solana from "./solana";
 import * as evm from "./evm";
 
-const solanaHandlers = solana.createHandlers();
-const evmHandlers = evm.createHandlers();
+const solanaHandlers =
+  argsFromEnv(["ADMIN_KEYPAIR_PATH", "ASSET_ADDRESS"], (...envVars) =>
+    solana.createHandlers("devnet", ...envVars),
+  ) ?? [];
+
+const evmHandlers =
+  argsFromEnv(
+    ["EVM_PRIVATE_KEY", "EVM_RECEIVING_ADDRESS", "EVM_ASSET_ADDRESS"],
+    (...envVars) => evm.createHandlers("base-sepolia", ...envVars),
+  ) ?? [];
 
 const handlers = [...solanaHandlers, ...evmHandlers];
 

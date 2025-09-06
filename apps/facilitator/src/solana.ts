@@ -3,29 +3,43 @@ import {
   createFacilitatorHandler as createFacilitatorHandlerExact,
   lookupX402Network,
 } from "@faremeter/payment-solana-exact";
-import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
+import {
+  clusterApiUrl,
+  Connection,
+  Keypair,
+  PublicKey,
+  type Cluster,
+} from "@solana/web3.js";
 import { createSolanaRpc } from "@solana/kit";
 import fs from "fs";
 import type { FacilitatorHandler } from "@faremeter/types";
 
 const USDC_MINT_ADDRESS = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"; // USDC devnet
 
-const { ADMIN_KEYPAIR_PATH, ASSET_ADDRESS } = process.env;
+// XXX - Move this somewhere more useful in future.
+const knownClusters = new Set(["devnet", "testnet", "mainnet-beta"]);
+function isNetworkValid(c: string): c is Cluster {
+  return knownClusters.has(c);
+}
 
-export function createHandlers() {
-  const handlers: FacilitatorHandler[] = [];
-  // Solana configuration
-  if (!(ADMIN_KEYPAIR_PATH && ASSET_ADDRESS)) {
-    return handlers;
+export function createHandlers(
+  network: string,
+  keypairPath: string,
+  assetAddress: string,
+) {
+  if (!isNetworkValid(network)) {
+    console.error(`Solana network '${network}' is invalid`);
+    process.exit(1);
   }
+
+  const handlers: FacilitatorHandler[] = [];
   const adminKeypair = Keypair.fromSecretKey(
-    Uint8Array.from(JSON.parse(fs.readFileSync(ADMIN_KEYPAIR_PATH, "utf-8"))),
+    Uint8Array.from(JSON.parse(fs.readFileSync(keypairPath, "utf-8"))),
   );
-  const network = "devnet";
   const apiUrl = clusterApiUrl(network);
   const connection = new Connection(apiUrl, "confirmed");
   const rpc = createSolanaRpc(apiUrl);
-  const mint = new PublicKey(ASSET_ADDRESS);
+  const mint = new PublicKey(assetAddress);
   const usdcMint = new PublicKey(USDC_MINT_ADDRESS);
 
   // Add Solana handlers
@@ -57,6 +71,6 @@ export function createHandlers() {
     );
   }
 
-  console.log("Solana handlers configured for devnet");
+  console.log(`Solana handlers configured for ${network}`);
   return handlers;
 }

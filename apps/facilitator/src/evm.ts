@@ -11,12 +11,8 @@ import { privateKeyToAccount } from "viem/accounts";
 import type { FacilitatorHandler } from "@faremeter/types";
 import { createFacilitatorHandler as createEvmHandler } from "@faremeter/payment-evm";
 
-const {
-  EVM_RECEIVING_ADDRESS,
-  EVM_PRIVATE_KEY,
-  EVM_RPC_URL,
-  EVM_ASSET_ADDRESS,
-} = process.env;
+const { EVM_RECEIVING_ADDRESS, EVM_PRIVATE_KEY, EVM_ASSET_ADDRESS } =
+  process.env;
 
 export function createHandlers() {
   const handlers: FacilitatorHandler[] = [];
@@ -38,7 +34,7 @@ export function createHandlers() {
       process.exit(1);
     }
 
-    const transport = http(EVM_RPC_URL ?? "https://sepolia.base.org");
+    const transport = http("https://sepolia.base.org");
 
     const publicClient = createPublicClient({
       chain: baseSepolia,

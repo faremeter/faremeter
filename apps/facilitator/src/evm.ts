@@ -1,15 +1,9 @@
-import {
-  createPublicClient,
-  http,
-  createWalletClient,
-  isAddress,
-  isHex,
-} from "viem";
-import { baseSepolia } from "viem/chains";
+import { createPublicClient, http, createWalletClient, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 import type { FacilitatorHandler } from "@faremeter/types";
 import { createFacilitatorHandler as createEvmHandler } from "@faremeter/payment-evm";
+import { isValidPrivateKey, lookupNetworkConfig } from "@faremeter/wallet-evm";
 
 const { EVM_RECEIVING_ADDRESS, EVM_PRIVATE_KEY, EVM_ASSET_ADDRESS } =
   process.env;
@@ -19,7 +13,7 @@ export function createHandlers() {
   // EVM configuration (Base Sepolia)
   if (EVM_RECEIVING_ADDRESS && EVM_PRIVATE_KEY) {
     // Validate private key format
-    if (!isHex(EVM_PRIVATE_KEY) || EVM_PRIVATE_KEY.length !== 66) {
+    if (!isValidPrivateKey(EVM_PRIVATE_KEY)) {
       console.error(
         "ERROR: EVM_PRIVATE_KEY must be a 32-byte hex string (64 chars + 0x prefix)",
       );
@@ -34,23 +28,33 @@ export function createHandlers() {
       process.exit(1);
     }
 
-    const transport = http("https://sepolia.base.org");
+    const network = "base-sepolia";
+
+    const networkConfig = lookupNetworkConfig(network);
+
+    if (!networkConfig) {
+      console.error(
+        `ERROR: Couldn't lookup configuration for network '${network}'`,
+      );
+      process.exit(1);
+    }
+
+    const transport = http(networkConfig.rpcUrl);
 
     const publicClient = createPublicClient({
-      chain: baseSepolia,
+      chain: networkConfig.chain,
       transport,
     });
 
     const account = privateKeyToAccount(EVM_PRIVATE_KEY);
     const walletClient = createWalletClient({
       account,
-      chain: baseSepolia,
+      chain: networkConfig.chain,
       transport,
     });
 
     handlers.push(
       createEvmHandler(
-        "base-sepolia",
         network,
         publicClient,
         walletClient,
@@ -58,7 +62,7 @@ export function createHandlers() {
         EVM_ASSET_ADDRESS,
       ),
     );
-    console.log("EVM handler configured for Base Sepolia");
+    console.log(`EVM handler configured for ${network}`);
   }
   return handlers;
 }

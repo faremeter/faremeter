@@ -51,7 +51,7 @@ export function createHandlers() {
     handlers.push(
       createEvmHandler(
         "base-sepolia",
-        // @ts-expect-error - TypeScript version mismatch: x-solana-settlement uses TS 5.5.4, needs update to 5.8.3
+        network,
         publicClient,
         walletClient,
         EVM_RECEIVING_ADDRESS,

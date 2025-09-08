@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { logger } from "../logger";
+import { logger, logResponse } from "../logger";
 import {
   clusterApiUrl,
   Connection,
@@ -114,4 +114,4 @@ const fetchWithPayer = wrapFetch(fetch, {
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");
-logger.info(await req.json());
+await logResponse(req);

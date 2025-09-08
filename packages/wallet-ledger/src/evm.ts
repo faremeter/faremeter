@@ -13,7 +13,7 @@ import { baseSepolia, mainnet, sepolia } from "viem/chains";
 import Eth from "@ledgerhq/hw-app-eth/lib-es/Eth";
 import { type } from "arktype";
 import { createTransport } from "./transport";
-import type { LedgerEvmWallet } from "./types";
+import type { LedgerEvmWallet, UserInterface } from "./types";
 
 interface NetworkConfig {
   chain: Chain;
@@ -45,6 +45,7 @@ const NETWORK_CONFIGS = new Map<string, NetworkConfig>([
 ]);
 
 export async function createLedgerEvmWallet(
+  ui: UserInterface,
   network: string,
   derivationPath: string,
 ): Promise<LedgerEvmWallet> {
@@ -169,12 +170,10 @@ export async function createLedgerEvmWallet(
           types,
         });
 
-        console.log("\nEIP-712 hashes calculated:");
-        console.log("  Domain separator:", domainSeparator);
-        console.log("  Message hash:", messageHash);
-        console.log(
-          "\nPlease approve the transaction on your Ledger device...",
-        );
+        ui.message("\nEIP-712 hashes calculated:");
+        ui.message(`  Domain separator: ${domainSeparator}`);
+        ui.message(`  Message hash: ${messageHash}`);
+        ui.message(`\nPlease approve the transaction on your Ledger device...`);
 
         const result = await eth.signEIP712HashedMessage(
           derivationPath,
@@ -186,7 +185,7 @@ export async function createLedgerEvmWallet(
           `0x${result.r}${result.s}${result.v.toString(16).padStart(2, "0")}` as Hex;
         return signature;
       } catch (error) {
-        console.error("EIP-712 signing failed:", error);
+        ui.message(`EIP-712 signing failed: ${error}`);
         throw error;
       }
     },

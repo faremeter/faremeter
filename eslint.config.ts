@@ -21,6 +21,7 @@ export default defineConfig(
   globalIgnores(["**/idl_type.ts", "**/dist/**"]),
   {
     rules: {
+      "no-console": "error",
       "@typescript-eslint/consistent-type-definitions": 0,
       "@typescript-eslint/restrict-template-expressions": 0,
       "@typescript-eslint/no-confusing-void-expression": 0,

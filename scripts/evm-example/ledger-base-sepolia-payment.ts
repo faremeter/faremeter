@@ -17,50 +17,43 @@ console.log("\nRequired Ledger Settings:");
 console.log("1. Enable 'Blind signing' in Ethereum app settings");
 console.log("2. When prompted, approve the EIP-712 message on your Ledger");
 
-try {
-  const selected = await selectLedgerAccount("evm", 5);
+const selected = await selectLedgerAccount("evm", 5);
 
-  if (!selected) {
-    process.exit(0);
-  }
-
-  console.log(`\nUsing account: ${selected.address}`);
-
-  const ledgerWallet = await createLedgerEvmWallet(
-    "base-sepolia",
-    selected.path,
-  );
-
-  const walletForPayment = {
-    network: ledgerWallet.network,
-    address: ledgerWallet.address,
-    account: {
-      signTypedData: async (params: {
-        domain: Record<string, unknown>;
-        types: Record<string, unknown>;
-        primaryType: string;
-        message: Record<string, unknown>;
-      }) => {
-        return await ledgerWallet.signTypedData(params as TypedDataDefinition);
-      },
-    },
-  };
-
-  const fetchWithPayer = wrapFetch(fetch, {
-    handlers: [createPaymentHandler(walletForPayment)],
-  });
-
-  console.log(`\nMaking payment request to ${url}...`);
-  console.log("When prompted, confirm the transaction on your Ledger...");
-
-  const req = await fetchWithPayer(url);
-  console.log("Status:", req.status);
-  console.log("Headers:", Object.fromEntries(req.headers));
-  const response = await req.json();
-  console.log("Response:", response);
-
-  await ledgerWallet.disconnect();
-  console.log("\nSuccess! Ledger payment completed.");
-} catch (error) {
-  console.error("Error:", (error as Error).message);
+if (!selected) {
+  process.exit(0);
 }
+
+console.log(`\nUsing account: ${selected.address}`);
+
+const ledgerWallet = await createLedgerEvmWallet("base-sepolia", selected.path);
+
+const walletForPayment = {
+  network: ledgerWallet.network,
+  address: ledgerWallet.address,
+  account: {
+    signTypedData: async (params: {
+      domain: Record<string, unknown>;
+      types: Record<string, unknown>;
+      primaryType: string;
+      message: Record<string, unknown>;
+    }) => {
+      return await ledgerWallet.signTypedData(params as TypedDataDefinition);
+    },
+  },
+};
+
+const fetchWithPayer = wrapFetch(fetch, {
+  handlers: [createPaymentHandler(walletForPayment)],
+});
+
+console.log(`\nMaking payment request to ${url}...`);
+console.log("When prompted, confirm the transaction on your Ledger...");
+
+const req = await fetchWithPayer(url);
+console.log("Status:", req.status);
+console.log("Headers:", Object.fromEntries(req.headers));
+const response = await req.json();
+console.log("Response:", response);
+
+await ledgerWallet.disconnect();
+console.log("\nSuccess! Ledger payment completed.");

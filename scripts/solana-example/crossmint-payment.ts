@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { logger } from "../logger";
+import { logResponse } from "../logger";
 import { createCrossmintWallet } from "@faremeter/wallet-crossmint";
 import { createPaymentHandler } from "@faremeter/x-solana-settlement";
 import { wrap as wrapFetch } from "@faremeter/fetch";
@@ -24,4 +24,4 @@ const fetchWithPayer = wrapFetch(fetch, {
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");
-logger.info(await req.json());
+await logResponse(req);

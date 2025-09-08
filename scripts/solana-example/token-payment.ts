@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { logger } from "../logger";
+import { logResponse } from "../logger";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { createLocalWallet } from "@faremeter/wallet-solana";
 import { createPaymentHandler } from "@faremeter/x-solana-settlement";
@@ -29,4 +29,4 @@ const fetchWithPayer = wrapFetch(fetch, {
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");
 
-logger.info(await req.json());
+await logResponse(req);

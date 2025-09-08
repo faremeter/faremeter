@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { logger } from "../logger";
+import { logger, logResponse } from "../logger";
 import { createLocalWallet } from "@faremeter/wallet-evm";
 import { createPaymentHandler } from "@faremeter/payment-evm";
 import { wrap as wrapFetch } from "@faremeter/fetch";
@@ -26,7 +26,4 @@ const fetchWithPayer = wrapFetch(fetch, {
 
 logger.info(`Making payment request to ${url}...`);
 const req = await fetchWithPayer(url);
-logger.info(`Status: ${req.status}`);
-logger.info(`Headers: ${JSON.stringify(Object.fromEntries(req.headers))}`);
-const response = await req.json();
-logger.info(`Response: ${response}`);
+await logResponse(req);

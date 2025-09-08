@@ -1,6 +1,7 @@
 import {
   createLedgerEvmWallet,
   selectLedgerAccount,
+  createReadlineInterface,
 } from "@faremeter/wallet-ledger";
 import { createPaymentHandler } from "@faremeter/payment-evm";
 import { wrap as wrapFetch } from "@faremeter/fetch";
@@ -12,20 +13,26 @@ const port = args[0] ?? "4021";
 const endpoint = args[1] ?? "weather";
 const url = `http://localhost:${port}/${endpoint}`;
 
-console.log("Connecting to Ledger for Base Sepolia payments...");
-console.log("\nRequired Ledger Settings:");
-console.log("1. Enable 'Blind signing' in Ethereum app settings");
-console.log("2. When prompted, approve the EIP-712 message on your Ledger");
+const ui = await createReadlineInterface(process);
 
-const selected = await selectLedgerAccount("evm", 5);
+ui.message("Connecting to Ledger for Base Sepolia payments...");
+ui.message("\nRequired Ledger Settings:");
+ui.message("1. Enable 'Blind signing' in Ethereum app settings");
+ui.message("2. When prompted, approve the EIP-712 message on your Ledger");
+
+const selected = await selectLedgerAccount(ui, "evm", 5);
 
 if (!selected) {
   process.exit(0);
 }
 
-console.log(`\nUsing account: ${selected.address}`);
+ui.message(`\nUsing account: ${selected.address}`);
 
-const ledgerWallet = await createLedgerEvmWallet("base-sepolia", selected.path);
+const ledgerWallet = await createLedgerEvmWallet(
+  ui,
+  "base-sepolia",
+  selected.path,
+);
 
 const walletForPayment = {
   network: ledgerWallet.network,
@@ -46,14 +53,15 @@ const fetchWithPayer = wrapFetch(fetch, {
   handlers: [createPaymentHandler(walletForPayment)],
 });
 
-console.log(`\nMaking payment request to ${url}...`);
-console.log("When prompted, confirm the transaction on your Ledger...");
+ui.message(`\nMaking payment request to ${url}...`);
+ui.message("When prompted, confirm the transaction on your Ledger...");
 
 const req = await fetchWithPayer(url);
-console.log("Status:", req.status);
-console.log("Headers:", Object.fromEntries(req.headers));
+ui.message(`Status: req.status`);
+ui.message(`Headers: ${JSON.stringify(Object.fromEntries(req.headers))}`);
 const response = await req.json();
-console.log("Response:", response);
+ui.message(`Response: ${JSON.stringify(response)}`);
 
 await ledgerWallet.disconnect();
-console.log("\nSuccess! Ledger payment completed.");
+ui.message("\nSuccess! Ledger payment completed.");
+await ui.close();

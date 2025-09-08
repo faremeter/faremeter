@@ -2,6 +2,7 @@ import Eth from "@ledgerhq/hw-app-eth/lib-es/Eth";
 import Solana from "@ledgerhq/hw-app-solana/lib-es/Solana";
 import { PublicKey } from "@solana/web3.js";
 import { createTransport, translateLedgerError } from "./transport";
+import type { UserInterface } from "./types";
 
 function evmDerivationPath(index: number) {
   return `m/44'/60'/${index}'/0/0`;
@@ -12,11 +13,12 @@ function solanaDerivationPath(index: number) {
 }
 
 export async function selectLedgerAccount(
+  ui: UserInterface,
   type: "evm" | "solana",
   numAccounts = 5,
 ): Promise<{ path: string; address: string } | null> {
   const isEvm = type === "evm";
-  console.log(
+  ui.message(
     `\nScanning first ${numAccounts} ${isEvm ? "Ethereum" : "Solana"} accounts...`,
   );
 
@@ -39,7 +41,7 @@ export async function selectLedgerAccount(
           ? address
           : `0x${address}`;
         accounts.push({ path, address: normalizedAddress });
-        console.log(`${i + 1}. ${normalizedAddress}`);
+        ui.message(`${i + 1}. ${normalizedAddress}`);
       }
     } else {
       const solana = new Solana(transport);
@@ -54,28 +56,19 @@ export async function selectLedgerAccount(
         const publicKey = new PublicKey(result.address);
         const address = publicKey.toBase58();
         accounts.push({ path, address });
-        console.log(`${i + 1}. ${address}`);
+        ui.message(`${i + 1}. ${address}`);
       }
     }
   } finally {
     await transport.close();
   }
 
-  const readline = await import("readline");
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  const selection = await new Promise<string>((resolve) => {
-    rl.question(`\nSelect account (1-${numAccounts}): `, resolve);
-  });
-  rl.close();
+  const selection = await ui.question(`\nSelect account (1-${numAccounts}): `);
 
   const index = parseInt(selection) - 1;
 
   if (index < 0 || index >= accounts.length) {
-    console.log("Invalid selection");
+    ui.message("Invalid selection");
     return null;
   }
 

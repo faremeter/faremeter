@@ -8,6 +8,7 @@ import { createFacilitatorRoutes } from "@faremeter/facilitator";
 import { argsFromEnv } from "./utils";
 import * as solana from "./solana";
 import * as evm from "./evm";
+import type { FacilitatorHandler } from "@faremeter/types";
 
 import { configure, getConsoleSink } from "@logtape/logtape";
 
@@ -23,12 +24,18 @@ await configure({
   ],
 });
 
-const solanaHandlers =
-  (await argsFromEnv(
-    ["ADMIN_KEYPAIR_PATH", "ASSET_ADDRESS", "ASSET_NETWORK"],
-    (keypairPath, assetAddress, network) =>
-      solana.createHandlers(network || "devnet", keypairPath, assetAddress),
-  )) ?? [];
+const networks = ["devnet", "mainnet-beta"] as const;
+const solanaHandlers: FacilitatorHandler[] = [];
+
+for (const network of networks) {
+  const handlers =
+    (await argsFromEnv(
+      ["ADMIN_KEYPAIR_PATH", "ASSET_ADDRESS", "ASSET_NETWORK"],
+      (keypairPath, assetAddress, assetNetwork) =>
+        solana.createHandlers(network, keypairPath, assetAddress, assetNetwork),
+    )) ?? [];
+  solanaHandlers.push(...handlers);
+}
 
 const evmHandlers =
   argsFromEnv(
@@ -67,7 +74,7 @@ serve({ fetch: app.fetch, port: listenPort }, (info) => {
   logger.info(`Facilitator server listening on port ${info.port}`);
   logger.info(`Active payment handlers: ${handlers.length}`);
   if (solanaHandlers.length > 0) {
-    logger.info("   - Solana (SOL & SPL Token)");
+    logger.info("   - Solana (devnet and mainnet)");
   }
   if (evmHandlers.length > 0) {
     logger.info("   - EVM (Base Sepolia)");

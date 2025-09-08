@@ -126,7 +126,15 @@ export const createFacilitatorHandler = (
   const getRequirements = async (req: x402PaymentRequirements[]) => {
     const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
       .blockhash;
-    const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
+    let mintInfo;
+    try {
+      mintInfo = await fetchMint(rpc, address(mint.toBase58()));
+    } catch (err) {
+      logger.error(
+        `Failed to fetch mint for ${mint.toBase58()} on ${network}: ${err}`,
+      );
+      return [];
+    }
     return req
       .filter((x) => !isValidationError(checkTupleAndAsset(x)))
       .map((x) => {

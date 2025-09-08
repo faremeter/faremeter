@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { logger } from "./logger";
 import { Hono } from "hono";
+import { logger as honoLogger } from "hono/logger";
 import { serve } from "@hono/node-server";
 import { createFacilitatorRoutes } from "@faremeter/facilitator";
 
@@ -47,6 +48,11 @@ if (handlers.length === 0) {
 const listenPort = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 
 const app = new Hono();
+app.use(
+  honoLogger((message: string, ...rest: string[]) => {
+    logger.info([message, ...rest].join(" "));
+  }),
+);
 
 app.route(
   "/",

@@ -21,8 +21,6 @@ export async function createCrossmintWallet(
     },
   });
 
-  console.log(wallet.address);
-
   const solanaWallet = SolanaWallet.from(wallet);
   const publicKey = new PublicKey(solanaWallet.address);
 

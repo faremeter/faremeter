@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 import { createPublicClient, http, createWalletClient, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -14,7 +16,7 @@ export function createHandlers(
   const handlers: FacilitatorHandler[] = [];
   // Validate private key format
   if (!isValidPrivateKey(privateKey)) {
-    console.error(
+    logger.error(
       "ERROR: EVM private key must be a 32-byte hex string (64 chars + 0x prefix)",
     );
     process.exit(1);
@@ -22,7 +24,7 @@ export function createHandlers(
 
   // Validate receiving address format
   if (!isAddress(receivingAddress)) {
-    console.error(
+    logger.error(
       "ERROR: EVM receiving address must be a valid Ethereum address",
     );
     process.exit(1);
@@ -31,7 +33,7 @@ export function createHandlers(
   const networkConfig = lookupNetworkConfig(network);
 
   if (!networkConfig) {
-    console.error(
+    logger.error(
       `ERROR: Couldn't lookup configuration for network '${network}'`,
     );
     process.exit(1);
@@ -61,6 +63,6 @@ export function createHandlers(
     ),
   );
 
-  console.log(`EVM handler configured for ${network}`);
+  logger.info(`EVM handler configured for ${network}`);
   return handlers;
 }

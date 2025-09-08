@@ -9,6 +9,7 @@ import {
 } from "@faremeter/types";
 import { findMatchingPaymentRequirements } from "./utils";
 import type { NextFunction, Request, Response } from "express";
+import { logger } from "./logger";
 
 function extractPaymentFromHeader(req: Request) {
   const paymentHeader = req.header("X-PAYMENT");
@@ -18,7 +19,7 @@ function extractPaymentFromHeader(req: Request) {
 
   const payload = x402PaymentHeaderToPayload(paymentHeader);
   if (isValidationError(payload)) {
-    console.log("type validation error:", payload.summary);
+    logger.info(`type validation error: ${payload.summary}`);
     return null;
   }
 

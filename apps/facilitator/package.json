@@ -15,6 +15,7 @@
     "@faremeter/wallet-evm": "workspace:^",
     "@faremeter/x-solana-settlement": "catalog:",
     "@hono/node-server": "catalog:",
+    "@logtape/logtape": "catalog:",
     "@solana/kit": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/web3.js": "catalog:",

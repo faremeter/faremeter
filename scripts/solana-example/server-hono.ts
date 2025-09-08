@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { logger } from "../logger";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { hono as middleware } from "@faremeter/middleware";
@@ -72,5 +73,5 @@ app.get(
 );
 
 serve(app, (info) => {
-  console.log(`Listening on http://localhost:${info.port}`);
+  logger.info(`Listening on http://localhost:${info.port}`);
 });

@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@faremeter/types": "workspace:^",
+    "@logtape/logtape": "catalog:",
     "@solana-program/compute-budget": "catalog:",
     "@solana-program/token": "catalog:",
     "@solana/kit": "catalog:",

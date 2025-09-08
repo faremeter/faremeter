@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { logger } from "./logger";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { createFacilitatorRoutes } from "@faremeter/facilitator";
@@ -6,6 +7,20 @@ import { createFacilitatorRoutes } from "@faremeter/facilitator";
 import { argsFromEnv } from "./utils";
 import * as solana from "./solana";
 import * as evm from "./evm";
+
+import { configure, getConsoleSink } from "@logtape/logtape";
+
+await configure({
+  sinks: { console: getConsoleSink() },
+  loggers: [
+    {
+      category: ["logtape", "meta"],
+      lowestLevel: "warning",
+      sinks: ["console"],
+    },
+    { category: "faremeter", lowestLevel: "debug", sinks: ["console"] },
+  ],
+});
 
 const solanaHandlers =
   argsFromEnv(["ADMIN_KEYPAIR_PATH", "ASSET_ADDRESS"], (...envVars) =>
@@ -21,7 +36,7 @@ const evmHandlers =
 const handlers = [...solanaHandlers, ...evmHandlers];
 
 if (handlers.length === 0) {
-  console.error(
+  logger.error(
     "ERROR: No payment handlers configured.\n" +
       "   Set ADMIN_KEYPAIR_PATH and ASSET_ADDRESS for Solana\n" +
       "   Set EVM_RECEIVING_ADDRESS and EVM_PRIVATE_KEY for EVM",
@@ -32,6 +47,7 @@ if (handlers.length === 0) {
 const listenPort = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 
 const app = new Hono();
+
 app.route(
   "/",
   createFacilitatorRoutes({
@@ -40,12 +56,12 @@ app.route(
 );
 
 serve({ fetch: app.fetch, port: listenPort }, (info) => {
-  console.log(`Facilitator server listening on port ${info.port}`);
-  console.log(`Active payment handlers: ${handlers.length}`);
+  logger.info(`Facilitator server listening on port ${info.port}`);
+  logger.info(`Active payment handlers: ${handlers.length}`);
   if (solanaHandlers.length > 0) {
-    console.log("   - Solana (SOL & SPL Token)");
+    logger.info("   - Solana (SOL & SPL Token)");
   }
   if (evmHandlers.length > 0) {
-    console.log("   - EVM (Base Sepolia)");
+    logger.info("   - EVM (Base Sepolia)");
   }
 });

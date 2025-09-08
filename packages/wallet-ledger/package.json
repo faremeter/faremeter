@@ -8,14 +8,15 @@
     "@ledgerhq/hw-app-eth": "^6.36.0",
     "@ledgerhq/hw-app-solana": "^7.2.0",
     "@ledgerhq/hw-transport": "^6.31.0",
-    "@ledgerhq/hw-transport-webusb": "^6.29.0",
     "@ledgerhq/hw-transport-node-hid": "^6.29.0",
+    "@ledgerhq/hw-transport-webusb": "^6.29.0",
+    "@logtape/logtape": "catalog:",
     "@solana/web3.js": "catalog:",
     "arktype": "catalog:",
     "viem": "catalog:"
   },
   "devDependencies": {
-    "typescript": "catalog:",
-    "tsc-esm-fix": "catalog:"
+    "tsc-esm-fix": "catalog:",
+    "typescript": "catalog:"
   }
 }

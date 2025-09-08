@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@faremeter/types": "workspace:^",
+    "@logtape/logtape": "catalog:",
     "arktype": "catalog:"
   },
   "tap": {

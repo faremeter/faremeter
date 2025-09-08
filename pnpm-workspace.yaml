@@ -35,6 +35,7 @@ catalog:
   typescript: ^5.9.2
   viem: ^2.37.2
   zx: ^8.8.1
+  "@logtape/logtape": 1.0.4
 
 catalogMode: prefer
 

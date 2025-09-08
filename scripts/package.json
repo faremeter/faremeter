@@ -17,6 +17,7 @@
     "@faremeter/wallet-ledger": "workspace:*",
     "@faremeter/wallet-solana": "workspace:^",
     "@faremeter/wallet-solana-squads": "workspace:^",
+    "@logtape/logtape": "catalog:",
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",

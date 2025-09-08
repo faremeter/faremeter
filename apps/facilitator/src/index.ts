@@ -24,9 +24,11 @@ await configure({
 });
 
 const solanaHandlers =
-  argsFromEnv(["ADMIN_KEYPAIR_PATH", "ASSET_ADDRESS"], (...envVars) =>
-    solana.createHandlers("devnet", ...envVars),
-  ) ?? [];
+  (await argsFromEnv(
+    ["ADMIN_KEYPAIR_PATH", "ASSET_ADDRESS", "ASSET_NETWORK"],
+    (keypairPath, assetAddress, network) =>
+      solana.createHandlers(network || "devnet", keypairPath, assetAddress),
+  )) ?? [];
 
 const evmHandlers =
   argsFromEnv(

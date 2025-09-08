@@ -29,3 +29,9 @@ export interface LedgerTransportWrapper {
   transport: Transport;
   close: () => Promise<void>;
 }
+
+export interface UserInterface {
+  message: (msg: string) => void;
+  question: (prompt: string) => Promise<string>;
+  close: () => Promise<void>;
+}

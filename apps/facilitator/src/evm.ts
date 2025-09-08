@@ -14,7 +14,6 @@ export function createHandlers(
   assetAddress: string,
 ) {
   const handlers: FacilitatorHandler[] = [];
-  // Validate private key format
   if (!isValidPrivateKey(privateKey)) {
     logger.error(
       "ERROR: EVM private key must be a 32-byte hex string (64 chars + 0x prefix)",
@@ -22,7 +21,6 @@ export function createHandlers(
     process.exit(1);
   }
 
-  // Validate receiving address format
   if (!isAddress(receivingAddress)) {
     logger.error(
       "ERROR: EVM receiving address must be a valid Ethereum address",

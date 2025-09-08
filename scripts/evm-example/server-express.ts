@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { logger } from "../logger";
 import { default as express } from "express";
 import type { Request, Response } from "express";
 import { express as middleware } from "@faremeter/middleware";
@@ -45,14 +46,14 @@ const run = async () => {
   );
 
   app.listen(port, () => {
-    console.log(`Resource server listening on port ${port}`);
+    logger.info(`Resource server listening on port ${port}`);
     const amount = (
       parseInt(paymentRequired.maxAmountRequired) / 1_000_000
     ).toFixed(2);
-    console.log(
+    logger.info(
       `Charging ${amount} USDC per request to ${paymentRequired.resource}`,
     );
-    console.log(`Payments go to: ${EVM_RECEIVING_ADDRESS}`);
+    logger.info(`Payments go to: ${EVM_RECEIVING_ADDRESS}`);
   });
 };
 

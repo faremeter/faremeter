@@ -15,6 +15,9 @@ catalogs:
     '@hono/node-server':
       specifier: ^1.19.1
       version: 1.19.1
+    '@logtape/logtape':
+      specifier: 1.0.4
+      version: 1.0.4
     '@solana-program/compute-budget':
       specifier: ^0.8.0
       version: 0.8.0
@@ -158,6 +161,9 @@ importers:
       '@hono/node-server':
         specifier: 'catalog:'
         version: 1.19.1(hono@4.9.5)
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 1.0.4
       '@solana/kit':
         specifier: 'catalog:'
         version: 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
@@ -198,6 +204,9 @@ importers:
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 1.0.4
       hono:
         specifier: 'catalog:'
         version: 4.9.5
@@ -290,6 +299,9 @@ importers:
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 1.0.4
       arktype:
         specifier: 'catalog:'
         version: 2.1.21
@@ -382,6 +394,9 @@ importers:
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 1.0.4
       '@solana-program/compute-budget':
         specifier: 'catalog:'
         version: 0.8.0(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))
@@ -569,6 +584,9 @@ importers:
       '@ledgerhq/hw-transport-webusb':
         specifier: ^6.29.0
         version: 6.29.9
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 1.0.4
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
@@ -625,6 +643,9 @@ importers:
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 1.0.4
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
@@ -704,6 +725,9 @@ importers:
       '@hono/node-server':
         specifier: 'catalog:'
         version: 1.19.1(hono@4.9.5)
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 1.0.4
       '@nestjs/common':
         specifier: ^10.0.0
         version: 10.4.20(reflect-metadata@0.1.14)(rxjs@7.8.2)
@@ -1193,6 +1217,9 @@ packages:
 
   '@ledgerhq/types-live@6.82.0':
     resolution: {integrity: sha512-+Sn+pwgMxrMpX/8hvwCNKpRLgJvBHeBozAnNvis4O+okBjQ8P4SGVNMr6I/2m3eNKbTzOGtEnGVi9+PWOjEOxQ==}
+
+  '@logtape/logtape@1.0.4':
+    resolution: {integrity: sha512-YvNVrXIxVpnY528zoiEjX8PqTfr0UCtKXyssvaWL8AE+OByFTCooKuKMdPlm6g65YUI9fPXrHn4UnogSskABnA==}
 
   '@lukeed/csprng@1.1.0':
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
@@ -4810,6 +4837,8 @@ snapshots:
     dependencies:
       bignumber.js: 9.3.1
       rxjs: 7.8.2
+
+  '@logtape/logtape@1.0.4': {}
 
   '@lukeed/csprng@1.1.0': {}
 

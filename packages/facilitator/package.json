@@ -31,8 +31,9 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
-    "hono": "catalog:",
-    "@faremeter/types": "workspace:^"
+    "@faremeter/types": "workspace:^",
+    "@logtape/logtape": "catalog:",
+    "hono": "catalog:"
   },
   "tap": {
     "plugin": [

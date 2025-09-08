@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { logger } from "../logger";
 import {
   clusterApiUrl,
   Connection,
@@ -91,7 +92,7 @@ async function createSquad() {
     [keypair, createKey],
   );
 
-  console.log("Created squad with signature", squadCreateSignature);
+  logger.info(`Created squad with signature: ${squadCreateSignature}`);
 
   return {
     multisigPda,
@@ -113,4 +114,4 @@ const fetchWithPayer = wrapFetch(fetch, {
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");
-console.log(await req.json());
+logger.info(await req.json());

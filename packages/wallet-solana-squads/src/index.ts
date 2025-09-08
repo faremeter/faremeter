@@ -10,6 +10,7 @@ import {
 } from "@solana/web3.js";
 import * as multisig from "@sqds/multisig";
 import bs58 from "bs58";
+import { logger } from "./logger";
 
 export async function createSquadsWallet(
   network: string,
@@ -64,9 +65,8 @@ export async function createSquadsWallet(
         createVaultTransaction,
         [keypair],
       );
-      console.log(
-        "Create vault transaction with signature",
-        createVaultTxSignature,
+      logger.info(
+        `Create vault transaction with signature: ${createVaultTxSignature}`,
       );
 
       const createProposalInstruction = multisig.instructions.proposalCreate({
@@ -83,9 +83,8 @@ export async function createSquadsWallet(
         createProposalTransaction,
         [keypair],
       );
-      console.log(
-        "Create proposal transaction with signature",
-        createProposalTxSignature,
+      logger.info(
+        `Create proposal transaction with signature: ${createProposalTxSignature}`,
       );
 
       const adminApproveInstruction = multisig.instructions.proposalApprove({
@@ -109,9 +108,9 @@ export async function createSquadsWallet(
         approveProposalTransaction,
         [keypair, squadMember],
       );
-      console.log(
-        "Approve vault transaction with signature",
-        approveProposalTxSignature,
+
+      logger.info(
+        `Approve vault transaction with signature: ${approveProposalTxSignature}`,
       );
 
       const { instruction } =
@@ -137,9 +136,8 @@ export async function createSquadsWallet(
         throw new Error("vault transaction is undefined");
       }
 
-      console.log(
-        "Execute vault transaction signature",
-        bs58.encode(tx.signatures[0]),
+      logger.info(
+        `Execute vault transaction signature: ${bs58.encode(tx.signatures[0])}`,
       );
 
       return tx;

@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 import type Transport from "@ledgerhq/hw-transport";
 
 const LEDGER_ERRORS: Record<string, string> = {
@@ -67,7 +68,7 @@ export async function createTransport(maxRetries = 3): Promise<Transport> {
         i < maxRetries - 1 &&
         (errorMessage.includes("USB") || errorMessage.includes("device"))
       ) {
-        console.log(`USB connection attempt ${i + 1} failed, retrying...`);
+        logger.warning(`USB connection attempt ${i + 1} failed, retrying...`);
         await new Promise((resolve) => setTimeout(resolve, 1000));
         continue;
       }

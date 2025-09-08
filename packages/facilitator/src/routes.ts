@@ -1,6 +1,9 @@
+import { getLogger } from "@logtape/logtape";
 import { Hono, type Context } from "hono";
 import * as x from "@faremeter/types/x402";
 import { isValidationError, type FacilitatorHandler } from "@faremeter/types";
+
+const logger = getLogger(["faremeter", "facilitator"]);
 
 type CreateFacilitatorRoutesArgs = {
   handlers: FacilitatorHandler[];
@@ -10,6 +13,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
   const router = new Hono();
 
   function sendError(c: Context, msg: string) {
+    logger.error(msg);
     return c.json({
       isValid: false,
       invalidReason: msg,

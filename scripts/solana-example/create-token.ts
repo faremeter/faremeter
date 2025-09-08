@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { logger } from "../logger";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import fs from "fs";
 
@@ -41,7 +42,7 @@ const mint = await createMint(
   decimals,
 );
 
-console.log(`Created new test token: ${mint.toString()}`);
+logger.info(`Created new test token: ${mint.toString()}`);
 
 async function sendMint(publicKey: PublicKey, amountToMint: number) {
   const tokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -60,7 +61,7 @@ async function sendMint(publicKey: PublicKey, amountToMint: number) {
     amountToMint,
   );
 
-  console.log(
+  logger.info(
     `Minted ${amountToMint} tokens for ${publicKey.toString()} to ${tokenAccount.address.toString()}`,
   );
 }

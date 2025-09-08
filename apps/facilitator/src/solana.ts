@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 import { createFacilitatorHandler as createSolanaHandler } from "@faremeter/x-solana-settlement/facilitator";
 import {
   createFacilitatorHandler as createFacilitatorHandlerExact,
@@ -28,7 +30,7 @@ export function createHandlers(
   assetAddress: string,
 ) {
   if (!isNetworkValid(network)) {
-    console.error(`Solana network '${network}' is invalid`);
+    logger.error(`Solana network '${network}' is invalid`);
     process.exit(1);
   }
 
@@ -71,6 +73,6 @@ export function createHandlers(
     );
   }
 
-  console.log(`Solana handlers configured for ${network}`);
+  logger.info(`Solana handlers configured for ${network}`);
   return handlers;
 }

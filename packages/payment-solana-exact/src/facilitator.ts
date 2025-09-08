@@ -25,6 +25,7 @@ import {
 import { Keypair, type PublicKey } from "@solana/web3.js";
 import { type } from "arktype";
 import { isValidTransaction } from "./verify";
+import { logger } from "./logger";
 
 export const x402Scheme = "exact";
 
@@ -33,6 +34,7 @@ export const PaymentRequirementsExtra = type({
 });
 
 function errorResponse(msg: string): x402SettleResponse {
+  logger.error(msg);
   return {
     success: false,
     error: msg,
@@ -74,7 +76,9 @@ const sendTransaction = async (
     .send();
 
   if (simResult.value.err) {
-    console.log("transaction simulation failed", simResult.value.err);
+    logger.error(
+      `transaction simulation failed: ${JSON.stringify(simResult.value.err)}`,
+    );
     return { success: false, error: "Transaction simulation failed" };
   }
 
@@ -160,7 +164,7 @@ export const createFacilitatorHandler = (
       );
 
       if (!(await isValidTransaction(transactionMessage, requirements))) {
-        console.log("Invalid transaction");
+        logger.error("Invalid transaction");
         return errorResponse("Invalid transaction");
       }
 
@@ -190,7 +194,7 @@ export const createFacilitatorHandler = (
         networkId: payment.network,
       };
     } catch (error) {
-      console.error("Transaction failed:", error);
+      logger.error(`Transaction failed: ${JSON.stringify(error)}`);
       return errorResponse(`Transaction failed`);
     }
   };

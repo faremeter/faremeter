@@ -10,6 +10,11 @@
       "require": "./dist/src/index.js",
       "import": "./dist/src/index.js",
       "types": "./dist/src/index.d.ts"
+    },
+    "./solana": {
+      "require": "./dist/src/solana.js",
+      "import": "./dist/src/solana.js",
+      "types": "./dist/src/solana.d.ts"
     }
   },
   "files": [

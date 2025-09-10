@@ -1,3 +1,5 @@
+import { type UnitInput } from "./common";
+
 const knownNetworks = {
   base: {
     chainId: 8453,
@@ -23,7 +25,7 @@ export function lookupKnownNetwork(n: KnownNetwork) {
 type HexPrefixed = `0x${string}`;
 type AssetInfo = {
   network: Partial<Record<KnownNetwork, { address: HexPrefixed }>>;
-  toUnit: (v: string) => string;
+  toUnit: (v: UnitInput) => string;
 };
 
 const knownAssets = {
@@ -36,7 +38,7 @@ const knownAssets = {
         address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
       },
     },
-    toUnit: (v: string) => v,
+    toUnit: (v: UnitInput) => v.toString(),
   },
 } as const satisfies Record<string, AssetInfo>;
 export type KnownAsset = keyof typeof knownAssets;

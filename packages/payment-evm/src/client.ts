@@ -4,13 +4,17 @@ import type {
   PaymentExecer,
   RequestContext,
 } from "@faremeter/types";
+import {
+  isKnownNetwork,
+  lookupKnownNetwork,
+  lookupKnownAsset,
+} from "@faremeter/info/evm";
 import type { x402PaymentRequirements } from "@faremeter/types";
 import type { Hex } from "viem";
 import { isAddress } from "viem";
 import { type } from "arktype";
 import {
   X402_EXACT_SCHEME,
-  USDC_BASE_SEPOLIA,
   EIP712_TYPES,
   eip712Domain,
   type x402ExactPayload,
@@ -31,6 +35,26 @@ interface WalletForPayment {
 }
 
 export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
+  if (!isKnownNetwork(wallet.network)) {
+    throw new Error(
+      `Wallet was created for unsupported network '${wallet.network}'`,
+    );
+  }
+
+  const networkInfo = lookupKnownNetwork(wallet.network);
+  if (!networkInfo) {
+    throw new Error(
+      `Couldn't look up network info for network '${wallet.network}'`,
+    );
+  }
+
+  const assetInfo = lookupKnownAsset(wallet.network, "USDC");
+  if (!assetInfo) {
+    throw new Error(
+      `Couldn't look up USDC information on network '${wallet.network}'`,
+    );
+  }
+
   return async function handlePayment(
     context: RequestContext,
     accepts: x402PaymentRequirements[],
@@ -73,14 +97,14 @@ export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
         }
 
         const domain = {
-          name: extraResult.name ?? "USDC",
+          name: extraResult.name ?? assetInfo.name,
           version: extraResult.version ?? "2",
-          chainId: extraResult.chainId ?? 84532,
+          chainId: extraResult.chainId ?? networkInfo.chainId,
           verifyingContract: (() => {
             const asset =
               extraResult.verifyingContract ??
               requirements.asset ??
-              USDC_BASE_SEPOLIA;
+              assetInfo.address;
             if (!isAddress(asset)) {
               throw new Error(`Invalid asset address: ${asset}`);
             }

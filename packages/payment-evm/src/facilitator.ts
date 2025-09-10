@@ -11,10 +11,14 @@ import type { PublicClient, Hex, WalletClient, Account } from "viem";
 import { verifyTypedData, encodeFunctionData, isAddress } from "viem";
 import { baseSepolia } from "viem/chains";
 import {
+  isKnownAsset,
+  lookupKnownAsset,
+  lookupKnownNetwork,
+} from "@faremeter/info/evm";
+
+import {
   X402_EXACT_SCHEME,
   BASE_SEPOLIA_NETWORK,
-  BASE_SEPOLIA_CHAIN_ID,
-  USDC_BASE_SEPOLIA,
   TRANSFER_WITH_AUTHORIZATION_ABI,
   EIP712_TYPES,
   x402ExactPayload,
@@ -44,13 +48,29 @@ export function createFacilitatorHandler(
   publicClient: PublicClient,
   walletClient: WalletClient,
   receivingAddress: Hex,
-  asset = USDC_BASE_SEPOLIA,
+  assetName: string,
 ): FacilitatorHandler {
   if (network !== BASE_SEPOLIA_NETWORK) {
     throw new Error(
       `Unsupported network: ${network}. Only base-sepolia is supported.`,
     );
   }
+
+  const networkInfo = lookupKnownNetwork(network);
+  if (!networkInfo) {
+    throw new Error(`Couldn't look up information for ${network}`);
+  }
+
+  if (!isKnownAsset(assetName)) {
+    throw new Error(`Unknown asset: ${assetName}`);
+  }
+
+  const assetInfo = lookupKnownAsset(network, assetName);
+  if (!assetInfo) {
+    throw new Error(`Couldn't look up asset ${assetName} on ${network}`);
+  }
+
+  const asset = assetInfo.address;
 
   if (!isAddress(asset)) {
     throw new Error(`Invalid asset address: ${asset}`);
@@ -77,9 +97,9 @@ export function createFacilitatorHandler(
         payTo: receivingAddress,
         // Provide EIP-712 domain parameters for client signing
         extra: {
-          name: "USDC",
+          name: assetName,
           version: "2",
-          chainId: BASE_SEPOLIA_CHAIN_ID,
+          chainId: networkInfo.chainId,
           verifyingContract: asset,
         },
       }));
@@ -286,7 +306,7 @@ export function createFacilitatorHandler(
         success: true,
         error: null,
         txHash,
-        networkId: BASE_SEPOLIA_CHAIN_ID.toString(),
+        networkId: networkInfo.chainId.toString(),
       };
     } catch (error) {
       return errorResponse(

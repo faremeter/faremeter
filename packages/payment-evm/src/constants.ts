@@ -10,8 +10,6 @@ const prefixedHexString = type("string").pipe.try((x) => {
 
 export const X402_EXACT_SCHEME = "exact";
 export const BASE_SEPOLIA_NETWORK = "base-sepolia";
-export const BASE_SEPOLIA_CHAIN_ID = 84532;
-export const USDC_BASE_SEPOLIA = "0x036cbd53842c5426634e7929541ec2318f3dcf7e";
 
 export const TRANSFER_WITH_AUTHORIZATION_ABI = [
   {

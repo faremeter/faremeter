@@ -6,12 +6,12 @@ import { privateKeyToAccount } from "viem/accounts";
 import type { FacilitatorHandler } from "@faremeter/types";
 import { createFacilitatorHandler as createEvmHandler } from "@faremeter/payment-evm";
 import { isValidPrivateKey, lookupNetworkConfig } from "@faremeter/wallet-evm";
+import { lookupKnownAsset, type KnownNetwork } from "@faremeter/info/evm";
 
 export function createHandlers(
   network: string,
   privateKey: string,
   receivingAddress: string,
-  assetAddress: string,
 ) {
   const handlers: FacilitatorHandler[] = [];
   // Validate private key format
@@ -39,6 +39,13 @@ export function createHandlers(
     process.exit(1);
   }
 
+  const usdcInfo = lookupKnownAsset(network as KnownNetwork, "USDC");
+
+  if (!usdcInfo) {
+    logger.error(`ERROR: Couldn't look up USDC on '${network}'`);
+    process.exit(1);
+  }
+
   const transport = http(networkConfig.rpcUrl);
 
   const publicClient = createPublicClient({
@@ -59,7 +66,7 @@ export function createHandlers(
       publicClient,
       walletClient,
       receivingAddress,
-      assetAddress,
+      usdcInfo.address,
     ),
   );
 

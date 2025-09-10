@@ -7,17 +7,11 @@ import {
 } from "@faremeter/payment-solana-exact";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createSolanaRpc } from "@solana/kit";
-import { isKnownCluster } from "@faremeter/info/solana";
+import { isKnownCluster, lookupKnownSPLToken } from "@faremeter/info/solana";
 import fs from "fs";
 import type { FacilitatorHandler } from "@faremeter/types";
 
-const USDC_MINT_ADDRESS = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"; // USDC devnet
-
-export function createHandlers(
-  network: string,
-  keypairPath: string,
-  assetAddress: string,
-) {
+export function createHandlers(network: string, keypairPath: string) {
   if (!isKnownCluster(network)) {
     logger.error(`Solana network '${network}' is invalid`);
     process.exit(1);
@@ -30,8 +24,13 @@ export function createHandlers(
   const apiUrl = clusterApiUrl(network);
   const connection = new Connection(apiUrl, "confirmed");
   const rpc = createSolanaRpc(apiUrl);
-  const mint = new PublicKey(assetAddress);
-  const usdcMint = new PublicKey(USDC_MINT_ADDRESS);
+
+  const usdcInfo = lookupKnownSPLToken(network, "USDC");
+  if (!usdcInfo) {
+    throw new Error(`Couldn't look up the USDC SPL Token on ${network}`);
+  }
+
+  const mint = new PublicKey(usdcInfo.address);
 
   // Add Solana handlers
   handlers.push(
@@ -47,20 +46,6 @@ export function createHandlers(
       mint,
     ),
   );
-
-  if (!mint.equals(usdcMint)) {
-    handlers.push(
-      // USDC SPL Token
-      createSolanaHandler(network, connection, adminKeypair, usdcMint),
-      // USDC with exact scheme
-      createFacilitatorHandlerExact(
-        lookupX402Network(network),
-        rpc,
-        adminKeypair,
-        usdcMint,
-      ),
-    );
-  }
 
   logger.info(`Solana handlers configured for ${network}`);
   return handlers;

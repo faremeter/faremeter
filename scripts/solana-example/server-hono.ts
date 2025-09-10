@@ -4,16 +4,13 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { hono as middleware } from "@faremeter/middleware";
 import { Keypair } from "@solana/web3.js";
+import { lookupKnownSPLToken } from "@faremeter/info/solana";
 import fs from "fs";
 
-const { PAYTO_KEYPAIR_PATH, ASSET_ADDRESS } = process.env;
+const { PAYTO_KEYPAIR_PATH } = process.env;
 
 if (!PAYTO_KEYPAIR_PATH) {
   throw new Error("ADMIN_KEYPAIR_PATH must be set in your environment");
-}
-
-if (!ASSET_ADDRESS) {
-  throw new Error("ASSET_ADDRESS must point at an SPL Token address");
 }
 
 const payToKeypair = Keypair.fromSecretKey(
@@ -21,8 +18,14 @@ const payToKeypair = Keypair.fromSecretKey(
 );
 
 const network = "devnet";
+const splTokenName = "USDC";
 
-const asset = ASSET_ADDRESS;
+const usdcInfo = lookupKnownSPLToken(network, splTokenName);
+if (!usdcInfo) {
+  throw new Error(`couldn't look up SPLToken ${splTokenName} on ${network}!`);
+}
+
+const asset = usdcInfo.address;
 
 const port = 3000;
 

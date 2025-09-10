@@ -8,6 +8,7 @@
   ],
   "dependencies": {
     "@faremeter/fetch": "workspace:*",
+    "@faremeter/info": "workspace:^",
     "@faremeter/middleware": "workspace:^",
     "@faremeter/payment-evm": "workspace:^",
     "@faremeter/payment-solana-exact": "workspace:^",

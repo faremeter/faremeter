@@ -24,14 +24,13 @@ await configure({
 });
 
 const solanaHandlers =
-  argsFromEnv(["ADMIN_KEYPAIR_PATH", "ASSET_ADDRESS"], (...envVars) =>
+  argsFromEnv(["ADMIN_KEYPAIR_PATH"], (...envVars) =>
     solana.createHandlers("devnet", ...envVars),
   ) ?? [];
 
 const evmHandlers =
-  argsFromEnv(
-    ["EVM_PRIVATE_KEY", "EVM_RECEIVING_ADDRESS", "EVM_ASSET_ADDRESS"],
-    (...envVars) => evm.createHandlers("base-sepolia", ...envVars),
+  argsFromEnv(["EVM_PRIVATE_KEY", "EVM_RECEIVING_ADDRESS"], (...envVars) =>
+    evm.createHandlers("base-sepolia", ...envVars),
   ) ?? [];
 
 const handlers = [...solanaHandlers, ...evmHandlers];
@@ -39,7 +38,7 @@ const handlers = [...solanaHandlers, ...evmHandlers];
 if (handlers.length === 0) {
   logger.error(
     "ERROR: No payment handlers configured.\n" +
-      "   Set ADMIN_KEYPAIR_PATH and ASSET_ADDRESS for Solana\n" +
+      "   Set ADMIN_KEYPAIR_PATH for Solana\n" +
       "   Set EVM_RECEIVING_ADDRESS and EVM_PRIVATE_KEY for EVM",
   );
   process.exit(1);

@@ -4,24 +4,28 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 import { createLocalWallet } from "@faremeter/wallet-solana";
 import { createPaymentHandler } from "@faremeter/x-solana-settlement";
 import { wrap as wrapFetch } from "@faremeter/fetch";
+import { lookupKnownSPLToken } from "@faremeter/info/solana";
 import fs from "fs";
 
-const { PAYER_KEYPAIR_PATH, ASSET_ADDRESS } = process.env;
+const { PAYER_KEYPAIR_PATH } = process.env;
 
 if (!PAYER_KEYPAIR_PATH) {
   throw new Error("PAYER_KEYPAIR_PATH must be set in your environment");
 }
 
-if (!ASSET_ADDRESS) {
-  throw new Error("ASSET_ADDRESS must point at an SPL Token address");
+const network = "devnet";
+const splTokenName = "USDC";
+
+const usdcInfo = lookupKnownSPLToken(network, splTokenName);
+if (!usdcInfo) {
+  throw new Error(`couldn't look up SPLToken ${splTokenName} on ${network}!`);
 }
 
-const network = "devnet";
 const keypair = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
 );
 
-const mint = new PublicKey(ASSET_ADDRESS);
+const mint = new PublicKey(usdcInfo.address);
 const wallet = await createLocalWallet(network, keypair);
 const fetchWithPayer = wrapFetch(fetch, {
   handlers: [createPaymentHandler(wallet, mint)],

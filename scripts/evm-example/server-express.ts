@@ -3,15 +3,23 @@ import { logger } from "../logger";
 import { default as express } from "express";
 import type { Request, Response } from "express";
 import { express as middleware } from "@faremeter/middleware";
+import { lookupKnownAsset } from "@faremeter/info/evm";
 
-const { EVM_RECEIVING_ADDRESS, EVM_ASSET_ADDRESS, PORT } = process.env;
+const { EVM_RECEIVING_ADDRESS, PORT } = process.env;
 
 if (!EVM_RECEIVING_ADDRESS) {
   throw new Error("EVM_RECEIVING_ADDRESS must be set in your environment");
 }
 
 const network = "base-sepolia";
-const asset = EVM_ASSET_ADDRESS ?? "0x036cbd53842c5426634e7929541ec2318f3dcf7e"; // USDC on Base Sepolia
+const assetName = "USDC";
+
+const usdcInfo = lookupKnownAsset(network, assetName);
+if (!usdcInfo) {
+  throw new Error(`Couldn't look up asset ${assetName} on ${network}`);
+}
+
+const asset = usdcInfo.address;
 
 const port = PORT ? parseInt(PORT) : 4021;
 

@@ -57,10 +57,11 @@ Generate EVM private keys for testing:
 
 ### For Solana
 
-Fund all keypairs with SOL on `devnet`:
+Fund all keypairs with SOL and USDC on `devnet`:
 
 - Use `solana airdrop`
 - Or visit the [Solana Faucet](https://faucet.solana.com)
+- And visit Circle's [USDC Faucet](https://faucet.circle.com) (select Solana Devnet)
 
 ### For EVM
 
@@ -75,18 +76,14 @@ Fund your Base Sepolia wallets:
 
 ```
 cat > apps/facilitator/.env <<EOF
-ASSET_ADDRESS=Hxtm6jXVcA9deMFxJRvMkHewhYJHxCpqsLvH9d1bvxBP
 ADMIN_KEYPAIR_PATH=../../keypairs/admin.json
 EOF
 
 cat > scripts/.env <<EOF
-ASSET_ADDRESS=Hxtm6jXVcA9deMFxJRvMkHewhYJHxCpqsLvH9d1bvxBP
 PAYER_KEYPAIR_PATH=../keypairs/payer.json
 PAYTO_KEYPAIR_PATH=../keypairs/payto.json
 EOF
 ```
-
-NOTE: To use an SPL Token, you'll need to fund the above keypairs with tokens from the `ASSET_ADDRESS` you provide.
 
 ### EVM Configuration
 
@@ -171,7 +168,7 @@ NOTE: To pay using Crossmint, you must have your `CROSSMINT_WALLET` address and 
 (cd scripts && pnpm tsx solana-example/token-payment.ts)
 ```
 
-NOTE: Your payer keypair must be funded with tokens using the above provided `ASSET_ADDRESS` for this method to work.
+NOTE: Your payer keypair must be funded with SPL Token-based `USDC` for this demo to work.
 
 ### EVM Payments
 
@@ -210,13 +207,3 @@ For EVM payments, you should see:
 ```
 
 ... as the client output. At the same time, the facilitator will log the processing of the payment.
-
-## 8. (Optional) Mint A New SPL Token
-
-If you wish to mint a new token, to experiment with and use as the `ASSET_ADDRESS` above, you can run:
-
-```
-(cd scripts && pnpm tsx solana-example/create-token.ts)
-```
-
-Then take the address exposed as the `new test token`, and put it in both of the environment files as the asset address.

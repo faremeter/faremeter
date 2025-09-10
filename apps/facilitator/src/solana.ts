@@ -5,31 +5,20 @@ import {
   createFacilitatorHandler as createFacilitatorHandlerExact,
   lookupX402Network,
 } from "@faremeter/payment-solana-exact";
-import {
-  clusterApiUrl,
-  Connection,
-  Keypair,
-  PublicKey,
-  type Cluster,
-} from "@solana/web3.js";
+import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createSolanaRpc } from "@solana/kit";
+import { isKnownCluster } from "@faremeter/info/solana";
 import fs from "fs";
 import type { FacilitatorHandler } from "@faremeter/types";
 
 const USDC_MINT_ADDRESS = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"; // USDC devnet
-
-// XXX - Move this somewhere more useful in future.
-const knownClusters = new Set(["devnet", "testnet", "mainnet-beta"]);
-function isNetworkValid(c: string): c is Cluster {
-  return knownClusters.has(c);
-}
 
 export function createHandlers(
   network: string,
   keypairPath: string,
   assetAddress: string,
 ) {
-  if (!isNetworkValid(network)) {
+  if (!isKnownCluster(network)) {
     logger.error(`Solana network '${network}' is invalid`);
     process.exit(1);
   }

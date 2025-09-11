@@ -4,7 +4,11 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { hono as middleware } from "@faremeter/middleware";
 import { Keypair } from "@solana/web3.js";
-import { lookupKnownSPLToken } from "@faremeter/info/solana";
+import {
+  lookupKnownSPLToken,
+  x402Exact,
+  xSolanaSettlement,
+} from "@faremeter/info/solana";
 import fs from "fs";
 
 const { PAYTO_KEYPAIR_PATH } = process.env;
@@ -25,20 +29,7 @@ if (!usdcInfo) {
   throw new Error(`couldn't look up SPLToken ${splTokenName} on ${network}!`);
 }
 
-const asset = usdcInfo.address;
-
-const port = 3000;
-
-const paymentRequired = {
-  scheme: "@faremeter/x-solana-settlement",
-  network,
-  payTo: payToKeypair.publicKey.toBase58(),
-  maxAmountRequired: "1000000",
-  resource: `http://localhost:${port}/protected`,
-  description: "a protected resource",
-  mimeType: "application/json",
-  maxTimeoutSeconds: 5,
-};
+const payTo = payToKeypair.publicKey.toBase58();
 
 const app = new Hono();
 
@@ -47,25 +38,27 @@ app.get(
   await middleware.createMiddleware({
     facilitatorURL: "http://localhost:4000",
     accepts: [
-      // Native Solana
-      {
-        ...paymentRequired,
-        scheme: "@faremeter/x-solana-settlement",
+      // USDC xSolanaSettlement Payment
+      xSolanaSettlement({
+        network,
+        payTo,
+        asset: "USDC",
+        amount: "1000000",
+      }),
+      // Native SOL xSolanaSettlement Payment
+      xSolanaSettlement({
+        network,
+        payTo,
         asset: "sol",
-      },
-      // Our custom mint
-      {
-        ...paymentRequired,
-        scheme: "@faremeter/x-solana-settlement",
-        asset,
-      },
-      // Exact payment with our custom mint
-      {
-        ...paymentRequired,
-        network: `solana-${network}`,
-        scheme: "exact",
-        asset,
-      },
+        amount: "1000000",
+      }),
+      // USDC Exact Payment
+      x402Exact({
+        network,
+        asset: "USDC",
+        amount: "10000",
+        payTo,
+      }),
     ],
   }),
   (c) => {

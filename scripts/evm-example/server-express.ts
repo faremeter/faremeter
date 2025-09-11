@@ -3,37 +3,21 @@ import { logger } from "../logger";
 import { default as express } from "express";
 import type { Request, Response } from "express";
 import { express as middleware } from "@faremeter/middleware";
-import { lookupKnownAsset } from "@faremeter/info/evm";
+import { isAddress, Address } from "@faremeter/types/evm";
+import { x402Exact } from "@faremeter/info/evm";
 
 const { EVM_RECEIVING_ADDRESS, PORT } = process.env;
 
-if (!EVM_RECEIVING_ADDRESS) {
-  throw new Error("EVM_RECEIVING_ADDRESS must be set in your environment");
+const payTo = EVM_RECEIVING_ADDRESS as Address;
+
+if (!isAddress(payTo)) {
+  throw new Error(
+    "EVM_RECEIVING_ADDRESS must be set in your environment, and be a valid EVM address",
+  );
 }
 
 const network = "base-sepolia";
-const assetName = "USDC";
-
-const usdcInfo = lookupKnownAsset(network, assetName);
-if (!usdcInfo) {
-  throw new Error(`Couldn't look up asset ${assetName} on ${network}`);
-}
-
-const asset = usdcInfo.address;
-
 const port = PORT ? parseInt(PORT) : 4021;
-
-const paymentRequired = {
-  scheme: "exact",
-  network,
-  asset,
-  payTo: EVM_RECEIVING_ADDRESS,
-  maxAmountRequired: "10000", // 0.01 USDC
-  maxTimeoutSeconds: 300,
-  resource: `http://localhost:${port}/weather`,
-  description: "Weather data API",
-  mimeType: "application/json",
-};
 
 const run = async () => {
   const app = express();
@@ -42,7 +26,14 @@ const run = async () => {
     "/weather",
     await middleware.createMiddleware({
       facilitatorURL: "http://localhost:4000",
-      accepts: [paymentRequired],
+      accepts: [
+        x402Exact({
+          network,
+          asset: "USDC",
+          payTo,
+          amount: "10000", // 0.01 USDC
+        }),
+      ],
     }),
     (_req: Request, res: Response) => {
       res.json({

@@ -14,6 +14,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
 
   function sendError(c: Context, msg: string) {
     logger.error(msg);
+    c.status(400);
     return c.json({
       isValid: false,
       invalidReason: msg,

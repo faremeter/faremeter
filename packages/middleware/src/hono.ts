@@ -2,19 +2,19 @@ import {
   x402SettleRequest,
   x402SettleResponse,
   x402PaymentRequiredResponse,
-  x402PaymentRequirements,
   x402PaymentHeaderToPayload,
   isValidationError,
 } from "@faremeter/types";
 import {
   findMatchingPaymentRequirements,
   gateGetPaymentRequiredResponse,
+  type RelaxedRequirements,
 } from "./utils";
 
 import type { MiddlewareHandler, Context } from "hono";
 
 type CreateMiddlewareArgs = {
-  accepts: x402PaymentRequirements[];
+  accepts: RelaxedRequirements[];
   facilitatorURL: string;
 };
 

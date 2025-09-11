@@ -26,3 +26,5 @@ export function gateGetPaymentRequiredResponse(res: Response) {
   logger.error(msg);
   throw new Error(msg);
 }
+
+export type RelaxedRequirements = Partial<x402PaymentRequirements>;

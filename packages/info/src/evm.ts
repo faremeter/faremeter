@@ -1,4 +1,4 @@
-import { type UnitInput } from "./common";
+import { type UnitInput, addX402PaymentRequirementDefaults } from "./common";
 import { Address } from "@faremeter/types/evm";
 
 const knownNetworks = {
@@ -66,4 +66,30 @@ export function lookupKnownAsset(network: KnownNetwork, name: KnownAsset) {
 
 export function isKnownAsset(asset: string): asset is KnownAsset {
   return asset in knownAssets;
+}
+
+export type x402ExactArgs = {
+  network: KnownNetwork;
+  asset: KnownAsset;
+  amount: UnitInput;
+  payTo: Address;
+};
+
+export function x402Exact(args: x402ExactArgs) {
+  const tokenInfo = lookupKnownAsset(args.network, args.asset);
+
+  if (!tokenInfo) {
+    throw new Error(`couldn't look up token '${args.asset}' on Solana cluster`);
+  }
+
+  const req = addX402PaymentRequirementDefaults({
+    scheme: "exact",
+    network: args.network,
+    maxAmountRequired: tokenInfo.toUnit(args.amount),
+    payTo: args.payTo,
+    asset: tokenInfo.address,
+    maxTimeoutSeconds: 300, // from coinbase/x402's middleware defaults
+  });
+
+  return req;
 }

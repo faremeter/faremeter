@@ -11,7 +11,7 @@ import {
   gateGetPaymentRequiredResponse,
 } from "./utils";
 
-import type { MiddlewareHandler } from "hono";
+import type { MiddlewareHandler, Context } from "hono";
 
 type CreateMiddlewareArgs = {
   accepts: x402PaymentRequirements[];
@@ -21,7 +21,15 @@ type CreateMiddlewareArgs = {
 export async function createMiddleware(
   args: CreateMiddlewareArgs,
 ): Promise<MiddlewareHandler> {
-  async function getPaymentRequiredResponse(args: CreateMiddlewareArgs) {
+  async function getPaymentRequiredResponse(
+    args: CreateMiddlewareArgs,
+    c: Context,
+  ) {
+    const accepts = args.accepts.map((x) => ({
+      ...x,
+      resource: x.resource ?? c.req.url,
+    }));
+
     const t = await fetch(`${args.facilitatorURL}/accepts`, {
       method: "POST",
       headers: {
@@ -30,7 +38,7 @@ export async function createMiddleware(
       },
       body: JSON.stringify({
         x402Version: 1,
-        accepts: args.accepts,
+        accepts,
       }),
     });
 
@@ -50,7 +58,7 @@ export async function createMiddleware(
   return async (c, next) => {
     // XXX - Temporarily request this every time.  This will be
     // cached in future.
-    const paymentRequiredResponse = await getPaymentRequiredResponse(args);
+    const paymentRequiredResponse = await getPaymentRequiredResponse(args, c);
     const sendPaymentRequired = () => {
       c.status(402);
       return c.json(paymentRequiredResponse);

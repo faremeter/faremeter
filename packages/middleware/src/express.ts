@@ -17,7 +17,18 @@ type CreateMiddlewareArgs = {
   facilitatorURL: string;
 };
 
-async function getPaymentRequiredResponse(args: CreateMiddlewareArgs) {
+async function getPaymentRequiredResponse(
+  args: CreateMiddlewareArgs,
+  req: Request,
+) {
+  // XXX - This is tracking the behavior of coinbase/x402, but is
+  // probably too naive of a URL creator for the long run.
+  const resource = `${req.protocol}://${req.headers.host}${req.path}`;
+  const accepts = args.accepts.map((x) => ({
+    ...x,
+    resource: x.resource ?? resource,
+  }));
+
   const t = await fetch(`${args.facilitatorURL}/accepts`, {
     method: "POST",
     headers: {
@@ -26,7 +37,7 @@ async function getPaymentRequiredResponse(args: CreateMiddlewareArgs) {
     },
     body: JSON.stringify({
       x402Version: 1,
-      accepts: args.accepts,
+      accepts,
     }),
   });
 
@@ -47,7 +58,7 @@ export async function createMiddleware(args: CreateMiddlewareArgs) {
   return async (req: Request, res: Response, next: NextFunction) => {
     // XXX - Temporarily request this every time.  This will be
     // cached in future.
-    const paymentRequiredResponse = await getPaymentRequiredResponse(args);
+    const paymentRequiredResponse = await getPaymentRequiredResponse(args, req);
     const sendPaymentRequired = (res: Response) => {
       res.status(402).json(paymentRequiredResponse);
     };

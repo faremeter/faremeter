@@ -55,13 +55,6 @@ const run = async () => {
 
   const server = app.listen(port, () => {
     logger.info(`Resource server listening on port ${port}`);
-    const amount = (
-      parseInt(paymentRequired.maxAmountRequired) / 1_000_000
-    ).toFixed(2);
-    logger.info(
-      `Charging ${amount} USDC per request to ${paymentRequired.resource}`,
-    );
-    logger.info(`Payments go to: ${EVM_RECEIVING_ADDRESS}`);
   });
 
   function shutdown() {

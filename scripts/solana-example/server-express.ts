@@ -3,7 +3,11 @@ import "../logger";
 import { default as express } from "express";
 import type { Request, Response } from "express";
 import { express as middleware } from "@faremeter/middleware";
-import { lookupKnownSPLToken } from "@faremeter/info/solana";
+import {
+  lookupKnownSPLToken,
+  x402Exact,
+  xSolanaSettlement,
+} from "@faremeter/info/solana";
 import { Keypair } from "@solana/web3.js";
 import fs from "fs";
 
@@ -18,6 +22,8 @@ const payToKeypair = Keypair.fromSecretKey(
 );
 
 const network = "devnet";
+const port = 3000;
+
 const splTokenName = "USDC";
 
 const usdcInfo = lookupKnownSPLToken(network, splTokenName);
@@ -25,19 +31,7 @@ if (!usdcInfo) {
   throw new Error(`couldn't look up SPLToken ${splTokenName} on ${network}!`);
 }
 
-const asset = usdcInfo.address;
-
-const port = 3000;
-
-const paymentRequired = {
-  network,
-  payTo: payToKeypair.publicKey.toBase58(),
-  maxAmountRequired: "1000000",
-  resource: `http://localhost:${port}/protected`,
-  description: "a protected resource",
-  mimeType: "application/json",
-  maxTimeoutSeconds: 5,
-};
+const payTo = payToKeypair.publicKey.toBase58();
 
 const run = async () => {
   const app = express();
@@ -47,25 +41,27 @@ const run = async () => {
     await middleware.createMiddleware({
       facilitatorURL: "http://localhost:4000",
       accepts: [
-        // Native Solana
-        {
-          ...paymentRequired,
-          scheme: "@faremeter/x-solana-settlement",
+        // USDC xSolanaSettlement Payment
+        xSolanaSettlement({
+          network,
+          payTo,
+          asset: "USDC",
+          amount: "1000000",
+        }),
+        // Native SOL xSolanaSettlement Payment
+        xSolanaSettlement({
+          network,
+          payTo,
           asset: "sol",
-        },
-        // Our custom mint
-        {
-          ...paymentRequired,
-          scheme: "@faremeter/x-solana-settlement",
-          asset,
-        },
-        // Exact payment with our custom mint
-        {
-          ...paymentRequired,
-          network: `solana-${network}`,
-          scheme: "exact",
-          asset,
-        },
+          amount: "1000000",
+        }),
+        // USDC Exact Payment
+        x402Exact({
+          network,
+          asset: "USDC",
+          amount: "10000",
+          payTo,
+        }),
       ],
     }),
     (req: Request, res: Response) => {

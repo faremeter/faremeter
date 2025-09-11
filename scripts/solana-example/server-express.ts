@@ -75,7 +75,16 @@ const run = async () => {
     },
   );
 
-  app.listen(port);
+  const server = app.listen(port);
+
+  function shutdown() {
+    server.close(() => {
+      process.exit(0);
+    });
+  }
+
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 };
 
 await run();

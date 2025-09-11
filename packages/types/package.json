@@ -15,6 +15,16 @@
       "require": "./dist/src/x402.js",
       "import": "./dist/src/x402.js",
       "types": "./dist/src/x402.d.ts"
+    },
+    "./solana": {
+      "require": "./dist/src/solana.js",
+      "import": "./dist/src/solana.js",
+      "types": "./dist/src/solana.d.ts"
+    },
+    "./evm": {
+      "require": "./dist/src/evm.js",
+      "import": "./dist/src/evm.js",
+      "types": "./dist/src/evm.d.ts"
     }
   },
   "files": [

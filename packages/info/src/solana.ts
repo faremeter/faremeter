@@ -1,4 +1,5 @@
 import { type UnitInput } from "./common";
+import { Base58Address } from "@faremeter/types/solana";
 
 const knownClusters = ["devnet", "testnet", "mainnet-beta"] as const;
 type knownClusters = typeof knownClusters;
@@ -9,7 +10,7 @@ export function isKnownCluster(c: string): c is KnownCluster {
 }
 
 type SPLTokenInfo = {
-  cluster: Partial<Record<KnownCluster, { address: string }>>;
+  cluster: Partial<Record<KnownCluster, { address: Base58Address }>>;
   toUnit: (v: UnitInput) => string;
 };
 

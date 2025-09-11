@@ -1,4 +1,5 @@
 import { type UnitInput } from "./common";
+import { Address } from "@faremeter/types/evm";
 
 const knownNetworks = {
   base: {
@@ -22,9 +23,8 @@ export function lookupKnownNetwork(n: KnownNetwork) {
   };
 }
 
-type HexPrefixed = `0x${string}`;
 type AssetInfo = {
-  network: Partial<Record<KnownNetwork, { address: HexPrefixed }>>;
+  network: Partial<Record<KnownNetwork, { address: Address }>>;
   toUnit: (v: UnitInput) => string;
 };
 

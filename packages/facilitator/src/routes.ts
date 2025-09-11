@@ -68,8 +68,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       )
     ).flat();
 
-    // XXX - This is not exactly standard.
-    c.status(402);
+    c.status(200);
     return c.json({
       x402Version: 1,
       accepts,

@@ -6,7 +6,10 @@ import {
   x402PaymentHeaderToPayload,
   isValidationError,
 } from "@faremeter/types";
-import { findMatchingPaymentRequirements } from "./utils";
+import {
+  findMatchingPaymentRequirements,
+  gateGetPaymentRequiredResponse,
+} from "./utils";
 import type { NextFunction, Request, Response } from "express";
 
 type CreateMiddlewareArgs = {
@@ -26,6 +29,8 @@ async function getPaymentRequiredResponse(args: CreateMiddlewareArgs) {
       accepts: args.accepts,
     }),
   });
+
+  gateGetPaymentRequiredResponse(t);
 
   const response = x402PaymentRequiredResponse(await t.json());
 

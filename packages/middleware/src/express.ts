@@ -1,5 +1,4 @@
 import {
-  type FacilitatorHandler,
   x402SettleRequest,
   x402SettleResponse,
   x402PaymentRequiredResponse,
@@ -9,76 +8,6 @@ import {
 } from "@faremeter/types";
 import { findMatchingPaymentRequirements } from "./utils";
 import type { NextFunction, Request, Response } from "express";
-import { logger } from "./logger";
-
-function extractPaymentFromHeader(req: Request) {
-  const paymentHeader = req.header("X-PAYMENT");
-  if (!paymentHeader) {
-    return null;
-  }
-
-  const payload = x402PaymentHeaderToPayload(paymentHeader);
-  if (isValidationError(payload)) {
-    logger.info(`type validation error: ${payload.summary}`);
-    return null;
-  }
-
-  return payload;
-}
-
-type CreateDirectFacilitatorMiddlewareArgs = {
-  handlers: FacilitatorHandler[];
-  accepts: x402PaymentRequirements[];
-};
-export function createDirectFacilitatorMiddleware(
-  args: CreateDirectFacilitatorMiddlewareArgs,
-) {
-  const sendPaymentRequired = async (res: Response) => {
-    const accepts: x402PaymentRequirements[] = (
-      await Promise.all(
-        args.handlers.flatMap((x) => x.getRequirements(args.accepts)),
-      )
-    ).flat();
-
-    res.status(402).json({
-      x402Version: 1,
-      accepts,
-    });
-  };
-
-  return async (req: Request, res: Response, next: NextFunction) => {
-    const payment = extractPaymentFromHeader(req);
-
-    if (!payment) {
-      return sendPaymentRequired(res);
-    }
-
-    const paymentRequirements = findMatchingPaymentRequirements(
-      args.accepts,
-      payment,
-    );
-
-    if (!paymentRequirements) {
-      return sendPaymentRequired(res);
-    }
-
-    // XXX - We need a better policy than "first one wins".
-    for (const handler of args.handlers) {
-      const t = await handler.handleSettle(paymentRequirements, payment);
-
-      if (t === null) {
-        continue;
-      }
-
-      if (t.success) {
-        next();
-        return;
-      }
-    }
-
-    return sendPaymentRequired(res);
-  };
-}
 
 type CreateMiddlewareArgs = {
   accepts: x402PaymentRequirements[];

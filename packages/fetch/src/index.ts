@@ -63,6 +63,7 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOptions) {
       x402Version: payResp.x402Version,
       scheme: payer.requirements.scheme,
       network: payer.requirements.network,
+      asset: payer.requirements.asset,
       payload: payerResult.payload,
     };
 

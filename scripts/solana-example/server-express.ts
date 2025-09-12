@@ -46,7 +46,7 @@ const run = async () => {
           network,
           payTo,
           asset: "USDC",
-          amount: "1000000",
+          amount: "10000", // 0.01 USDC
         }),
         // Native SOL xSolanaSettlement Payment
         xSolanaSettlement({
@@ -59,7 +59,7 @@ const run = async () => {
         x402Exact({
           network,
           asset: "USDC",
-          amount: "10000",
+          amount: "10000", // 0.01 USDC,
           payTo,
         }),
       ],

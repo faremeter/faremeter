@@ -29,6 +29,7 @@ export const x402PaymentPayload = type({
   x402Version: "number.integer",
   scheme: "string",
   network: "string",
+  asset: "string?",
   payload: "object",
 });
 

@@ -47,7 +47,6 @@ export function createFacilitatorHandler(
   network: string,
   publicClient: PublicClient,
   walletClient: WalletClient,
-  receivingAddress: Hex,
   assetName: string,
 ): FacilitatorHandler {
   if (network !== BASE_SEPOLIA_NETWORK) {
@@ -94,7 +93,6 @@ export function createFacilitatorHandler(
         ...x,
         asset,
         maxTimeoutSeconds: 300,
-        payTo: receivingAddress,
         // Provide EIP-712 domain parameters for client signing
         extra: {
           name: assetName,
@@ -124,7 +122,7 @@ export function createFacilitatorHandler(
     const { authorization, signature } = payloadResult;
 
     // Check if the payment is to the correct address
-    if (authorization.to.toLowerCase() !== receivingAddress.toLowerCase()) {
+    if (authorization.to.toLowerCase() !== requirements.payTo.toLowerCase()) {
       return errorResponse("Payment authorized to wrong address");
     }
 

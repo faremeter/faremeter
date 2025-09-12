@@ -29,7 +29,7 @@ const solanaHandlers =
   ) ?? [];
 
 const evmHandlers =
-  argsFromEnv(["EVM_PRIVATE_KEY", "EVM_RECEIVING_ADDRESS"], (...envVars) =>
+  argsFromEnv(["EVM_PRIVATE_KEY"], (...envVars) =>
     evm.createHandlers("base-sepolia", ...envVars),
   ) ?? [];
 
@@ -39,7 +39,7 @@ if (handlers.length === 0) {
   logger.error(
     "ERROR: No payment handlers configured.\n" +
       "   Set ADMIN_KEYPAIR_PATH for Solana\n" +
-      "   Set EVM_RECEIVING_ADDRESS and EVM_PRIVATE_KEY for EVM",
+      "   Set EVM_PRIVATE_KEY for EVM",
   );
   process.exit(1);
 }

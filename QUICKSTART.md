@@ -93,7 +93,6 @@ To enable EVM support for Base Sepolia USDC payments:
 # Add to apps/facilitator/.env
 cat >> apps/facilitator/.env <<EOF
 EVM_PRIVATE_KEY=0xYOUR_FACILITATOR_PRIVATE_KEY_HERE
-EVM_RECEIVING_ADDRESS=0xYOUR_RECEIVING_ADDRESS_HERE
 EOF
 
 # Add to scripts/.env
@@ -106,7 +105,7 @@ NOTE: For EVM payments, you'll need:
 
 - USDC tokens on Base Sepolia in your client wallet for making payments
 - ETH on Base Sepolia in your facilitator wallet for paying gas fees
-- Both EVM_PRIVATE_KEY and EVM_RECEIVING_ADDRESS are required for the facilitator
+- EVM_PRIVATE_KEY is required for the facilitator
 
 ## 5. Start the facilitator
 

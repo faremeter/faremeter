@@ -3,10 +3,14 @@
 opsh::version::require v0.7.0
 lib::import step-runner
 
+explain-githooks() {
+	log::fatal "Please configure your git hooks: git config core.hooksPath .githooks"
+}
+
 step::10::check_git_hooks() {
 	git rev-parse --git-dir >/dev/null 2>&1 || log::fatal "Not inside a git repository"
-	hookspath=$(git config core.hooksPath) || log::fatal "Couldn't retrieve your git config's core.hooksPath"
-	[[ $hookspath = .githooks ]] || log::fatal "Your git hooks must be configured to point to .githooks"
+	hookspath=$(git config core.hooksPath) || explain-githooks
+	[[ $hookspath = .githooks ]] || explain-githooks
 	[[ -d "$hookspath" ]] || log::fatal "Hooks directory does not exist: $hookspath"
 }
 

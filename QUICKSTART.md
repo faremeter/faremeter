@@ -7,6 +7,8 @@ Here's a quick way to get the Faremeter tooling up and running. The following wi
 - Use the experimental [@faremeter/x-solana-settlement](https://github.com/faremeter/x-solana-settlement) payment scheme for Solana
 - Use EIP-3009 gasless USDC transfers for EVM payments
 
+For more information, see the [developer notes](./DEV.md).
+
 From inside the `faremeter` git repository, run the following:
 
 ## 0. Install tooling
@@ -22,6 +24,7 @@ NOTE: These tools may also be available from your favorite package manager (e.g.
 ## 1. Setup your environment
 
 ```
+git config core.hooksPath .githooks
 pnpm install -r
 solana config set -u devnet
 make

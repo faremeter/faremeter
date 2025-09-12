@@ -11,7 +11,7 @@ shift
 source "$SCRIPTDIR/lib.opsh"
 
 step::000::remove-build-artifacts() {
-	if [[ $IS_BRANCH_CHECKOUT = 1 ]]; then
+	if [[ $PREV_HEAD != $NEW_HEAD && $IS_BRANCH_CHECKOUT = 1 ]]; then
 		make clean
 	fi
 }

@@ -1,30 +1,18 @@
 import { logger } from "./logger";
 
-import { createPublicClient, http, createWalletClient, isAddress } from "viem";
+import { createPublicClient, http, createWalletClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 import type { FacilitatorHandler } from "@faremeter/types";
 import { createFacilitatorHandler as createEvmHandler } from "@faremeter/payment-evm";
 import { isValidPrivateKey, lookupNetworkConfig } from "@faremeter/wallet-evm";
 
-export function createHandlers(
-  network: string,
-  privateKey: string,
-  receivingAddress: string,
-) {
+export function createHandlers(network: string, privateKey: string) {
   const handlers: FacilitatorHandler[] = [];
   // Validate private key format
   if (!isValidPrivateKey(privateKey)) {
     logger.error(
       "ERROR: EVM private key must be a 32-byte hex string (64 chars + 0x prefix)",
-    );
-    process.exit(1);
-  }
-
-  // Validate receiving address format
-  if (!isAddress(receivingAddress)) {
-    logger.error(
-      "ERROR: EVM receiving address must be a valid Ethereum address",
     );
     process.exit(1);
   }
@@ -52,15 +40,7 @@ export function createHandlers(
     transport,
   });
 
-  handlers.push(
-    createEvmHandler(
-      network,
-      publicClient,
-      walletClient,
-      receivingAddress,
-      "USDC",
-    ),
-  );
+  handlers.push(createEvmHandler(network, publicClient, walletClient, "USDC"));
 
   logger.info(`EVM handler configured for ${network}`);
   return handlers;

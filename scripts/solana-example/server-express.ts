@@ -1,7 +1,6 @@
 import "dotenv/config";
 import "../logger";
 import { default as express } from "express";
-import type { Request, Response } from "express";
 import { express as middleware } from "@faremeter/middleware";
 import {
   lookupKnownSPLToken,
@@ -64,7 +63,7 @@ const run = async () => {
         }),
       ],
     }),
-    (req: Request, res: Response) => {
+    (_, res) => {
       res.json({
         msg: "success",
       });

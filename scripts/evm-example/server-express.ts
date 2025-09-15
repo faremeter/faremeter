@@ -1,7 +1,6 @@
 import "dotenv/config";
 import { logger } from "../logger";
 import { default as express } from "express";
-import type { Request, Response } from "express";
 import { express as middleware } from "@faremeter/middleware";
 import { isAddress, Address } from "@faremeter/types/evm";
 import { x402Exact } from "@faremeter/info/evm";
@@ -35,7 +34,7 @@ const run = async () => {
         }),
       ],
     }),
-    (_req: Request, res: Response) => {
+    (_, res) => {
       res.json({
         temperature: 72,
         conditions: "sunny",

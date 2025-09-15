@@ -10,6 +10,21 @@
       "require": "./dist/src/index.js",
       "import": "./dist/src/index.js",
       "types": "./dist/src/index.d.ts"
+    },
+    "./hono": {
+      "require": "./dist/src/hono.js",
+      "import": "./dist/src/hono.js",
+      "types": "./dist/src/hono.d.ts"
+    },
+    "./express": {
+      "require": "./dist/src/express.js",
+      "import": "./dist/src/express.js",
+      "types": "./dist/src/express.d.ts"
+    },
+    "./common": {
+      "require": "./dist/src/common.js",
+      "import": "./dist/src/common.js",
+      "types": "./dist/src/common.d.ts"
     }
   },
   "files": [

@@ -14,6 +14,7 @@ lint:
 	pnpm eslint --cache .
 
 test:
+	@[[ -d .tap/plugins ]] || pnpm tap build
 	pnpm tap --disable-coverage
 
 format:

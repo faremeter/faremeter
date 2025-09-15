@@ -9,7 +9,7 @@ import {
   findMatchingPaymentRequirements,
   gateGetPaymentRequiredResponse,
   type RelaxedRequirements,
-} from "./utils";
+} from "./common";
 
 import type { MiddlewareHandler, Context } from "hono";
 

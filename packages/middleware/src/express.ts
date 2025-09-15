@@ -9,7 +9,7 @@ import {
   findMatchingPaymentRequirements,
   gateGetPaymentRequiredResponse,
   type RelaxedRequirements,
-} from "./utils";
+} from "./common";
 import type { NextFunction, Request, Response } from "express";
 
 type CreateMiddlewareArgs = {

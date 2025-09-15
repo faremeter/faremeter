@@ -1,7 +1,7 @@
 import "dotenv/config";
 import "../logger";
 import { default as express } from "express";
-import { express as middleware } from "@faremeter/middleware";
+import { createMiddleware } from "@faremeter/middleware/express";
 import {
   lookupKnownSPLToken,
   x402Exact,
@@ -37,7 +37,7 @@ const run = async () => {
 
   app.get(
     "/protected",
-    await middleware.createMiddleware({
+    await createMiddleware({
       facilitatorURL: "http://localhost:4000",
       accepts: [
         // USDC xSolanaSettlement Payment

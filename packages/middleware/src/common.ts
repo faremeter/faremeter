@@ -3,6 +3,9 @@ import {
   type x402PaymentPayload,
   isValidationError,
   x402PaymentRequiredResponse,
+  x402PaymentHeaderToPayload,
+  x402SettleRequest,
+  x402SettleResponse,
 } from "@faremeter/types";
 
 import { logger } from "./logger";
@@ -90,4 +93,80 @@ export async function getPaymentRequiredResponse(
   }
 
   return response;
+}
+
+type PossibleStatusCodes = 402;
+type PossibleJSONResponse = object;
+
+export type CommonMiddlewareArgs = {
+  facilitatorURL: string;
+  accepts: RelaxedRequirements[];
+};
+
+export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
+  CommonMiddlewareArgs & {
+    resource: string;
+    getHeader: (key: string) => string | undefined;
+    sendJSONResponse: (
+      status: PossibleStatusCodes,
+      obj: PossibleJSONResponse,
+    ) => MiddlewareResponse;
+  };
+
+export async function handleMiddlewareRequest<MiddlewareResponse>(
+  args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
+) {
+  // XXX - Temporarily request this every time.  This will be
+  // cached in future.
+  const paymentRequiredResponse = await getPaymentRequiredResponse(args);
+
+  const sendPaymentRequired = () =>
+    args.sendJSONResponse(402, paymentRequiredResponse);
+
+  const paymentHeader = args.getHeader("X-PAYMENT");
+
+  if (!paymentHeader) {
+    return sendPaymentRequired();
+  }
+
+  const payload = x402PaymentHeaderToPayload(paymentHeader);
+
+  if (isValidationError(payload)) {
+    return sendPaymentRequired();
+  }
+
+  const paymentRequirements = findMatchingPaymentRequirements(
+    paymentRequiredResponse.accepts,
+    payload,
+  );
+
+  if (!paymentRequirements) {
+    return sendPaymentRequired();
+  }
+
+  const settleRequest: x402SettleRequest = {
+    x402Version: 1,
+    paymentHeader,
+    paymentRequirements,
+  };
+
+  const t = await fetch(`${args.facilitatorURL}/settle`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(settleRequest),
+  });
+  const settlementResponse = x402SettleResponse(await t.json());
+
+  if (isValidationError(settlementResponse)) {
+    throw new Error(
+      `error getting response from facilitator for settlement: ${settlementResponse.summary}`,
+    );
+  }
+
+  if (!settlementResponse.success) {
+    return sendPaymentRequired();
+  }
 }

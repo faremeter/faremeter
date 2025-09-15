@@ -1,17 +1,16 @@
 import {
   x402SettleRequest,
   x402SettleResponse,
-  x402PaymentRequiredResponse,
   x402PaymentHeaderToPayload,
   isValidationError,
 } from "@faremeter/types";
 import {
   findMatchingPaymentRequirements,
-  gateGetPaymentRequiredResponse,
   type RelaxedRequirements,
+  getPaymentRequiredResponse,
 } from "./common";
 
-import type { MiddlewareHandler, Context } from "hono";
+import type { MiddlewareHandler } from "hono";
 
 type CreateMiddlewareArgs = {
   accepts: RelaxedRequirements[];
@@ -21,44 +20,13 @@ type CreateMiddlewareArgs = {
 export async function createMiddleware(
   args: CreateMiddlewareArgs,
 ): Promise<MiddlewareHandler> {
-  async function getPaymentRequiredResponse(
-    args: CreateMiddlewareArgs,
-    c: Context,
-  ) {
-    const accepts = args.accepts.map((x) => ({
-      ...x,
-      resource: x.resource ?? c.req.url,
-    }));
-
-    const t = await fetch(`${args.facilitatorURL}/accepts`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        x402Version: 1,
-        accepts,
-      }),
-    });
-
-    gateGetPaymentRequiredResponse(t);
-
-    const response = x402PaymentRequiredResponse(await t.json());
-
-    if (isValidationError(response)) {
-      throw new Error(
-        `invalid payment requirements from facilitator: ${response.summary}`,
-      );
-    }
-
-    return response;
-  }
-
   return async (c, next) => {
     // XXX - Temporarily request this every time.  This will be
     // cached in future.
-    const paymentRequiredResponse = await getPaymentRequiredResponse(args, c);
+    const paymentRequiredResponse = await getPaymentRequiredResponse({
+      ...args,
+      resource: c.req.url,
+    });
     const sendPaymentRequired = () => {
       c.status(402);
       return c.json(paymentRequiredResponse);

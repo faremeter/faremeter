@@ -1,6 +1,8 @@
-import type {
-  x402PaymentRequirements,
-  x402PaymentPayload,
+import {
+  type x402PaymentRequirements,
+  type x402PaymentPayload,
+  isValidationError,
+  x402PaymentRequiredResponse,
 } from "@faremeter/types";
 
 import { logger } from "./logger";
@@ -50,3 +52,42 @@ export function gateGetPaymentRequiredResponse(res: Response) {
 }
 
 export type RelaxedRequirements = Partial<x402PaymentRequirements>;
+
+type getPaymentRequiredResponseArgs = {
+  facilitatorURL: string;
+  accepts: RelaxedRequirements[];
+  resource: string;
+};
+
+export async function getPaymentRequiredResponse(
+  args: getPaymentRequiredResponseArgs,
+) {
+  const accepts = args.accepts.map((x) => ({
+    ...x,
+    resource: x.resource ?? args.resource,
+  }));
+
+  const t = await fetch(`${args.facilitatorURL}/accepts`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      x402Version: 1,
+      accepts,
+    }),
+  });
+
+  gateGetPaymentRequiredResponse(t);
+
+  const response = x402PaymentRequiredResponse(await t.json());
+
+  if (isValidationError(response)) {
+    throw new Error(
+      `invalid payment requirements from facilitator: ${response.summary}`,
+    );
+  }
+
+  return response;
+}

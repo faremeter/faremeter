@@ -2,7 +2,7 @@ import "dotenv/config";
 import { logger } from "../logger";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { hono as middleware } from "@faremeter/middleware";
+import { createMiddleware } from "@faremeter/middleware/hono";
 import { Keypair } from "@solana/web3.js";
 import {
   lookupKnownSPLToken,
@@ -35,7 +35,7 @@ const app = new Hono();
 
 app.get(
   "/protected",
-  await middleware.createMiddleware({
+  await createMiddleware({
     facilitatorURL: "http://localhost:4000",
     accepts: [
       // USDC xSolanaSettlement Payment

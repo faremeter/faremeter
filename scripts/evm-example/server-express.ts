@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { logger } from "../logger";
 import { default as express } from "express";
-import { express as middleware } from "@faremeter/middleware";
+import { createMiddleware } from "@faremeter/middleware/express";
 import { isAddress, Address } from "@faremeter/types/evm";
 import { x402Exact } from "@faremeter/info/evm";
 
@@ -23,7 +23,7 @@ const run = async () => {
 
   app.get(
     "/weather",
-    await middleware.createMiddleware({
+    await createMiddleware({
       facilitatorURL: "http://localhost:4000",
       accepts: [
         x402Exact({

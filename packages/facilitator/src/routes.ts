@@ -58,10 +58,26 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
     }
 
     for (const handler of args.handlers) {
-      const t = await handler.handleSettle(
-        x402Req.paymentRequirements,
-        paymentPayload,
-      );
+      let t;
+
+      try {
+        t = await handler.handleSettle(
+          x402Req.paymentRequirements,
+          paymentPayload,
+        );
+      } catch (e) {
+        let msg = undefined;
+
+        // XXX - We can do a better job of determining if it's a chain
+        // error, or some other issue.
+        if (e instanceof Error) {
+          msg = e.message;
+        } else {
+          msg = "unknown error handling settlement";
+        }
+
+        return sendSettleError(c, 500, msg);
+      }
 
       if (t === null) {
         continue;

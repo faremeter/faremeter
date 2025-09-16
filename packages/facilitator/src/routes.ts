@@ -9,30 +9,50 @@ type CreateFacilitatorRoutesArgs = {
   handlers: FacilitatorHandler[];
 };
 
+type StatusCode = 400 | 500;
+
 export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
   const router = new Hono();
 
-  function sendError(c: Context, msg: string) {
-    logger.error(msg);
-    c.status(400);
-    return c.json({
-      isValid: false,
-      invalidReason: msg,
-    });
+  function sendSettleError(
+    c: Context,
+    status: StatusCode,
+    msg: string | undefined,
+  ) {
+    const response: x.x402SettleResponse = {
+      success: false,
+      txHash: null,
+      networkId: null,
+    };
+
+    if (msg !== undefined) {
+      response.error = msg;
+      logger.error(msg);
+    } else {
+      logger.error("unknown error during settlement");
+    }
+
+    c.status(status);
+    return c.json(response);
   }
 
   router.post("/settle", async (c) => {
     const x402Req = x.x402SettleRequest(await c.req.json());
 
     if (isValidationError(x402Req)) {
-      return sendError(c, `couldn't validate request: ${x402Req.summary}`);
+      return sendSettleError(
+        c,
+        400,
+        `couldn't validate request: ${x402Req.summary}`,
+      );
     }
 
     const paymentPayload = x.x402PaymentHeaderToPayload(x402Req.paymentHeader);
 
     if (isValidationError(paymentPayload)) {
-      return sendError(
+      return sendSettleError(
         c,
+        400,
         `couldn't validate x402 payload: ${paymentPayload.summary}`,
       );
     }
@@ -49,15 +69,16 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
 
       return c.json(t);
     }
-    sendError(c, "no matching payment handler found");
+    sendSettleError(c, 400, "no matching payment handler found");
   });
 
   router.post("/accepts", async (c) => {
     const x402Req = x.x402PaymentRequiredResponse(await c.req.json());
 
     if (isValidationError(x402Req)) {
-      return sendError(
+      return sendSettleError(
         c,
+        400,
         `couldn't parse required response: ${x402Req.summary}`,
       );
     }

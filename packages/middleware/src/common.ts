@@ -132,6 +132,7 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
   const payload = x402PaymentHeaderToPayload(paymentHeader);
 
   if (isValidationError(payload)) {
+    logger.debug(`couldn't validate client payload: ${payload.summary}`);
     return sendPaymentRequired();
   }
 
@@ -141,6 +142,10 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
   );
 
   if (!paymentRequirements) {
+    logger.warning(
+      `couldn't find matching payment requirements for payload`,
+      payload,
+    );
     return sendPaymentRequired();
   }
 
@@ -161,12 +166,13 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
   const settlementResponse = x402SettleResponse(await t.json());
 
   if (isValidationError(settlementResponse)) {
-    throw new Error(
-      `error getting response from facilitator for settlement: ${settlementResponse.summary}`,
-    );
+    const msg = `error getting response from facilitator for settlement: ${settlementResponse.summary}`;
+    logger.error(msg);
+    throw new Error(msg);
   }
 
   if (!settlementResponse.success) {
+    logger.warning("failed to settle payment: {error}", settlementResponse);
     return sendPaymentRequired();
   }
 }

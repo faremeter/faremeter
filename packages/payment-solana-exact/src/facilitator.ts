@@ -76,9 +76,7 @@ const sendTransaction = async (
     .send();
 
   if (simResult.value.err) {
-    logger.error(
-      `transaction simulation failed: ${JSON.stringify(simResult.value.err)}`,
-    );
+    logger.error("transaction simulation failed: {*}", simResult.value);
     return { success: false, error: "Transaction simulation failed" };
   }
 

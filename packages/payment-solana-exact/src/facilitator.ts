@@ -22,6 +22,7 @@ import {
   partiallySignTransaction,
   type Transaction,
 } from "@solana/transactions";
+import type { TransactionError } from "@solana/rpc-types";
 import { Keypair, type PublicKey } from "@solana/web3.js";
 import { type } from "arktype";
 import { isValidTransaction } from "./verify";
@@ -58,6 +59,20 @@ export const lookupX402Network = (network: string) => {
   return `solana-${network}`;
 };
 
+export function transactionErrorToString(t: TransactionError) {
+  if (typeof t == "string") {
+    return t;
+  }
+
+  if (typeof t == "object") {
+    return JSON.stringify(t, (_, v: unknown) =>
+      typeof v === "bigint" ? v.toString() : v,
+    );
+  }
+
+  return String(t);
+}
+
 const sendTransaction = async (
   rpc: Rpc<SolanaRpcApi>,
   signedTransaction: Transaction,
@@ -91,7 +106,7 @@ const sendTransaction = async (
     if (status.value[0]?.err) {
       return {
         success: false,
-        error: `Transaction failed: ${JSON.stringify(status.value[0].err)}`,
+        error: `Transaction failed: ${transactionErrorToString(status.value[0].err)}`,
       };
     }
     if (

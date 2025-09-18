@@ -1,4 +1,4 @@
-export * from "./x402";
+export * as x402 from "./x402";
 export * from "./client";
 export * from "./facilitator";
 export * from "./validation";

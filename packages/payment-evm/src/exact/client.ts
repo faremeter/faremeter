@@ -9,7 +9,7 @@ import {
   lookupKnownNetwork,
   lookupKnownAsset,
 } from "@faremeter/info/evm";
-import type { x402PaymentRequirements } from "@faremeter/types";
+import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import type { Hex } from "viem";
 import { isAddress } from "viem";
 import { type } from "arktype";

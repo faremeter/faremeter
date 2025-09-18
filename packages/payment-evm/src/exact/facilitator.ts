@@ -1,8 +1,11 @@
+import type {
+  x402PaymentRequirements,
+  x402PaymentPayload,
+  x402SettleResponse,
+} from "@faremeter/types/x402";
+
 import {
   type FacilitatorHandler,
-  type x402PaymentRequirements,
-  type x402PaymentPayload,
-  type x402SettleResponse,
   isValidationError,
   caseInsensitiveLiteral,
 } from "@faremeter/types";

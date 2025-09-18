@@ -1,4 +1,4 @@
-import { type x402PaymentRequirements } from "@faremeter/types";
+import { type x402PaymentRequirements } from "@faremeter/types/x402";
 
 export type UnitInput = string | number;
 

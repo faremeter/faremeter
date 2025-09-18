@@ -2,11 +2,14 @@ import {
   type PaymentExecer,
   type RequestContext,
   type PaymentHandler,
-  x402PaymentRequiredResponse,
-  x402PaymentPayload,
   isValidationError,
   throwValidationError,
 } from "@faremeter/types";
+
+import type {
+  x402PaymentRequiredResponse,
+  x402PaymentPayload,
+} from "@faremeter/types/x402";
 
 type WrapOptions = {
   handlers: PaymentHandler[];

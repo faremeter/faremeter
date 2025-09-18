@@ -1,14 +1,14 @@
+import { isValidationError, throwValidationError } from "@faremeter/types";
+
 import {
   type PaymentExecer,
   type RequestContext,
   type PaymentHandler,
-  isValidationError,
-  throwValidationError,
-} from "@faremeter/types";
+} from "@faremeter/types/client";
 
-import type {
+import {
   x402PaymentRequiredResponse,
-  x402PaymentPayload,
+  type x402PaymentPayload,
 } from "@faremeter/types/x402";
 
 type WrapOptions = {

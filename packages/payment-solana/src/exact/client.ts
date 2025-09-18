@@ -3,10 +3,12 @@ import {
   isValidationError,
   throwValidationError,
   caseInsensitiveLiteral,
-  type PaymentExecer,
-  type PaymentHandler,
-  type RequestContext,
 } from "@faremeter/types";
+import type {
+  PaymentExecer,
+  PaymentHandler,
+  RequestContext,
+} from "@faremeter/types/client";
 import {
   createTransferCheckedInstruction,
   getAssociatedTokenAddressSync,

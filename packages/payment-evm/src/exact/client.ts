@@ -3,7 +3,7 @@ import type {
   PaymentHandler,
   PaymentExecer,
   RequestContext,
-} from "@faremeter/types";
+} from "@faremeter/types/client";
 import {
   isKnownNetwork,
   lookupKnownNetwork,

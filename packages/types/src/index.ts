@@ -1,6 +1,6 @@
 export * as x402 from "./x402";
-export * from "./client";
-export * from "./facilitator";
+export * as client from "./client";
+export * as facilitator from "./facilitator";
 export * from "./validation";
 export * from "./literal";
 export * as solana from "./solana";

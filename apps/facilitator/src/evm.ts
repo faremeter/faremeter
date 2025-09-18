@@ -3,7 +3,7 @@ import { logger } from "./logger";
 import { createPublicClient, http, createWalletClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-import type { FacilitatorHandler } from "@faremeter/types";
+import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import { createFacilitatorHandler as createEvmHandler } from "@faremeter/payment-evm/exact";
 import { isValidPrivateKey, lookupNetworkConfig } from "@faremeter/wallet-evm";
 

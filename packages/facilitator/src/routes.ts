@@ -1,7 +1,8 @@
 import { getLogger } from "@logtape/logtape";
 import { Hono, type Context } from "hono";
 import * as x from "@faremeter/types/x402";
-import { isValidationError, type FacilitatorHandler } from "@faremeter/types";
+import { isValidationError } from "@faremeter/types";
+import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 
 const logger = getLogger(["faremeter", "facilitator"]);
 

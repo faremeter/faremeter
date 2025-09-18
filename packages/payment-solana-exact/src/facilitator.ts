@@ -155,48 +155,62 @@ export const createFacilitatorHandler = (
       return errorResponse(paymentPayload.summary);
     }
 
+    let transactionMessage, transaction;
     try {
-      const transaction = paymentPayload.transaction;
+      transaction = paymentPayload.transaction;
       const compiledTransactionMessage =
         getCompiledTransactionMessageDecoder().decode(transaction.messageBytes);
-      const transactionMessage = decompileTransactionMessage(
+      transactionMessage = decompileTransactionMessage(
         compiledTransactionMessage,
       );
+    } catch (cause) {
+      throw new Error("Failed to get compiled transaction message", { cause });
+    }
 
+    try {
       if (!(await isValidTransaction(transactionMessage, requirements))) {
         logger.error("Invalid transaction");
         return errorResponse("Invalid transaction");
       }
+    } catch (cause) {
+      throw new Error("Failed to validate transaction", { cause });
+    }
 
+    let signedTransaction;
+    try {
       const kitKeypair = await createKeyPairSignerFromBytes(
         feePayerKeypair.secretKey,
       );
-      const signedTransaction = await partiallySignTransaction(
+      signedTransaction = await partiallySignTransaction(
         [kitKeypair.keyPair],
         transaction,
       );
+    } catch (cause) {
+      throw new Error("Failed to partially sign transaction", { cause });
+    }
 
-      const result = await sendTransaction(
+    let result;
+    try {
+      result = await sendTransaction(
         rpc,
         signedTransaction,
         maxRetries,
         retryDelayMs,
       );
-
-      if (!result.success) {
-        return errorResponse(result.error);
-      }
-
-      return {
-        success: true,
-        error: null,
-        txHash: result.signature,
-        networkId: payment.network,
-      };
-    } catch (error) {
-      logger.error(`Transaction failed: ${JSON.stringify(error)}`);
-      return errorResponse(`Transaction failed`);
+    } catch (cause) {
+      throw new Error("Failed to send transaction", { cause });
     }
+
+    if (!result.success) {
+      return errorResponse(result.error);
+    }
+
+    return {
+      success: true,
+      error: null,
+      txHash: result.signature,
+      networkId: payment.network,
+    };
   };
 
   return {

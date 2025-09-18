@@ -3,7 +3,7 @@ import {
   selectLedgerAccount,
   createReadlineInterface,
 } from "@faremeter/wallet-ledger";
-import { createPaymentHandler } from "@faremeter/payment-evm";
+import { createPaymentHandler } from "@faremeter/payment-evm/exact";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import type { TypedDataDefinition } from "viem";
 

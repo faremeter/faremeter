@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { logger, logResponse } from "../logger";
 import { createLocalWallet } from "@faremeter/wallet-evm";
-import { createPaymentHandler } from "@faremeter/payment-evm";
+import { createPaymentHandler } from "@faremeter/payment-evm/exact";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 
 const { EVM_PRIVATE_KEY } = process.env;

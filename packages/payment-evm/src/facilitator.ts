@@ -165,9 +165,7 @@ export function createFacilitatorHandler(
         args: [authorization.from, authorization.nonce],
       });
     } catch (error) {
-      return errorResponse(
-        `Failed to check authorization status: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+      throw new Error("Failed to check authorization status", { cause: error });
     }
 
     if (onChainUsed) {
@@ -192,10 +190,8 @@ export function createFacilitatorHandler(
         }),
         publicClient.getChainId(),
       ]);
-    } catch (error) {
-      return errorResponse(
-        `Failed to read contract parameters: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+    } catch (cause) {
+      throw new Error("Failed to read contract parameters", { cause });
     }
 
     const domain = {
@@ -227,10 +223,8 @@ export function createFacilitatorHandler(
         message,
         signature: signature,
       });
-    } catch (error) {
-      return errorResponse(
-        `Signature verification failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+    } catch (cause) {
+      throw new Error("Signature verification failed", { cause });
     }
 
     if (!isValidSignature) {
@@ -244,10 +238,8 @@ export function createFacilitatorHandler(
         abi: TRANSFER_WITH_AUTHORIZATION_ABI,
         functionName: "DOMAIN_SEPARATOR",
       });
-    } catch (error) {
-      return errorResponse(
-        `Contract does not support EIP-712: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+    } catch (cause) {
+      throw new Error("Contract does not support EIP-712", { cause });
     }
 
     const acct: Account | undefined = walletClient.account;
@@ -306,10 +298,8 @@ export function createFacilitatorHandler(
         txHash,
         networkId: networkInfo.chainId.toString(),
       };
-    } catch (error) {
-      return errorResponse(
-        `Transaction execution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+    } catch (cause) {
+      throw new Error("Transaction execution failed", { cause });
     }
   };
 

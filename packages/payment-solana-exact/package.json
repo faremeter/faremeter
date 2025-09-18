@@ -30,6 +30,7 @@
     "@solana-program/compute-budget": "catalog:",
     "@solana-program/token": "catalog:",
     "@solana/kit": "catalog:",
+    "@solana/rpc-types": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/transactions": "catalog:",
     "@solana/web3.js": "catalog:",

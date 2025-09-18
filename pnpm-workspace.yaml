@@ -36,6 +36,7 @@ catalog:
   viem: 2.37.2
   zx: 8.8.1
   "@logtape/logtape": 1.0.4
+  "@solana/rpc-types": 3.0.3
 
 catalogMode: prefer
 

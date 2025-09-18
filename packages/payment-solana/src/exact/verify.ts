@@ -1,7 +1,5 @@
-import {
-  isValidationError,
-  type x402PaymentRequirements,
-} from "@faremeter/types";
+import type { x402PaymentRequirements } from "@faremeter/types/x402";
+import { isValidationError } from "@faremeter/types";
 import {
   parseSetComputeUnitLimitInstruction,
   parseSetComputeUnitPriceInstruction,

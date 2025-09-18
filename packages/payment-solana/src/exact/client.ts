@@ -1,3 +1,4 @@
+import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import {
   isValidationError,
   throwValidationError,
@@ -5,7 +6,6 @@ import {
   type PaymentExecer,
   type PaymentHandler,
   type RequestContext,
-  type x402PaymentRequirements,
 } from "@faremeter/types";
 import {
   createTransferCheckedInstruction,

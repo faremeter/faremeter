@@ -1,8 +1,10 @@
-import {
-  isValidationError,
+import type {
   x402PaymentPayload,
   x402PaymentRequirements,
   x402SettleResponse,
+} from "@faremeter/types/x402";
+import {
+  isValidationError,
   caseInsensitiveLiteral,
   type FacilitatorHandler,
 } from "@faremeter/types";

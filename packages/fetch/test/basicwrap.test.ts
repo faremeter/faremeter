@@ -3,6 +3,7 @@
 import t from "tap";
 import * as fmFetch from "../src/index";
 import * as fmTypes from "@faremeter/types";
+import * as x402 from "@faremeter/types/x402";
 
 import { responseFeeder } from "./mockfetch";
 
@@ -61,7 +62,7 @@ await t.test("basicWrap", async (t) => {
       }
 
       const headers = new Headers(init.headers);
-      const paymentPayload = fmTypes.x402PaymentHeaderToPayload.assert(
+      const paymentPayload = x402.x402PaymentHeaderToPayload.assert(
         headers.get("X-PAYMENT"),
       );
 

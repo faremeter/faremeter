@@ -1,12 +1,12 @@
+import { isValidationError } from "@faremeter/types";
 import {
   type x402PaymentRequirements,
   type x402PaymentPayload,
-  isValidationError,
   x402PaymentRequiredResponse,
   x402PaymentHeaderToPayload,
   x402SettleRequest,
   x402SettleResponse,
-} from "@faremeter/types";
+} from "@faremeter/types/x402";
 
 import { logger } from "./logger";
 

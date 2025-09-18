@@ -4,7 +4,7 @@ import { createFacilitatorHandler as createSolanaHandler } from "@faremeter/x-so
 import {
   createFacilitatorHandler as createFacilitatorHandlerExact,
   lookupX402Network,
-} from "@faremeter/payment-solana-exact";
+} from "@faremeter/payment-solana/exact";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createSolanaRpc } from "@solana/kit";
 import { isKnownCluster, lookupKnownSPLToken } from "@faremeter/info/solana";

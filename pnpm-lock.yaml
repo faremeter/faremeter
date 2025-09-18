@@ -152,9 +152,9 @@ importers:
       '@faremeter/payment-evm':
         specifier: workspace:^
         version: link:../../packages/payment-evm
-      '@faremeter/payment-solana-exact':
+      '@faremeter/payment-solana':
         specifier: workspace:^
-        version: link:../../packages/payment-solana-exact
+        version: link:../../packages/payment-solana
       '@faremeter/types':
         specifier: workspace:^
         version: link:../../packages/types
@@ -444,7 +444,7 @@ importers:
         specifier: 'catalog:'
         version: 4.4.0
 
-  packages/payment-solana-exact:
+  packages/payment-solana:
     dependencies:
       '@faremeter/types':
         specifier: workspace:^
@@ -759,9 +759,9 @@ importers:
       '@faremeter/payment-evm':
         specifier: workspace:^
         version: link:../packages/payment-evm
-      '@faremeter/payment-solana-exact':
+      '@faremeter/payment-solana':
         specifier: workspace:^
-        version: link:../packages/payment-solana-exact
+        version: link:../packages/payment-solana
       '@faremeter/types':
         specifier: workspace:^
         version: link:../packages/types

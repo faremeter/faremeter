@@ -1,5 +1,5 @@
 {
-  "name": "@faremeter/payment-solana-exact",
+  "name": "@faremeter/payment-solana",
   "version": "0.5.0",
   "license": "LGPL-3.0-only",
   "type": "module",
@@ -10,7 +10,11 @@
   ],
   "exports": {
     ".": "./dist/src/index.js",
-    "./client": "./dist/src/client.js"
+    "./exact": {
+      "require": "./dist/src/exact/index.js",
+      "import": "./dist/src/exact/index.js",
+      "types": "./dist/src/exact/index.d.ts"
+    }
   },
   "devDependencies": {
     "@eslint/js": "catalog:",

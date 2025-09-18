@@ -6,7 +6,7 @@ import { lookupKnownSPLToken } from "@faremeter/info/solana";
 import {
   createPaymentHandler,
   lookupX402Network,
-} from "@faremeter/payment-solana-exact";
+} from "@faremeter/payment-solana/exact";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import fs from "fs";
 import { clusterApiUrl } from "@solana/web3.js";

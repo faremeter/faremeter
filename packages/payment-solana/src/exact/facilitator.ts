@@ -3,11 +3,8 @@ import type {
   x402PaymentRequirements,
   x402SettleResponse,
 } from "@faremeter/types/x402";
-import {
-  isValidationError,
-  caseInsensitiveLiteral,
-  type FacilitatorHandler,
-} from "@faremeter/types";
+import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
+import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import { fetchMint } from "@solana-program/token";
 import {
   address,

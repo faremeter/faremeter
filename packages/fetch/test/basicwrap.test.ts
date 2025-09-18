@@ -2,7 +2,7 @@
 
 import t from "tap";
 import * as fmFetch from "../src/index";
-import * as fmTypes from "@faremeter/types";
+import * as fmTypes from "@faremeter/types/client";
 import * as x402 from "@faremeter/types/x402";
 
 import { responseFeeder } from "./mockfetch";

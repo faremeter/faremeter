@@ -4,11 +4,9 @@ import type {
   x402SettleResponse,
 } from "@faremeter/types/x402";
 
-import {
-  type FacilitatorHandler,
-  isValidationError,
-  caseInsensitiveLiteral,
-} from "@faremeter/types";
+import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
+import { type FacilitatorHandler } from "@faremeter/types/facilitator";
+
 import { type } from "arktype";
 import type { PublicClient, Hex, WalletClient, Account } from "viem";
 import { verifyTypedData, encodeFunctionData, isAddress } from "viem";

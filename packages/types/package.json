@@ -11,6 +11,16 @@
       "import": "./dist/src/index.js",
       "types": "./dist/src/index.d.ts"
     },
+    "./client": {
+      "require": "./dist/src/client.js",
+      "import": "./dist/src/client.js",
+      "types": "./dist/src/client.d.ts"
+    },
+    "./facilitator": {
+      "require": "./dist/src/facilitator.js",
+      "import": "./dist/src/facilitator.js",
+      "types": "./dist/src/facilitator.d.ts"
+    },
     "./x402": {
       "require": "./dist/src/x402.js",
       "import": "./dist/src/x402.js",

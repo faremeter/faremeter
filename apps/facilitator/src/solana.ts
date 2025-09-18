@@ -9,7 +9,7 @@ import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createSolanaRpc } from "@solana/kit";
 import { isKnownCluster, lookupKnownSPLToken } from "@faremeter/info/solana";
 import fs from "fs";
-import type { FacilitatorHandler } from "@faremeter/types";
+import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 
 export function createHandlers(network: string, keypairPath: string) {
   if (!isKnownCluster(network)) {

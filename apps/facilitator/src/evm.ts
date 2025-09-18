@@ -4,7 +4,7 @@ import { createPublicClient, http, createWalletClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 import type { FacilitatorHandler } from "@faremeter/types";
-import { createFacilitatorHandler as createEvmHandler } from "@faremeter/payment-evm";
+import { createFacilitatorHandler as createEvmHandler } from "@faremeter/payment-evm/exact";
 import { isValidPrivateKey, lookupNetworkConfig } from "@faremeter/wallet-evm";
 
 export function createHandlers(network: string, privateKey: string) {

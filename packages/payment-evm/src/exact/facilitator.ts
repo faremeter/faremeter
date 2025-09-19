@@ -45,12 +45,12 @@ function parseSignature(signature: string): { v: number; r: Hex; s: Hex } {
   return { v, r, s };
 }
 
-export function createFacilitatorHandler(
+export async function createFacilitatorHandler(
   network: string,
   publicClient: PublicClient,
   walletClient: WalletClient,
   assetName: string,
-): FacilitatorHandler {
+): Promise<FacilitatorHandler> {
   if (!isKnownNetwork(network)) {
     throw new Error(`Unknown network ${network}`);
   }

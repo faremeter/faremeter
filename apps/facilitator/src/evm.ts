@@ -7,7 +7,7 @@ import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import { createFacilitatorHandler as createEvmHandler } from "@faremeter/payment-evm/exact";
 import { isValidPrivateKey, lookupNetworkConfig } from "@faremeter/wallet-evm";
 
-export function createHandlers(network: string, privateKey: string) {
+export async function createHandlers(network: string, privateKey: string) {
   const handlers: FacilitatorHandler[] = [];
   // Validate private key format
   if (!isValidPrivateKey(privateKey)) {
@@ -40,7 +40,9 @@ export function createHandlers(network: string, privateKey: string) {
     transport,
   });
 
-  handlers.push(createEvmHandler(network, publicClient, walletClient, "USDC"));
+  handlers.push(
+    await createEvmHandler(network, publicClient, walletClient, "USDC"),
+  );
 
   logger.info(`EVM handler configured for ${network}`);
   return handlers;

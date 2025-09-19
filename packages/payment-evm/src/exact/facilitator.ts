@@ -77,6 +77,15 @@ export async function createFacilitatorHandler(
     throw new Error(`Invalid asset address: ${asset}`);
   }
 
+  {
+    const domain = await generateDomain(publicClient, chainId, asset);
+    if (domain.name != assetInfo.contractName) {
+      throw new Error(
+        `On chain contract name (${domain.name}) doesn't match configured asset name (${assetInfo.contractName})`,
+      );
+    }
+  }
+
   const checkTuple = type({
     scheme: caseInsensitiveLiteral(X402_EXACT_SCHEME),
     network: caseInsensitiveLiteral(network),

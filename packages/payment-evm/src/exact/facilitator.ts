@@ -24,6 +24,8 @@ import {
   x402ExactPayload,
 } from "./constants";
 
+import { generateDomain } from "./common";
+
 function errorResponse(msg: string): x402SettleResponse {
   return {
     success: false,
@@ -172,32 +174,7 @@ export function createFacilitatorHandler(
       return errorResponse("Authorization already used on-chain");
     }
 
-    // Read domain parameters from chain
-    let tokenName: string;
-    let tokenVersion: string;
-    try {
-      [tokenName, tokenVersion] = await Promise.all([
-        publicClient.readContract({
-          address: asset,
-          abi: TRANSFER_WITH_AUTHORIZATION_ABI,
-          functionName: "name",
-        }),
-        publicClient.readContract({
-          address: asset,
-          abi: TRANSFER_WITH_AUTHORIZATION_ABI,
-          functionName: "version",
-        }),
-      ]);
-    } catch (cause) {
-      throw new Error("Failed to read contract parameters", { cause });
-    }
-
-    const domain = {
-      name: tokenName,
-      version: tokenVersion,
-      chainId,
-      verifyingContract: asset,
-    };
+    const domain = await generateDomain(publicClient, chainId, asset);
 
     const types = EIP712_TYPES;
 

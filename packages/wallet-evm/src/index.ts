@@ -7,7 +7,7 @@ import {
   isHex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { baseSepolia, mainnet, sepolia } from "viem/chains";
+import { base, baseSepolia, mainnet, sepolia } from "viem/chains";
 
 interface NetworkConfig {
   chain: Chain;
@@ -15,6 +15,13 @@ interface NetworkConfig {
 }
 
 const NETWORK_CONFIGS = new Map<string, NetworkConfig>([
+  [
+    "base",
+    {
+      chain: base,
+      rpcUrl: "https://mainnet.base.org",
+    },
+  ],
   [
     "base-sepolia",
     {

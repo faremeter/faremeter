@@ -93,7 +93,7 @@ export function createFacilitatorHandler(
         maxTimeoutSeconds: 300,
         // Provide EIP-712 domain parameters for client signing
         extra: {
-          name: assetName,
+          name: assetInfo.contractName,
           version: "2",
           chainId: networkInfo.chainId,
           verifyingContract: asset,

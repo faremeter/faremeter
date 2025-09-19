@@ -97,7 +97,7 @@ export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
         }
 
         const domain = {
-          name: extraResult.name ?? assetInfo.name,
+          name: extraResult.name ?? assetInfo.contractName,
           version: extraResult.version ?? "2",
           chainId: extraResult.chainId ?? networkInfo.chainId,
           verifyingContract: (() => {

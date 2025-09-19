@@ -12,13 +12,13 @@ import type { PublicClient, Hex, WalletClient, Account } from "viem";
 import { verifyTypedData, encodeFunctionData, isAddress } from "viem";
 import {
   isKnownAsset,
+  isKnownNetwork,
   lookupKnownAsset,
   lookupKnownNetwork,
 } from "@faremeter/info/evm";
 
 import {
   X402_EXACT_SCHEME,
-  BASE_SEPOLIA_NETWORK,
   TRANSFER_WITH_AUTHORIZATION_ABI,
   EIP712_TYPES,
   x402ExactPayload,
@@ -49,10 +49,8 @@ export function createFacilitatorHandler(
   walletClient: WalletClient,
   assetName: string,
 ): FacilitatorHandler {
-  if (network !== BASE_SEPOLIA_NETWORK) {
-    throw new Error(
-      `Unsupported network: ${network}. Only base-sepolia is supported.`,
-    );
+  if (!isKnownNetwork(network)) {
+    throw new Error(`Unknown network ${network}`);
   }
 
   const networkInfo = lookupKnownNetwork(network);

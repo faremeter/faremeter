@@ -10,7 +10,6 @@ import { type FacilitatorHandler } from "@faremeter/types/facilitator";
 import { type } from "arktype";
 import type { PublicClient, Hex, WalletClient, Account } from "viem";
 import { verifyTypedData, encodeFunctionData, isAddress } from "viem";
-import { baseSepolia } from "viem/chains";
 import {
   isKnownAsset,
   lookupKnownAsset,
@@ -274,7 +273,7 @@ export function createFacilitatorHandler(
         to: asset,
         data,
         account: acct,
-        chain: baseSepolia,
+        chain: undefined,
       });
 
       const serializedTransaction = await walletClient.signTransaction(request);

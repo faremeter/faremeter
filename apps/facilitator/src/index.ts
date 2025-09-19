@@ -29,9 +29,9 @@ const solanaHandlers =
   ) ?? [];
 
 const evmHandlers =
-  argsFromEnv(["EVM_PRIVATE_KEY"], (...envVars) =>
+  (await argsFromEnv(["EVM_PRIVATE_KEY"], (...envVars) =>
     evm.createHandlers("base-sepolia", ...envVars),
-  ) ?? [];
+  )) ?? [];
 
 const handlers = [...solanaHandlers, ...evmHandlers];
 

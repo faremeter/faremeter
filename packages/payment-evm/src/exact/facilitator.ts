@@ -194,7 +194,7 @@ export function createFacilitatorHandler(
 
     const domain = {
       name: tokenName,
-      version: tokenVersion ?? "2",
+      version: tokenVersion,
       chainId,
       verifyingContract: asset,
     };

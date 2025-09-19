@@ -23,8 +23,13 @@ export function lookupKnownNetwork(n: KnownNetwork) {
   };
 }
 
+type NetworkInfo = {
+  address: Address;
+  contractName: string;
+};
+
 type AssetInfo = {
-  network: Partial<Record<KnownNetwork, { address: Address }>>;
+  network: Partial<Record<KnownNetwork, NetworkInfo>>;
   toUnit: (v: UnitInput) => string;
 };
 
@@ -33,9 +38,11 @@ const knownAssets = {
     network: {
       "base-sepolia": {
         address: "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+        contractName: "USDC",
       },
       base: {
         address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        contractName: "USD Coin",
       },
     },
     toUnit: (v: UnitInput) => v.toString(),

@@ -58,6 +58,8 @@ export function createFacilitatorHandler(
     throw new Error(`Couldn't look up information for ${network}`);
   }
 
+  const { chainId } = networkInfo;
+
   if (!isKnownAsset(assetName)) {
     throw new Error(`Unknown asset: ${assetName}`);
   }
@@ -95,7 +97,7 @@ export function createFacilitatorHandler(
         extra: {
           name: assetInfo.contractName,
           version: "2",
-          chainId: networkInfo.chainId,
+          chainId,
           verifyingContract: asset,
         },
       }));
@@ -173,9 +175,8 @@ export function createFacilitatorHandler(
     // Read domain parameters from chain
     let tokenName: string;
     let tokenVersion: string;
-    let chainId: number;
     try {
-      [tokenName, tokenVersion, chainId] = await Promise.all([
+      [tokenName, tokenVersion] = await Promise.all([
         publicClient.readContract({
           address: asset,
           abi: TRANSFER_WITH_AUTHORIZATION_ABI,
@@ -186,7 +187,6 @@ export function createFacilitatorHandler(
           abi: TRANSFER_WITH_AUTHORIZATION_ABI,
           functionName: "version",
         }),
-        publicClient.getChainId(),
       ]);
     } catch (cause) {
       throw new Error("Failed to read contract parameters", { cause });
@@ -294,7 +294,7 @@ export function createFacilitatorHandler(
         success: true,
         error: null,
         txHash,
-        networkId: networkInfo.chainId.toString(),
+        networkId: chainId.toString(),
       };
     } catch (cause) {
       throw new Error("Transaction execution failed", { cause });

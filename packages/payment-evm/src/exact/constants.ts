@@ -9,7 +9,6 @@ const prefixedHexString = type("string").pipe.try((x) => {
 });
 
 export const X402_EXACT_SCHEME = "exact";
-export const BASE_SEPOLIA_NETWORK = "base-sepolia";
 
 export const TRANSFER_WITH_AUTHORIZATION_ABI = [
   {

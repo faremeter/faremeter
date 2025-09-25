@@ -8,6 +8,10 @@ const prefixedHexString = type("string").pipe.try((x) => {
   return toHex(x);
 });
 
+export const SIGNATURE_LENGTH = 132; // 0x + 64 bytes r + 64 bytes s + 2 bytes v
+export const DEFAULT_TIMEOUT_SECONDS = 300;
+export const NONCE_KEY_SEPARATOR = "-";
+
 export const X402_EXACT_SCHEME = "exact";
 
 export const TRANSFER_WITH_AUTHORIZATION_ABI = [

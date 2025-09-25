@@ -7,7 +7,13 @@ import {
   isHex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { base, baseSepolia, mainnet, sepolia } from "viem/chains";
+import {
+  base,
+  baseSepolia,
+  mainnet,
+  sepolia,
+  skaleEuropaTestnet,
+} from "viem/chains";
 
 interface NetworkConfig {
   chain: Chain;
@@ -41,6 +47,13 @@ const NETWORK_CONFIGS = new Map<string, NetworkConfig>([
     {
       chain: sepolia,
       rpcUrl: "https://ethereum-sepolia-rpc.publicnode.com",
+    },
+  ],
+  [
+    "skale-europa-testnet",
+    {
+      chain: skaleEuropaTestnet,
+      rpcUrl: "https://testnet.skalenodes.com/v1/juicy-low-small-testnet",
     },
   ],
 ]);

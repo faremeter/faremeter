@@ -36,3 +36,17 @@ export async function generateDomain(
 
   return domain;
 }
+
+export function generateForwarderDomain(
+  chainId: number,
+  domainInfo: {
+    version: string;
+    name: string;
+    verifyingContract: `0x${string}`;
+  },
+) {
+  return {
+    ...domainInfo,
+    chainId,
+  };
+}

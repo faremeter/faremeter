@@ -176,7 +176,9 @@ export const createFacilitatorHandler = (
         compiledTransactionMessage,
       );
     } catch (cause) {
-      throw new Error("Failed to get compiled transaction message", { cause });
+      throw new Error("Failed to get compiled transaction message", {
+        cause,
+      });
     }
 
     try {

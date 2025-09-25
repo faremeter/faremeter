@@ -24,7 +24,7 @@ import {
   x402ExactPayload,
 } from "./constants";
 
-import { generateDomain } from "./common";
+import { generateDomain, generateForwarderDomain } from "./common";
 
 function errorResponse(msg: string): x402SettleResponse {
   return {
@@ -73,12 +73,37 @@ export async function createFacilitatorHandler(
 
   const asset = assetInfo.address;
 
+  const useForwarder =
+    assetInfo.forwarder !== undefined && assetInfo.forwarderName !== undefined;
+
   if (!isAddress(asset)) {
     throw new Error(`Invalid asset address: ${asset}`);
   }
 
-  {
-    const domain = await generateDomain(publicClient, chainId, asset);
+  let domain: {
+    name: string;
+    version: string;
+    chainId: number;
+    verifyingContract: `0x${string}`;
+  };
+
+  if (useForwarder) {
+    if (!assetInfo.forwarder) {
+      throw new Error("Missing Forwarding Contract");
+    }
+    if (!assetInfo.forwarderVersion) {
+      throw new Error("Missing Forwarding Version");
+    }
+    if (!assetInfo.forwarderName) {
+      throw new Error("Missing Forwarding Name");
+    }
+    domain = generateForwarderDomain(chainId, {
+      version: assetInfo.forwarderVersion,
+      name: assetInfo.forwarderName,
+      verifyingContract: assetInfo.forwarder,
+    });
+  } else {
+    domain = await generateDomain(publicClient, chainId, asset);
     if (domain.name != assetInfo.contractName) {
       throw new Error(
         `On chain contract name (${domain.name}) doesn't match configured asset name (${assetInfo.contractName})`,
@@ -106,10 +131,10 @@ export async function createFacilitatorHandler(
         maxTimeoutSeconds: 300,
         // Provide EIP-712 domain parameters for client signing
         extra: {
-          name: assetInfo.contractName,
-          version: "2",
+          name: useForwarder ? assetInfo.forwarderName : assetInfo.contractName,
+          version: useForwarder ? assetInfo.forwarderVersion : "2",
           chainId,
-          verifyingContract: asset,
+          verifyingContract: useForwarder ? assetInfo.forwarder : asset,
         },
       }));
   };
@@ -126,6 +151,7 @@ export async function createFacilitatorHandler(
 
     // For the exact scheme with EIP-3009, validate the authorization payload
     const payloadResult = x402ExactPayload(payment.payload);
+
     if (payloadResult instanceof type.errors) {
       return errorResponse(`Invalid payload: ${payloadResult.summary}`);
     }
@@ -170,20 +196,44 @@ export async function createFacilitatorHandler(
     let onChainUsed: boolean;
     try {
       onChainUsed = await publicClient.readContract({
-        address: asset,
+        address: assetInfo.forwarder ?? asset,
         abi: TRANSFER_WITH_AUTHORIZATION_ABI,
         functionName: "authorizationState",
         args: [authorization.from, authorization.nonce],
       });
     } catch (error) {
-      throw new Error("Failed to check authorization status", { cause: error });
+      throw new Error("Failed to check authorization status", {
+        cause: error,
+      });
     }
 
     if (onChainUsed) {
       return errorResponse("Authorization already used on-chain");
     }
 
-    const domain = await generateDomain(publicClient, chainId, asset);
+    let domain: {
+      name: string;
+      version: string;
+      verifyingContract: `0x${string}`;
+      chainId: number;
+    };
+    if (useForwarder) {
+      if (
+        !assetInfo.forwarderVersion ||
+        !assetInfo.forwarderName ||
+        !assetInfo.forwarder
+      ) {
+        throw new Error("Secondary Forwardign Information Missing");
+      }
+
+      domain = generateForwarderDomain(chainId, {
+        version: assetInfo.forwarderVersion,
+        name: assetInfo.forwarderName,
+        verifyingContract: assetInfo.forwarder,
+      });
+    } else {
+      domain = await generateDomain(publicClient, chainId, asset);
+    }
 
     const types = EIP712_TYPES;
 
@@ -218,7 +268,7 @@ export async function createFacilitatorHandler(
     // Verify contract supports EIP-712
     try {
       await publicClient.readContract({
-        address: asset,
+        address: useForwarder ? domain.verifyingContract : asset,
         abi: TRANSFER_WITH_AUTHORIZATION_ABI,
         functionName: "DOMAIN_SEPARATOR",
       });
@@ -254,7 +304,7 @@ export async function createFacilitatorHandler(
     // Build and send the transaction
     try {
       const request = await walletClient.prepareTransactionRequest({
-        to: asset,
+        to: useForwarder ? domain.verifyingContract : asset,
         data,
         account: acct,
         chain: undefined,

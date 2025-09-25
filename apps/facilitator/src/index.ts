@@ -33,7 +33,12 @@ const evmHandlers =
     evm.createHandlers("base-sepolia", ...envVars),
   )) ?? [];
 
-const handlers = [...solanaHandlers, ...evmHandlers];
+const skaleHandlers =
+  (await argsFromEnv(["EVM_PRIVATE_KEY"], (...envVars) =>
+    evm.createHandlers("skale-europa-testnet", ...envVars),
+  )) ?? [];
+
+const handlers = [...solanaHandlers, ...evmHandlers, ...skaleHandlers];
 
 if (handlers.length === 0) {
   logger.error(

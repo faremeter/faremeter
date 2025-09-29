@@ -593,6 +593,9 @@ importers:
 
   packages/wallet-evm:
     dependencies:
+      '@faremeter/types':
+        specifier: workspace:^
+        version: link:../types
       viem:
         specifier: 'catalog:'
         version: 2.37.2(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.22.4)

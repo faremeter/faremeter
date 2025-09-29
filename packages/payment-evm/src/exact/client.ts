@@ -96,20 +96,19 @@ export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
           );
         }
 
+        const verifyingContract =
+          extraResult.verifyingContract ??
+          requirements.asset ??
+          assetInfo.address;
+        if (!isAddress(verifyingContract)) {
+          throw new Error(`Invalid verifying contract: ${verifyingContract}`);
+        }
+
         const domain = {
           name: extraResult.name ?? assetInfo.contractName,
           version: extraResult.version ?? "2",
           chainId: extraResult.chainId ?? networkInfo.chainId,
-          verifyingContract: (() => {
-            const asset =
-              extraResult.verifyingContract ??
-              requirements.asset ??
-              assetInfo.address;
-            if (!isAddress(asset)) {
-              throw new Error(`Invalid asset address: ${asset}`);
-            }
-            return asset;
-          })(),
+          verifyingContract,
         } as const;
 
         const types = EIP712_TYPES;

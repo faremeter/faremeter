@@ -34,13 +34,13 @@ export function lookupX402Network(chainId: number) {
   return ("eip155:" + chainId.toString()) as KnownNetwork;
 }
 
-type NetworkInfo = {
+export type ContractInfo = {
   address: Address;
   contractName: string;
 };
 
 type AssetInfo = {
-  network: Partial<Record<KnownNetwork, NetworkInfo>>;
+  network: Partial<Record<KnownNetwork, ContractInfo>>;
   toUnit: (v: UnitInput) => string;
 };
 
@@ -75,14 +75,14 @@ export function lookupKnownAsset(
     network = lookupX402Network(network);
   }
 
-  const networkInfo = assetInfo.network[network];
+  const contractInfo = assetInfo.network[network];
 
-  if (!networkInfo) {
+  if (!contractInfo) {
     return;
   }
 
   return {
-    ...networkInfo,
+    ...contractInfo,
     name,
     network,
     toUnit: assetInfo.toUnit,

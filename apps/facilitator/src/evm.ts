@@ -1,8 +1,5 @@
 import { logger } from "./logger";
 
-import { createPublicClient, http, createWalletClient } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import { createFacilitatorHandler as createEvmHandler } from "@faremeter/payment-evm/exact";
 import { isValidPrivateKey, lookupNetworkConfig } from "@faremeter/wallet-evm";
@@ -26,22 +23,8 @@ export async function createHandlers(network: string, privateKey: string) {
     process.exit(1);
   }
 
-  const transport = http(networkConfig.rpcUrl);
-
-  const publicClient = createPublicClient({
-    chain: networkConfig.chain,
-    transport,
-  });
-
-  const account = privateKeyToAccount(privateKey);
-  const walletClient = createWalletClient({
-    account,
-    chain: networkConfig.chain,
-    transport,
-  });
-
   handlers.push(
-    await createEvmHandler(network, publicClient, walletClient, "USDC"),
+    await createEvmHandler(network, networkConfig.chain, privateKey, "USDC"),
   );
 
   logger.info(`EVM handler configured for ${network}`);

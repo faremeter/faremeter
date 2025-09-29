@@ -8,8 +8,18 @@ import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
 import { type FacilitatorHandler } from "@faremeter/types/facilitator";
 
 import { type } from "arktype";
-import type { PublicClient, Hex, WalletClient, Account } from "viem";
-import { verifyTypedData, encodeFunctionData, isAddress } from "viem";
+import type { Hex, Account, Chain, Transport } from "viem";
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  verifyTypedData,
+  encodeFunctionData,
+  isAddress,
+} from "viem";
+
+import { privateKeyToAccount } from "viem/accounts";
+
 import {
   isKnownAsset,
   isKnownNetwork,
@@ -45,11 +55,15 @@ function parseSignature(signature: string): { v: number; r: Hex; s: Hex } {
   return { v, r, s };
 }
 
+type CreateFacilitatorHandlerOpts = {
+  transport?: Transport;
+};
 export async function createFacilitatorHandler(
   network: string,
-  publicClient: PublicClient,
-  walletClient: WalletClient,
+  chain: Chain,
+  privateKey: Hex,
   assetName: string,
+  opts: CreateFacilitatorHandlerOpts = {},
 ): Promise<FacilitatorHandler> {
   if (!isKnownNetwork(network)) {
     throw new Error(`Unknown network ${network}`);
@@ -60,7 +74,7 @@ export async function createFacilitatorHandler(
     throw new Error(`Couldn't look up information for ${network}`);
   }
 
-  const { chainId } = networkInfo;
+  const chainId = chain.id;
 
   if (!isKnownAsset(assetName)) {
     throw new Error(`Unknown asset: ${assetName}`);
@@ -76,6 +90,20 @@ export async function createFacilitatorHandler(
   if (!isAddress(asset)) {
     throw new Error(`Invalid asset address: ${asset}`);
   }
+
+  const transport = opts.transport ?? http(chain.rpcUrls.default.http[0]);
+  const account = privateKeyToAccount(privateKey);
+
+  const publicClient = createPublicClient({
+    chain,
+    transport,
+  });
+
+  const walletClient = createWalletClient({
+    account,
+    chain,
+    transport,
+  });
 
   {
     const domain = await generateDomain(publicClient, chainId, asset);

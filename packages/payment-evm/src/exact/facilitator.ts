@@ -22,9 +22,9 @@ import { privateKeyToAccount } from "viem/accounts";
 
 import {
   isKnownAsset,
-  isKnownNetwork,
   lookupKnownAsset,
-  lookupKnownNetwork,
+  lookupX402Network,
+  type KnownNetwork,
 } from "@faremeter/info/evm";
 
 import {
@@ -56,23 +56,16 @@ function parseSignature(signature: string): { v: number; r: Hex; s: Hex } {
 }
 
 type CreateFacilitatorHandlerOpts = {
+  network?: KnownNetwork;
   transport?: Transport;
 };
 export async function createFacilitatorHandler(
-  network: string,
   chain: Chain,
   privateKey: Hex,
   assetName: string,
   opts: CreateFacilitatorHandlerOpts = {},
 ): Promise<FacilitatorHandler> {
-  if (!isKnownNetwork(network)) {
-    throw new Error(`Unknown network ${network}`);
-  }
-
-  const networkInfo = lookupKnownNetwork(network);
-  if (!networkInfo) {
-    throw new Error(`Couldn't look up information for ${network}`);
-  }
+  const network = opts.network ?? lookupX402Network(chain.id);
 
   const chainId = chain.id;
 

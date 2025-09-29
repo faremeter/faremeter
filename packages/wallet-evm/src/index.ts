@@ -1,10 +1,10 @@
+import { isPrivateKey } from "@faremeter/types/evm";
 import {
   createWalletClient,
   http,
   type WalletClient,
   type Hex,
   type Chain,
-  isHex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia, mainnet, sepolia } from "viem/chains";
@@ -49,10 +49,6 @@ export function lookupNetworkConfig(network: string) {
   return NETWORK_CONFIGS.get(network);
 }
 
-export function isValidPrivateKey(privateKey: string): privateKey is Hex {
-  return isHex(privateKey) && privateKey.length == 66;
-}
-
 export interface EvmWallet {
   chain: Chain;
   address: Hex;
@@ -64,7 +60,7 @@ export async function createLocalWallet(
   chain: Chain,
   privateKey: string,
 ): Promise<EvmWallet> {
-  if (!isValidPrivateKey(privateKey)) {
+  if (!isPrivateKey(privateKey)) {
     throw new Error(
       `Invalid private key format. Expected 64-character hex string with '0x' prefix, got: ${privateKey.slice(0, 10)}...`,
     );

@@ -129,7 +129,7 @@ export const createFacilitatorHandler = (
 ): FacilitatorHandler => {
   const checkTuple = type({
     scheme: caseInsensitiveLiteral(x402Scheme),
-    network: caseInsensitiveLiteral(network),
+    network: caseInsensitiveLiteral(lookupX402Network(network)),
   });
   const checkTupleAndAsset = checkTuple.and({
     asset: caseInsensitiveLiteral(mint.toBase58()),

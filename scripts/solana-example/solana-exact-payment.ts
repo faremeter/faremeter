@@ -3,10 +3,7 @@ import { logResponse } from "../logger";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createLocalWallet } from "@faremeter/wallet-solana";
 import { lookupKnownSPLToken } from "@faremeter/info/solana";
-import {
-  createPaymentHandler,
-  lookupX402Network,
-} from "@faremeter/payment-solana/exact";
+import { createPaymentHandler } from "@faremeter/payment-solana/exact";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import fs from "fs";
 import { clusterApiUrl } from "@solana/web3.js";
@@ -18,7 +15,6 @@ if (!PAYER_KEYPAIR_PATH) {
 }
 
 const network = "devnet";
-const x402Network = lookupX402Network(network);
 
 const splTokenName = "USDC";
 
@@ -34,7 +30,7 @@ const keypair = Keypair.fromSecretKey(
 const connection = new Connection(clusterApiUrl(network));
 
 const mint = new PublicKey(usdcInfo.address);
-const wallet = await createLocalWallet(x402Network, keypair);
+const wallet = await createLocalWallet(network, keypair);
 const fetchWithPayer = wrapFetch(fetch, {
   handlers: [createPaymentHandler(wallet, mint, connection)],
 });

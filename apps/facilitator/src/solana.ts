@@ -1,10 +1,7 @@
 import { logger } from "./logger";
 
 import { createFacilitatorHandler as createSolanaHandler } from "@faremeter/x-solana-settlement/facilitator";
-import {
-  createFacilitatorHandler as createFacilitatorHandlerExact,
-  lookupX402Network,
-} from "@faremeter/payment-solana/exact";
+import { createFacilitatorHandler as createFacilitatorHandlerExact } from "@faremeter/payment-solana/exact";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createSolanaRpc } from "@solana/kit";
 import { isKnownCluster, lookupKnownSPLToken } from "@faremeter/info/solana";
@@ -39,12 +36,7 @@ export function createHandlers(network: string, keypairPath: string) {
     // SPL Token
     createSolanaHandler(network, connection, adminKeypair, mint),
     // SPL Token with exact scheme
-    createFacilitatorHandlerExact(
-      lookupX402Network(network),
-      rpc,
-      adminKeypair,
-      mint,
-    ),
+    createFacilitatorHandlerExact(network, rpc, adminKeypair, mint),
   );
 
   logger.info(`Solana handlers configured for ${network}`);

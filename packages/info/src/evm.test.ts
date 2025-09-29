@@ -37,5 +37,25 @@ await t.test("basicAssetLookup", async (t) => {
     t.end();
   });
 
+  await t.test((t) => {
+    const info = evm.lookupKnownAsset(84532, "USDC");
+
+    if (!info) {
+      throw new Error("failed to lookup known EVM asset");
+    }
+
+    t.matchOnly(info.address, "0x036cbd53842c5426634e7929541ec2318f3dcf7e");
+    t.matchOnly(info.name, "USDC");
+    t.matchOnly(info.network, "base-sepolia");
+    t.end();
+  });
+
+  t.end();
+});
+
+await t.test("basicChainLookup", async (t) => {
+  t.matchOnly(evm.lookupX402Network(8453), "base");
+  t.matchOnly(evm.lookupX402Network(84532), "base-sepolia");
+  t.matchOnly(evm.lookupX402Network(8675309), "eip155:8675309");
   t.end();
 });

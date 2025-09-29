@@ -23,6 +23,17 @@ export function lookupKnownNetwork(n: KnownNetwork) {
   };
 }
 
+export function lookupX402Network(chainId: number) {
+  let k: KnownNetwork;
+  for (k in knownNetworks) {
+    if (knownNetworks[k].chainId == chainId) {
+      return k;
+    }
+  }
+
+  return ("eip155:" + chainId.toString()) as KnownNetwork;
+}
+
 type NetworkInfo = {
   address: Address;
   contractName: string;
@@ -50,11 +61,18 @@ const knownAssets = {
 } as const satisfies Record<string, AssetInfo>;
 export type KnownAsset = keyof typeof knownAssets;
 
-export function lookupKnownAsset(network: KnownNetwork, name: KnownAsset) {
+export function lookupKnownAsset(
+  network: KnownNetwork | number,
+  name: KnownAsset,
+) {
   const assetInfo: AssetInfo = knownAssets[name];
 
   if (!assetInfo) {
     return;
+  }
+
+  if (typeof network === "number") {
+    network = lookupX402Network(network);
   }
 
   const networkInfo = assetInfo.network[network];

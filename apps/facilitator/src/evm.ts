@@ -24,7 +24,7 @@ export async function createHandlers(network: string, privateKey: string) {
   }
 
   handlers.push(
-    await createEvmHandler(network, networkConfig.chain, privateKey, "USDC"),
+    await createEvmHandler(networkConfig.chain, privateKey, "USDC"),
   );
 
   logger.info(`EVM handler configured for ${network}`);

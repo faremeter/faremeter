@@ -6,6 +6,7 @@ import {
 import { createPaymentHandler } from "@faremeter/payment-evm/exact";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import type { TypedDataDefinition } from "viem";
+import { baseSepolia } from "viem/chains";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -30,12 +31,12 @@ ui.message(`\nUsing account: ${selected.address}`);
 
 const ledgerWallet = await createLedgerEvmWallet(
   ui,
-  "base-sepolia",
+  baseSepolia,
   selected.path,
 );
 
 const walletForPayment = {
-  network: ledgerWallet.network,
+  chain: ledgerWallet.chain,
   address: ledgerWallet.address,
   account: {
     signTypedData: async (params: {

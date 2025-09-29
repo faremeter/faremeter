@@ -9,53 +9,16 @@ import {
   hashDomain,
   hashStruct,
 } from "viem";
-import { baseSepolia, mainnet, sepolia } from "viem/chains";
 import Eth from "@ledgerhq/hw-app-eth/lib-es/Eth";
 import { type } from "arktype";
 import { createTransport } from "./transport";
 import type { LedgerEvmWallet, UserInterface } from "./types";
 
-interface NetworkConfig {
-  chain: Chain;
-  rpcUrl: string;
-}
-
-const NETWORK_CONFIGS = new Map<string, NetworkConfig>([
-  [
-    "base-sepolia",
-    {
-      chain: baseSepolia,
-      rpcUrl: "https://sepolia.base.org",
-    },
-  ],
-  [
-    "ethereum",
-    {
-      chain: mainnet,
-      rpcUrl: "https://ethereum-rpc.publicnode.com",
-    },
-  ],
-  [
-    "sepolia",
-    {
-      chain: sepolia,
-      rpcUrl: "https://ethereum-sepolia-rpc.publicnode.com",
-    },
-  ],
-]);
-
 export async function createLedgerEvmWallet(
   ui: UserInterface,
-  network: string,
+  chain: Chain,
   derivationPath: string,
 ): Promise<LedgerEvmWallet> {
-  const config = NETWORK_CONFIGS.get(network);
-  if (!config) {
-    throw new Error(
-      `Unsupported network: ${network}. Supported networks: ${Array.from(NETWORK_CONFIGS.keys()).join(", ")}`,
-    );
-  }
-
   const transport = await createTransport();
   const eth = new Eth(transport);
 
@@ -106,7 +69,7 @@ export async function createLedgerEvmWallet(
         gasPrice: toHex(transaction.gasPrice),
         maxFeePerGas: toHex(transaction.maxFeePerGas),
         maxPriorityFeePerGas: toHex(transaction.maxPriorityFeePerGas),
-        chainId: config.chain.id,
+        chainId: chain.id,
       };
 
       const result = await eth.signTransaction(
@@ -193,12 +156,12 @@ export async function createLedgerEvmWallet(
 
   const client = createWalletClient({
     account: ledgerAccount,
-    chain: config.chain,
-    transport: http(config.rpcUrl),
+    chain: chain,
+    transport: http(chain.rpcUrls.default.http[0]),
   });
 
   return {
-    network,
+    chain,
     address: formattedAddress,
     client,
     signTransaction: async (tx: TransactionSerializable) => {

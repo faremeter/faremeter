@@ -54,23 +54,16 @@ export function isValidPrivateKey(privateKey: string): privateKey is Hex {
 }
 
 export interface EvmWallet {
-  network: string;
+  chain: Chain;
   address: Hex;
   client: WalletClient;
   account: ReturnType<typeof privateKeyToAccount>;
 }
 
 export async function createLocalWallet(
-  network: string,
+  chain: Chain,
   privateKey: string,
 ): Promise<EvmWallet> {
-  const config = lookupNetworkConfig(network);
-  if (!config) {
-    throw new Error(
-      `Unsupported network: ${network}. Supported networks: ${Array.from(NETWORK_CONFIGS.keys()).join(", ")}`,
-    );
-  }
-
   if (!isValidPrivateKey(privateKey)) {
     throw new Error(
       `Invalid private key format. Expected 64-character hex string with '0x' prefix, got: ${privateKey.slice(0, 10)}...`,
@@ -80,12 +73,12 @@ export async function createLocalWallet(
   const account = privateKeyToAccount(privateKey);
   const client = createWalletClient({
     account,
-    chain: config.chain,
-    transport: http(config.rpcUrl),
+    chain: chain,
+    transport: http(chain.rpcUrls.default.http[0]),
   });
 
   return {
-    network,
+    chain,
     address: account.address,
     client,
     account,

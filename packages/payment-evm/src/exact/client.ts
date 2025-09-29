@@ -4,11 +4,7 @@ import type {
   PaymentExecer,
   RequestContext,
 } from "@faremeter/types/client";
-import {
-  isKnownNetwork,
-  lookupKnownNetwork,
-  lookupKnownAsset,
-} from "@faremeter/info/evm";
+import { lookupX402Network, lookupKnownAsset } from "@faremeter/info/evm";
 import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import type { Hex } from "viem";
 import { isAddress } from "viem";
@@ -22,7 +18,10 @@ import {
 } from "./constants";
 
 interface WalletForPayment {
-  network: string;
+  chain: {
+    id: number;
+    name: string;
+  };
   address: Hex;
   account: {
     signTypedData: (params: {
@@ -35,23 +34,12 @@ interface WalletForPayment {
 }
 
 export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
-  if (!isKnownNetwork(wallet.network)) {
-    throw new Error(
-      `Wallet was created for unsupported network '${wallet.network}'`,
-    );
-  }
+  const x402Network = lookupX402Network(wallet.chain.id);
 
-  const networkInfo = lookupKnownNetwork(wallet.network);
-  if (!networkInfo) {
-    throw new Error(
-      `Couldn't look up network info for network '${wallet.network}'`,
-    );
-  }
-
-  const assetInfo = lookupKnownAsset(wallet.network, "USDC");
+  const assetInfo = lookupKnownAsset(wallet.chain.id, "USDC");
   if (!assetInfo) {
     throw new Error(
-      `Couldn't look up USDC information on network '${wallet.network}'`,
+      `Couldn't look up USDC information on network '${x402Network}'`,
     );
   }
 
@@ -60,8 +48,7 @@ export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
     accepts: x402PaymentRequirements[],
   ): Promise<PaymentExecer[]> {
     const compatibleRequirements = accepts.filter(
-      (req) =>
-        req.scheme === X402_EXACT_SCHEME && req.network === wallet.network,
+      (req) => req.scheme === X402_EXACT_SCHEME && req.network === x402Network,
     );
 
     return compatibleRequirements.map((requirements) => ({
@@ -107,7 +94,7 @@ export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
         const domain = {
           name: extraResult.name ?? assetInfo.contractName,
           version: extraResult.version ?? "2",
-          chainId: extraResult.chainId ?? networkInfo.chainId,
+          chainId: extraResult.chainId ?? wallet.chain.id,
           verifyingContract,
         } as const;
 

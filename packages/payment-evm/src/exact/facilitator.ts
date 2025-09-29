@@ -25,6 +25,7 @@ import {
   lookupKnownAsset,
   lookupX402Network,
   type KnownNetwork,
+  type ContractInfo,
 } from "@faremeter/info/evm";
 
 import {
@@ -62,20 +63,31 @@ type CreateFacilitatorHandlerOpts = {
 export async function createFacilitatorHandler(
   chain: Chain,
   privateKey: Hex,
-  assetName: string,
+  assetNameOrInfo: string | ContractInfo,
   opts: CreateFacilitatorHandlerOpts = {},
 ): Promise<FacilitatorHandler> {
   const network = opts.network ?? lookupX402Network(chain.id);
 
   const chainId = chain.id;
 
-  if (!isKnownAsset(assetName)) {
-    throw new Error(`Unknown asset: ${assetName}`);
-  }
+  let assetInfo: ContractInfo;
 
-  const assetInfo = lookupKnownAsset(network, assetName);
-  if (!assetInfo) {
-    throw new Error(`Couldn't look up asset ${assetName} on ${network}`);
+  if (typeof assetNameOrInfo == "string") {
+    if (!isKnownAsset(assetNameOrInfo)) {
+      throw new Error(`Unknown asset: ${assetNameOrInfo}`);
+    }
+
+    const t = lookupKnownAsset(network, assetNameOrInfo);
+
+    if (!t) {
+      throw new Error(
+        `Couldn't look up asset ${assetNameOrInfo} on ${network}`,
+      );
+    }
+
+    assetInfo = t;
+  } else {
+    assetInfo = assetNameOrInfo;
   }
 
   const asset = assetInfo.address;

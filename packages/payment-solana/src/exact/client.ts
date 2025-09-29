@@ -28,7 +28,11 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { type } from "arktype";
-import { PaymentRequirementsExtra, x402Scheme } from "./facilitator";
+import {
+  PaymentRequirementsExtra,
+  x402Scheme,
+  lookupX402Network,
+} from "./facilitator";
 
 export type Wallet = {
   network: string;
@@ -50,7 +54,7 @@ export function createPaymentHandler(
 ): PaymentHandler {
   const matcher = type({
     scheme: caseInsensitiveLiteral(x402Scheme),
-    network: caseInsensitiveLiteral(wallet.network),
+    network: caseInsensitiveLiteral(lookupX402Network(wallet.network)),
     asset: caseInsensitiveLiteral(mint ? mint.toBase58() : "sol"),
   });
 

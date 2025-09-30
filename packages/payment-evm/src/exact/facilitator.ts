@@ -5,6 +5,7 @@ import type {
 } from "@faremeter/types/x402";
 
 import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
+import { isPrivateKey } from "@faremeter/types/evm";
 import { type FacilitatorHandler } from "@faremeter/types/facilitator";
 
 import { type } from "arktype";
@@ -62,10 +63,14 @@ type CreateFacilitatorHandlerOpts = {
 };
 export async function createFacilitatorHandler(
   chain: Chain,
-  privateKey: Hex,
+  privateKey: string,
   assetNameOrInfo: string | ContractInfo,
   opts: CreateFacilitatorHandlerOpts = {},
 ): Promise<FacilitatorHandler> {
+  if (!isPrivateKey(privateKey)) {
+    throw new Error(`Invalid private key: ${privateKey}`);
+  }
+
   const network = opts.network ?? lookupX402Network(chain.id);
 
   const chainId = chain.id;

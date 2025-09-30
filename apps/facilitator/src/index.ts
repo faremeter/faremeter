@@ -7,7 +7,8 @@ import { createFacilitatorRoutes } from "@faremeter/facilitator";
 
 import { argsFromEnv } from "./utils";
 import * as solana from "./solana";
-import * as evm from "./evm";
+import { createFacilitatorHandler as createEVMHandler } from "@faremeter/payment-evm/exact";
+import * as evmChains from "viem/chains";
 
 import { configure, getConsoleSink } from "@logtape/logtape";
 
@@ -29,9 +30,9 @@ const solanaHandlers =
   ) ?? [];
 
 const evmHandlers =
-  (await argsFromEnv(["EVM_PRIVATE_KEY"], (...envVars) =>
-    evm.createHandlers("base-sepolia", ...envVars),
-  )) ?? [];
+  (await argsFromEnv(["EVM_PRIVATE_KEY"], async (privateKey) => [
+    await createEVMHandler(evmChains.baseSepolia, privateKey, "USDC"),
+  ])) ?? [];
 
 const handlers = [...solanaHandlers, ...evmHandlers];
 

@@ -158,9 +158,6 @@ importers:
       '@faremeter/types':
         specifier: workspace:^
         version: link:../../packages/types
-      '@faremeter/wallet-evm':
-        specifier: workspace:^
-        version: link:../../packages/wallet-evm
       '@faremeter/x-solana-settlement':
         specifier: 'catalog:'
         version: 0.1.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)

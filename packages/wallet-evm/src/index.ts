@@ -7,47 +7,6 @@ import {
   type Chain,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { base, baseSepolia, mainnet, sepolia } from "viem/chains";
-
-interface NetworkConfig {
-  chain: Chain;
-  rpcUrl: string;
-}
-
-const NETWORK_CONFIGS = new Map<string, NetworkConfig>([
-  [
-    "base",
-    {
-      chain: base,
-      rpcUrl: "https://mainnet.base.org",
-    },
-  ],
-  [
-    "base-sepolia",
-    {
-      chain: baseSepolia,
-      rpcUrl: "https://sepolia.base.org",
-    },
-  ],
-  [
-    "ethereum",
-    {
-      chain: mainnet,
-      rpcUrl: "https://ethereum-rpc.publicnode.com",
-    },
-  ],
-  [
-    "sepolia",
-    {
-      chain: sepolia,
-      rpcUrl: "https://ethereum-sepolia-rpc.publicnode.com",
-    },
-  ],
-]);
-
-export function lookupNetworkConfig(network: string) {
-  return NETWORK_CONFIGS.get(network);
-}
 
 export interface EvmWallet {
   chain: Chain;

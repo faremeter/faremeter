@@ -104,7 +104,7 @@ export function x402Exact(args: x402ExactArgs) {
   const tokenInfo = lookupKnownAsset(args.network, args.asset);
 
   if (!tokenInfo) {
-    throw new Error(`couldn't look up token '${args.asset}' on Solana cluster`);
+    throw new Error(`couldn't look up token '${args.asset}' on EVM chain`);
   }
 
   const req = addX402PaymentRequirementDefaults({

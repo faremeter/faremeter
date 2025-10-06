@@ -19,6 +19,9 @@ await t.test("basicAssetLookup", async (t) => {
     t.matchOnly(info.address, "0x036cbd53842c5426634e7929541ec2318f3dcf7e");
     t.matchOnly(info.name, "USDC");
     t.matchOnly(info.network, "base-sepolia");
+    t.equal(info.forwarder, undefined);
+    t.equal(info.forwarderName, undefined);
+    t.equal(info.forwarderVersion, undefined);
     t.end();
   });
   await t.test((t) => {

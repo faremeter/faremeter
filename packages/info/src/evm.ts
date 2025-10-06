@@ -37,6 +37,9 @@ export function lookupX402Network(chainId: number) {
 export type ContractInfo = {
   address: Address;
   contractName: string;
+  forwarder?: Address;
+  forwarderName?: string;
+  forwarderVersion?: string;
 };
 
 type AssetInfo = {

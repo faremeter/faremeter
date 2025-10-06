@@ -34,7 +34,12 @@ const evmHandlers =
     await createEVMHandler(evmChains.baseSepolia, privateKey, "USDC"),
   ])) ?? [];
 
-const handlers = [...solanaHandlers, ...evmHandlers];
+const skaleHandlers =
+  (await argsFromEnv(["EVM_PRIVATE_KEY"], async (privateKey) => [
+    await createEVMHandler(evmChains.skaleEuropaTestnet, privateKey, "USDC"),
+  ])) ?? [];
+
+const handlers = [...solanaHandlers, ...evmHandlers, ...skaleHandlers];
 
 if (handlers.length === 0) {
   logger.error(

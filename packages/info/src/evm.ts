@@ -8,6 +8,9 @@ const knownNetworks = {
   "base-sepolia": {
     chainId: 84532,
   },
+  "skale-europa-testnet": {
+    chainId: 1444673419,
+  },
 } as const;
 type knownNetworks = typeof knownNetworks;
 export type KnownNetwork = keyof knownNetworks;
@@ -57,6 +60,13 @@ const knownAssets = {
       base: {
         address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
         contractName: "USD Coin",
+      },
+      "skale-europa-testnet": {
+        address: "0x9eAb55199f4481eCD7659540A17Af618766b07C4",
+        contractName: "USDC", // EIP-3009 Forwarder,
+        forwarder: "0x7779B0d1766e6305E5f8081E3C0CDF58FcA24330",
+        forwarderName: "USDC Forwarder",
+        forwarderVersion: "1",
       },
     },
     toUnit: (v: UnitInput) => v.toString(),

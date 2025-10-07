@@ -9,23 +9,26 @@ import * as x402 from "@faremeter/types/x402";
 import { responseFeeder } from "./mock";
 
 function createFakeHandler(t: Test) {
-  const expectedAccepts = [
-    {
-      scheme: "exact",
-      network: "solana-mainnet",
-      maxAmountRequired: "1.0",
-      resource: "http://wherever",
-      description: "what is a description",
-      mimeType: "text/plain",
-      payTo: "someaccount",
-      maxTimeoutSeconds: 5,
-      asset: "theasset",
-    },
-  ];
+  const mockRequirements = {
+    x402Version: 1,
+    accepts: [
+      {
+        scheme: "exact",
+        network: "solana-mainnet",
+        maxAmountRequired: "1.0",
+        resource: "http://wherever",
+        description: "what is a description",
+        mimeType: "text/plain",
+        payTo: "someaccount",
+        maxTimeoutSeconds: 5,
+        asset: "theasset",
+      },
+    ],
+  };
 
   const fakeHandler: fmTypes.PaymentHandler = async (ctx, required) => {
     t.equal(required.length, 1);
-    t.matchOnly(required, expectedAccepts);
+    t.matchOnly(required, mockRequirements.accepts);
 
     const requirements = required[0];
 
@@ -45,18 +48,19 @@ function createFakeHandler(t: Test) {
     return execers;
   };
 
+  const createMockResponse = async () =>
+    new Response(JSON.stringify(mockRequirements), {
+      status: 402,
+    });
+
+  return { fakeHandler, createMockResponse, mockRequirements };
+}
+
+await t.test("basicWrap", async (t) => {
+  const { fakeHandler, createMockResponse } = createFakeHandler(t);
+
   const mockFetch = responseFeeder([
-    async () => {
-      return new Response(
-        JSON.stringify({
-          x402Version: 1,
-          accepts: expectedAccepts,
-        }),
-        {
-          status: 402,
-        },
-      );
-    },
+    createMockResponse,
     async (input, init?: RequestInit) => {
       if (init?.headers === undefined) {
         throw new Error("didn't get back request headers");
@@ -72,12 +76,6 @@ function createFakeHandler(t: Test) {
       return new Response("mypayload");
     },
   ]);
-
-  return { fakeHandler, mockFetch };
-}
-
-await t.test("basicWrap", async (t) => {
-  const { mockFetch, fakeHandler } = createFakeHandler(t);
 
   const wrappedFetch = fmFetch.wrap(mockFetch, {
     handlers: [fakeHandler],

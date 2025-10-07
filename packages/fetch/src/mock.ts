@@ -1,5 +1,5 @@
-type MockFetchType = typeof fetch;
-type MockResponse = Response;
+export type MockFetchType = typeof fetch;
+export type MockResponse = Response;
 
 export function responseFeeder(
   responses: (MockFetchType | MockResponse)[],

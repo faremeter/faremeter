@@ -5,7 +5,7 @@ import * as fmFetch from "./fetch";
 import * as fmTypes from "@faremeter/types/client";
 import * as x402 from "@faremeter/types/x402";
 
-import { responseFeeder } from "./mockfetch";
+import { responseFeeder } from "./mock";
 
 await t.test("basicWrap", async (t) => {
   const expectedAccepts = [

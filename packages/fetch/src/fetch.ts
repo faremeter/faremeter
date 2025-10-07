@@ -17,7 +17,17 @@ type WrapOptions = {
   phase1Fetch?: typeof fetch;
   retryCount?: number;
   initialRetryDelay?: number;
+  returnPaymentFailure?: boolean;
 };
+
+export class WrappedFetchError extends Error {
+  constructor(
+    message: string,
+    public response: Response,
+  ) {
+    super(message);
+  }
+}
 
 export function chooseFirstAvailable(
   possiblePayers: PaymentExecer[],
@@ -104,6 +114,13 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOptions) {
       backoff *= 2;
     } while (--attempt > 0);
 
-    return response;
+    if (options.returnPaymentFailure) {
+      return response;
+    }
+
+    throw new WrappedFetchError(
+      "failed to complete payment after retries",
+      response,
+    );
   };
 }

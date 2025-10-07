@@ -211,6 +211,7 @@ await t.test("basicRetry", async (t) => {
     const wrappedFetch = fmFetch.wrap(mockFetch, {
       handlers: [fakeHandler],
       retryCount: 0,
+      returnPaymentFailure: true,
     });
 
     {
@@ -224,4 +225,33 @@ await t.test("basicRetry", async (t) => {
 
   t.pass();
   t.end();
+});
+
+await t.test("handlingErrors", async (t) => {
+  const { fakeHandler, createMockResponse } = createFakeHandler(t);
+
+  const mockFetch = responseFeeder([
+    createMockResponse,
+    createMockResponse,
+    async () => {
+      return new Response("retry worked", {
+        status: 200,
+      });
+    },
+  ]);
+
+  const wrappedFetch = fmFetch.wrap(mockFetch, {
+    handlers: [fakeHandler],
+    retryCount: 0,
+  });
+
+  await t.rejects(
+    async () => {
+      await wrappedFetch("http://somewhere/something/protected");
+    },
+    new fmFetch.WrappedFetchError(
+      "failed to complete payment after retries",
+      new Response(),
+    ),
+  );
 });

@@ -1,13 +1,14 @@
 #!/usr/bin/env pnpm tsx
 
 import t from "tap";
+import type { Test } from "tap";
 import * as fmFetch from "./fetch";
 import * as fmTypes from "@faremeter/types/client";
 import * as x402 from "@faremeter/types/x402";
 
 import { responseFeeder } from "./mock";
 
-await t.test("basicWrap", async (t) => {
+function createFakeHandler(t: Test) {
   const expectedAccepts = [
     {
       scheme: "exact",
@@ -71,6 +72,12 @@ await t.test("basicWrap", async (t) => {
       return new Response("mypayload");
     },
   ]);
+
+  return { fakeHandler, mockFetch };
+}
+
+await t.test("basicWrap", async (t) => {
+  const { mockFetch, fakeHandler } = createFakeHandler(t);
 
   const wrappedFetch = fmFetch.wrap(mockFetch, {
     handlers: [fakeHandler],

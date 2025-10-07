@@ -136,3 +136,92 @@ await t.test("failedPhase1", async (t) => {
   t.pass();
   t.end();
 });
+
+await t.test("basicRetry", async (t) => {
+  const { fakeHandler, createMockResponse, mockRequirements } =
+    createFakeHandler(t);
+
+  {
+    const mockFetch = responseFeeder([
+      createMockResponse,
+      createMockResponse,
+      async () => {
+        return new Response("retry worked", {
+          status: 200,
+        });
+      },
+    ]);
+
+    const wrappedFetch = fmFetch.wrap(mockFetch, {
+      handlers: [fakeHandler],
+      retryCount: 1,
+    });
+
+    {
+      const begin = Date.now();
+      const res = await wrappedFetch("http://somewhere/something/protected");
+      const delta = Date.now() - begin;
+      // XXX - Hopefully this doesn't become flakey.
+      t.ok(delta > 90 && delta < 110);
+      t.equal(res.status, 200);
+      const body = await res.text();
+      t.matchOnly(body, "retry worked");
+    }
+  }
+
+  {
+    const retryCount = 42;
+    const mockFetch = responseFeeder([
+      ...Array<typeof createMockResponse>(retryCount + 1).fill(
+        createMockResponse,
+      ),
+      async () => {
+        return new Response("retry worked", {
+          status: 200,
+        });
+      },
+    ]);
+
+    const wrappedFetch = fmFetch.wrap(mockFetch, {
+      handlers: [fakeHandler],
+      retryCount,
+      initialRetryDelay: 0,
+    });
+
+    {
+      const res = await wrappedFetch("http://somewhere/something/protected");
+
+      t.equal(res.status, 200);
+      const body = await res.text();
+      t.matchOnly(body, "retry worked");
+    }
+  }
+
+  {
+    const mockFetch = responseFeeder([
+      createMockResponse,
+      createMockResponse,
+      async () => {
+        return new Response("retry worked", {
+          status: 200,
+        });
+      },
+    ]);
+
+    const wrappedFetch = fmFetch.wrap(mockFetch, {
+      handlers: [fakeHandler],
+      retryCount: 0,
+    });
+
+    {
+      const res = await wrappedFetch("http://somewhere/something/protected");
+
+      t.equal(res.status, 402);
+      const body = (await res.json()) as x402.x402PaymentRequiredResponse;
+      t.matchOnly(body, mockRequirements);
+    }
+  }
+
+  t.pass();
+  t.end();
+});

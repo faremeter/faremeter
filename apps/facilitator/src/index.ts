@@ -20,7 +20,7 @@ await configure({
       lowestLevel: "warning",
       sinks: ["console"],
     },
-    { category: "faremeter", lowestLevel: "debug", sinks: ["console"] },
+    { category: "faremeter", lowestLevel: "info", sinks: ["console"] },
   ],
 });
 

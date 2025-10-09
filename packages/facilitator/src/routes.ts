@@ -101,10 +101,13 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
         continue;
       }
 
-      logger.info("successfully settled request: {*}", {
-        requirements: summarizeRequirements(x402Req.paymentRequirements),
-        txHash: t.txHash,
-      });
+      logger.info(
+        `${t.success ? "succeeded" : "failed"} settlement request: {*}`,
+        {
+          requirements: summarizeRequirements(x402Req.paymentRequirements),
+          txHash: t.txHash,
+        },
+      );
 
       return c.json(t);
     }

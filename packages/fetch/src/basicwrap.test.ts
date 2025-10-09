@@ -251,7 +251,7 @@ await t.test("handlingErrors", async (t) => {
     },
     new fmFetch.WrappedFetchError(
       "failed to complete payment after retries",
-      new Response(),
+      new Response(null, { status: 402 }),
     ),
   );
 });

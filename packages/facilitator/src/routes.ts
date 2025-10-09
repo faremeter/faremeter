@@ -2,6 +2,7 @@ import { getLogger } from "@logtape/logtape";
 import { Hono, type Context } from "hono";
 import * as x from "@faremeter/types/x402";
 import { isValidationError } from "@faremeter/types";
+import { type x402PaymentRequirements } from "@faremeter/types/x402";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 
 const logger = getLogger(["faremeter", "facilitator"]);
@@ -11,6 +12,20 @@ type CreateFacilitatorRoutesArgs = {
 };
 
 type StatusCode = 400 | 500;
+
+function summarizeRequirements({
+  scheme,
+  network,
+  asset,
+  payTo,
+}: x402PaymentRequirements) {
+  return {
+    scheme,
+    network,
+    asset,
+    payTo,
+  };
+}
 
 export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
   const router = new Hono();
@@ -58,6 +73,8 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       );
     }
 
+    logger.debug("starting settlement attempt for request: {*}", x402Req);
+
     for (const handler of args.handlers) {
       let t;
 
@@ -84,9 +101,18 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
         continue;
       }
 
+      logger.info("successfully settled request: {*}", {
+        requirements: summarizeRequirements(x402Req.paymentRequirements),
+        txHash: t.txHash,
+      });
+
       return c.json(t);
     }
     sendSettleError(c, 400, "no matching payment handler found");
+    logger.warning(
+      "attempt to settle was made with no handler found, requirements summary was: {*}",
+      summarizeRequirements(x402Req.paymentRequirements),
+    );
   });
 
   router.post("/accepts", async (c) => {
@@ -105,6 +131,10 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
         args.handlers.flatMap((x) => x.getRequirements(x402Req.accepts)),
       )
     ).flat();
+
+    logger.debug(`returning ${accepts.length} accepts: {*}`, {
+      accepts: accepts.map(summarizeRequirements),
+    });
 
     c.status(200);
     return c.json({

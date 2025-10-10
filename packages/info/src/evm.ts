@@ -118,6 +118,35 @@ export function isKnownAsset(asset: string): asset is KnownAsset {
   return asset in knownAssets;
 }
 
+export type AssetNameOrContractInfo = string | ContractInfo;
+
+export function findAssetInfo(
+  network: x402Network,
+  assetNameOrInfo: AssetNameOrContractInfo,
+) {
+  let assetInfo: ContractInfo;
+
+  if (typeof assetNameOrInfo == "string") {
+    if (!isKnownAsset(assetNameOrInfo)) {
+      throw new Error(`Unknown asset: ${assetNameOrInfo}`);
+    }
+
+    const t = lookupKnownAsset(network, assetNameOrInfo);
+
+    if (!t) {
+      throw new Error(
+        `Couldn't look up asset ${assetNameOrInfo} on ${network}`,
+      );
+    }
+
+    assetInfo = t;
+  } else {
+    assetInfo = assetNameOrInfo;
+  }
+
+  return assetInfo;
+}
+
 export type x402ExactArgs = {
   network: x402Network | number;
   asset: KnownAsset;

@@ -22,11 +22,10 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 
 import {
-  isKnownAsset,
-  lookupKnownAsset,
   lookupX402Network,
   type KnownX402Network,
-  type ContractInfo,
+  findAssetInfo,
+  type AssetNameOrContractInfo,
 } from "@faremeter/info/evm";
 
 import {
@@ -64,7 +63,7 @@ type CreateFacilitatorHandlerOpts = {
 export async function createFacilitatorHandler(
   chain: Chain,
   privateKey: string,
-  assetNameOrInfo: string | ContractInfo,
+  assetNameOrInfo: AssetNameOrContractInfo,
   opts: CreateFacilitatorHandlerOpts = {},
 ): Promise<FacilitatorHandler> {
   if (!isPrivateKey(privateKey)) {
@@ -75,25 +74,7 @@ export async function createFacilitatorHandler(
 
   const chainId = chain.id;
 
-  let assetInfo: ContractInfo;
-
-  if (typeof assetNameOrInfo == "string") {
-    if (!isKnownAsset(assetNameOrInfo)) {
-      throw new Error(`Unknown asset: ${assetNameOrInfo}`);
-    }
-
-    const t = lookupKnownAsset(network, assetNameOrInfo);
-
-    if (!t) {
-      throw new Error(
-        `Couldn't look up asset ${assetNameOrInfo} on ${network}`,
-      );
-    }
-
-    assetInfo = t;
-  } else {
-    assetInfo = assetNameOrInfo;
-  }
+  const assetInfo = findAssetInfo(network, assetNameOrInfo);
 
   const asset = assetInfo.address;
 

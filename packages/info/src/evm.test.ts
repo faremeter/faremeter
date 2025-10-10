@@ -4,8 +4,8 @@ import t from "tap";
 import * as evm from "./evm";
 
 await t.test("basicNetworkLookup", async (t) => {
-  t.ok(evm.isKnownNetwork("base"));
-  t.ok(!evm.isKnownNetwork("asdkljas" as evm.KnownNetwork));
+  t.ok(evm.isKnownX402Network("base"));
+  t.ok(!evm.isKnownX402Network("asdkljas" as evm.KnownX402Network));
 });
 
 await t.test("basicAssetLookup", async (t) => {
@@ -41,7 +41,7 @@ await t.test("basicAssetLookup", async (t) => {
   });
   await t.test((t) => {
     const info = evm.lookupKnownAsset(
-      "alsdkjaklsdj" as evm.KnownNetwork,
+      "alsdkjaklsdj" as evm.KnownX402Network,
       "asldkjasd" as evm.KnownAsset,
     );
 

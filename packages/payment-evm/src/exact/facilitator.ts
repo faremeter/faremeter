@@ -25,7 +25,7 @@ import {
   isKnownAsset,
   lookupKnownAsset,
   lookupX402Network,
-  type KnownNetwork,
+  type KnownX402Network,
   type ContractInfo,
 } from "@faremeter/info/evm";
 
@@ -58,7 +58,7 @@ function parseSignature(signature: string): { v: number; r: Hex; s: Hex } {
 }
 
 type CreateFacilitatorHandlerOpts = {
-  network?: KnownNetwork;
+  network?: KnownX402Network;
   transport?: Transport;
 };
 export async function createFacilitatorHandler(

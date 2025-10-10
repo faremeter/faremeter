@@ -1,7 +1,7 @@
 import { type UnitInput, addX402PaymentRequirementDefaults } from "./common";
 import { Address } from "@faremeter/types/evm";
 
-const knownNetworks = {
+const knownX402Networks = {
   base: {
     chainId: 8453,
   },
@@ -12,29 +12,31 @@ const knownNetworks = {
     chainId: 1444673419,
   },
 } as const;
-type knownNetworks = typeof knownNetworks;
-export type KnownNetwork = keyof knownNetworks;
+type knownX402Networks = typeof knownX402Networks;
+export type KnownX402Network = keyof knownX402Networks;
 
-export function isKnownNetwork(n: string): n is KnownNetwork {
-  return n in knownNetworks;
+export function isKnownX402Network(n: string): n is KnownX402Network {
+  return n in knownX402Networks;
 }
 
-export function lookupKnownNetwork(n: KnownNetwork) {
+export function lookupKnownX402Network(n: KnownX402Network) {
   return {
-    ...knownNetworks[n],
+    ...knownX402Networks[n],
     name: n,
   };
 }
 
+export type x402Network = KnownX402Network | `eip155:${number}`;
+
 export function lookupX402Network(chainId: number) {
-  let k: KnownNetwork;
-  for (k in knownNetworks) {
-    if (knownNetworks[k].chainId == chainId) {
+  let k: KnownX402Network;
+  for (k in knownX402Networks) {
+    if (knownX402Networks[k].chainId == chainId) {
       return k;
     }
   }
 
-  return ("eip155:" + chainId.toString()) as KnownNetwork;
+  return ("eip155:" + chainId.toString()) as x402Network;
 }
 
 export type ContractInfo = {
@@ -46,7 +48,7 @@ export type ContractInfo = {
 };
 
 type AssetInfo = {
-  network: Partial<Record<KnownNetwork, ContractInfo>>;
+  network: Partial<Record<x402Network, ContractInfo>>;
   toUnit: (v: UnitInput) => string;
 };
 
@@ -75,7 +77,7 @@ const knownAssets = {
 export type KnownAsset = keyof typeof knownAssets;
 
 export function lookupKnownAsset(
-  network: KnownNetwork | number,
+  network: x402Network | number,
   name: KnownAsset,
 ) {
   const assetInfo: AssetInfo = knownAssets[name];
@@ -107,7 +109,7 @@ export function isKnownAsset(asset: string): asset is KnownAsset {
 }
 
 export type x402ExactArgs = {
-  network: KnownNetwork;
+  network: x402Network | number;
   asset: KnownAsset;
   amount: UnitInput;
   payTo: Address;

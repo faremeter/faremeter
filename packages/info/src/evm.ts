@@ -122,7 +122,7 @@ export function x402Exact(args: x402ExactArgs) {
 
   const req = addX402PaymentRequirementDefaults({
     scheme: "exact",
-    network: args.network,
+    network: tokenInfo.network,
     maxAmountRequired: tokenInfo.toUnit(args.amount),
     payTo: args.payTo,
     asset: tokenInfo.address,

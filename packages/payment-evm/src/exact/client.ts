@@ -4,7 +4,11 @@ import type {
   PaymentExecer,
   RequestContext,
 } from "@faremeter/types/client";
-import { lookupX402Network, lookupKnownAsset } from "@faremeter/info/evm";
+import {
+  lookupX402Network,
+  findAssetInfo,
+  type AssetNameOrContractInfo,
+} from "@faremeter/info/evm";
 import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import type { Hex } from "viem";
 import { isAddress } from "viem";
@@ -33,10 +37,17 @@ interface WalletForPayment {
   };
 }
 
-export function createPaymentHandler(wallet: WalletForPayment): PaymentHandler {
+export type CreatePaymentHandlerOpts = {
+  asset?: AssetNameOrContractInfo;
+};
+
+export function createPaymentHandler(
+  wallet: WalletForPayment,
+  opts: CreatePaymentHandlerOpts = {},
+): PaymentHandler {
   const x402Network = lookupX402Network(wallet.chain.id);
 
-  const assetInfo = lookupKnownAsset(wallet.chain.id, "USDC");
+  const assetInfo = findAssetInfo(x402Network, opts.asset ?? "USDC");
   if (!assetInfo) {
     throw new Error(
       `Couldn't look up USDC information on network '${x402Network}'`,

@@ -4,11 +4,15 @@ import * as x from "@faremeter/types/x402";
 import { isValidationError } from "@faremeter/types";
 import { type x402PaymentRequirements } from "@faremeter/types/x402";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
+import { allSettledWithTimeout } from "./promise";
 
 const logger = getLogger(["faremeter", "facilitator"]);
 
 type CreateFacilitatorRoutesArgs = {
   handlers: FacilitatorHandler[];
+  timeout?: {
+    getRequirements?: number;
+  };
 };
 
 type StatusCode = 400 | 500;
@@ -129,11 +133,24 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       );
     }
 
-    const accepts: x.x402PaymentRequirements[] = (
-      await Promise.all(
-        args.handlers.flatMap((x) => x.getRequirements(x402Req.accepts)),
-      )
-    ).flat();
+    const results = await allSettledWithTimeout(
+      args.handlers.flatMap((x) => x.getRequirements(x402Req.accepts)),
+      args.timeout?.getRequirements ?? 500,
+    );
+
+    const accepts = results
+      .filter((x) => x.status === "fulfilled")
+      .map((x) => x.value)
+      .flat();
+
+    results.forEach((x) => {
+      if (x.status === "rejected") {
+        logger.error(
+          "failed to retrieve requirements from facilitator handler",
+          x.reason,
+        );
+      }
+    });
 
     logger.debug(`returning ${accepts.length} accepts: {*}`, {
       accepts: accepts.map(summarizeRequirements),

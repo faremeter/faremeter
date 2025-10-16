@@ -107,6 +107,7 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
   CommonMiddlewareArgs & {
     resource: string;
     getHeader: (key: string) => string | undefined;
+    getPaymentRequiredResponse: typeof getPaymentRequiredResponse;
     sendJSONResponse: (
       status: PossibleStatusCodes,
       obj: PossibleJSONResponse,
@@ -118,7 +119,7 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
 ) {
   // XXX - Temporarily request this every time.  This will be
   // cached in future.
-  const paymentRequiredResponse = await getPaymentRequiredResponse(args);
+  const paymentRequiredResponse = await args.getPaymentRequiredResponse(args);
 
   const sendPaymentRequired = () =>
     args.sendJSONResponse(402, paymentRequiredResponse);

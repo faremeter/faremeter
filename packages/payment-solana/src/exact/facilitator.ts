@@ -31,6 +31,8 @@ export const x402Scheme = "exact";
 
 export const PaymentRequirementsExtra = type({
   feePayer: "string",
+  decimals: "number?",
+  recentBlockhash: "string?",
 });
 
 function errorResponse(msg: string): x402SettleResponse {

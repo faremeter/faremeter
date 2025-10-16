@@ -50,7 +50,7 @@ export type Wallet = {
 export function createPaymentHandler(
   wallet: Wallet,
   mint: PublicKey,
-  connection: Connection,
+  connection?: Connection,
 ): PaymentHandler {
   const matcher = type({
     scheme: caseInsensitiveLiteral(x402Scheme),
@@ -75,6 +75,31 @@ export function createPaymentHandler(
         }
 
         const exec = async () => {
+          let recentBlockhash: string;
+
+          if (extra.recentBlockhash !== undefined) {
+            recentBlockhash = extra.recentBlockhash;
+          } else if (connection !== undefined) {
+            recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+          } else {
+            throw new Error(
+              "couldn't get the latest Solana network block hash",
+            );
+          }
+
+          let decimals: number;
+
+          if (extra.decimals !== undefined) {
+            decimals = extra.decimals;
+          } else if (connection !== undefined) {
+            const mintInfo = await getMint(connection, mint);
+            decimals = mintInfo.decimals;
+          } else {
+            throw new Error(
+              "couldn't get the decimal information for the mint",
+            );
+          }
+
           const paymentRequirements = {
             ...extra,
             amount: Number(requirements.maxAmountRequired),
@@ -91,8 +116,6 @@ export function createPaymentHandler(
             paymentRequirements.receiver,
           );
 
-          const mintInfo = await getMint(connection, mint);
-
           const instructions = [
             ComputeBudgetProgram.setComputeUnitLimit({
               units: 50_000,
@@ -106,12 +129,9 @@ export function createPaymentHandler(
               receiverAccount,
               wallet.publicKey,
               paymentRequirements.amount,
-              mintInfo.decimals,
+              decimals,
             ),
           ];
-
-          const recentBlockhash = (await connection.getLatestBlockhash())
-            .blockhash;
 
           let tx: VersionedTransaction;
 

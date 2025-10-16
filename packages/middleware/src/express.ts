@@ -1,4 +1,8 @@
-import { handleMiddlewareRequest, type CommonMiddlewareArgs } from "./common";
+import {
+  handleMiddlewareRequest,
+  type CommonMiddlewareArgs,
+  getPaymentRequiredResponse,
+} from "./common";
 import type { NextFunction, Request, Response } from "express";
 
 type createMiddlewareArgs = CommonMiddlewareArgs;
@@ -8,6 +12,7 @@ export async function createMiddleware(args: createMiddlewareArgs) {
     const response = await handleMiddlewareRequest({
       ...args,
       resource: `${req.protocol}://${req.headers.host}${req.path}`,
+      getPaymentRequiredResponse,
       getHeader: (key) => req.header(key),
       sendJSONResponse: (status, body) => res.status(status).json(body),
     });

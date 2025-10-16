@@ -7,6 +7,7 @@ import {
   x402SettleRequest,
   x402SettleResponse,
 } from "@faremeter/types/x402";
+import { type AgedLRUCacheOpts, AgedLRUCache } from "./cache";
 
 import { logger } from "./logger";
 
@@ -101,6 +102,7 @@ type PossibleJSONResponse = object;
 export type CommonMiddlewareArgs = {
   facilitatorURL: string;
   accepts: RelaxedRequirements[];
+  cacheConfig?: createPaymentRequiredResponseCacheOpts;
 };
 
 export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
@@ -117,8 +119,6 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
 export async function handleMiddlewareRequest<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
 ) {
-  // XXX - Temporarily request this every time.  This will be
-  // cached in future.
   const paymentRequiredResponse = await args.getPaymentRequiredResponse(args);
 
   const sendPaymentRequired = () =>
@@ -176,4 +176,40 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     logger.warning("failed to settle payment: {error}", settlementResponse);
     return sendPaymentRequired();
   }
+}
+
+export type createPaymentRequiredResponseCacheOpts = AgedLRUCacheOpts & {
+  disable?: boolean;
+};
+export function createPaymentRequiredResponseCache(
+  opts: createPaymentRequiredResponseCacheOpts = {},
+) {
+  if (opts.disable) {
+    logger.warning("payment required response cache disabled");
+
+    return {
+      getPaymentRequiredResponse,
+    };
+  }
+
+  const cache = new AgedLRUCache<
+    RelaxedRequirements[],
+    x402PaymentRequiredResponse
+  >(opts);
+
+  return {
+    getPaymentRequiredResponse: async (
+      args: getPaymentRequiredResponseArgs,
+    ) => {
+      let response = cache.get(args.accepts);
+
+      if (response === undefined) {
+        response = await getPaymentRequiredResponse(args);
+
+        cache.put(args.accepts, response);
+      }
+
+      return response;
+    },
+  };
 }

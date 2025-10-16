@@ -1,7 +1,7 @@
 import {
   handleMiddlewareRequest,
   type CommonMiddlewareArgs,
-  getPaymentRequiredResponse,
+  createPaymentRequiredResponseCache,
 } from "./common";
 import type { MiddlewareHandler } from "hono";
 
@@ -10,6 +10,10 @@ type CreateMiddlewareArgs = CommonMiddlewareArgs;
 export async function createMiddleware(
   args: CreateMiddlewareArgs,
 ): Promise<MiddlewareHandler> {
+  const { getPaymentRequiredResponse } = createPaymentRequiredResponseCache(
+    args.cacheConfig,
+  );
+
   return async (c, next) => {
     const response = await handleMiddlewareRequest({
       ...args,

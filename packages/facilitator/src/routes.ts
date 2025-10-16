@@ -145,8 +145,16 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
 
     results.forEach((x) => {
       if (x.status === "rejected") {
+        let message: string;
+
+        if (x.reason instanceof Error) {
+          message = x.reason.message;
+        } else {
+          message = "unknown reason";
+        }
+
         logger.error(
-          "failed to retrieve requirements from facilitator handler",
+          `failed to retrieve requirements from facilitator handler: ${message}`,
           x.reason,
         );
       }

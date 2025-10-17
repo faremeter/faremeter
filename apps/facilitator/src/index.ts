@@ -63,6 +63,9 @@ app.route(
   "/",
   createFacilitatorRoutes({
     handlers,
+    timeout: {
+      getRequirements: 5000,
+    },
   }),
 );
 

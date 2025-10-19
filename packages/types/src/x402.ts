@@ -67,13 +67,17 @@ export const x402SettleResponse = type({
 
 export type x402SettleResponse = typeof x402SettleResponse.infer;
 
+export const x402SupportedKind = type({
+  x402Version: "number.integer",
+  scheme: "string",
+  network: "string",
+  extra: "object?",
+});
+
+export type x402SupportedKind = typeof x402SupportedKind.infer;
+
 export const x402SupportedResponse = type({
-  kinds: [
-    {
-      scheme: "string",
-      network: "string",
-    },
-  ],
+  kinds: x402SupportedKind.array(),
 });
 
 export type x402SupportedResponse = typeof x402SupportedResponse.infer;

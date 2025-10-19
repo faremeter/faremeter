@@ -12,6 +12,7 @@ type CreateFacilitatorRoutesArgs = {
   handlers: FacilitatorHandler[];
   timeout?: {
     getRequirements?: number;
+    getSupported?: number;
   };
 };
 
@@ -168,6 +169,44 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
     return c.json({
       x402Version: 1,
       accepts,
+    });
+  });
+
+  router.get("/supported", async (c) => {
+    const results = await allSettledWithTimeout(
+      args.handlers.flatMap((x) => (x.getSupported ? x.getSupported() : [])),
+      args.timeout?.getSupported ?? 500,
+    );
+
+    const kinds = results
+      .filter((x) => x.status === "fulfilled")
+      .map((x) => x.value)
+      .flat();
+
+    results.forEach((x) => {
+      if (x.status === "rejected") {
+        let message: string;
+
+        if (x.reason instanceof Error) {
+          message = x.reason.message;
+        } else {
+          message = "unknown reason";
+        }
+
+        logger.error(
+          `failed to retrieve supported from facilitator handler: ${message}`,
+          x.reason,
+        );
+      }
+    });
+
+    logger.debug(`returning ${kinds.length} kinds supported: {*}`, {
+      kinds,
+    });
+
+    c.status(200);
+    return c.json({
+      kinds,
     });
   });
 

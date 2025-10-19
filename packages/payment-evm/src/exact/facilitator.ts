@@ -2,6 +2,7 @@ import type {
   x402PaymentRequirements,
   x402PaymentPayload,
   x402SettleResponse,
+  x402SupportedKind,
 } from "@faremeter/types/x402";
 
 import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
@@ -138,6 +139,16 @@ export async function createFacilitatorHandler(
   const checkTupleAndAsset = checkTuple.and({
     asset: caseInsensitiveLiteral(asset),
   });
+
+  const getSupported = (): Promise<x402SupportedKind>[] => {
+    return [
+      Promise.resolve({
+        x402Version: 1,
+        network,
+        scheme: X402_EXACT_SCHEME,
+      }),
+    ];
+  };
 
   const getRequirements = async (
     req: x402PaymentRequirements[],
@@ -354,6 +365,7 @@ export async function createFacilitatorHandler(
   };
 
   return {
+    getSupported,
     getRequirements,
     handleSettle,
   };

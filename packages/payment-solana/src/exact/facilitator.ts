@@ -2,6 +2,7 @@ import type {
   x402PaymentPayload,
   x402PaymentRequirements,
   x402SettleResponse,
+  x402SupportedKind,
 } from "@faremeter/types/x402";
 import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
@@ -137,6 +138,19 @@ export const createFacilitatorHandler = (
     asset: caseInsensitiveLiteral(mint.toBase58()),
   });
 
+  const getSupported = (): Promise<x402SupportedKind>[] => {
+    return [
+      Promise.resolve({
+        x402Version: 1,
+        scheme: x402Scheme,
+        network: lookupX402Network(network),
+        extra: {
+          feePayer: feePayerKeypair.publicKey.toString(),
+        },
+      }),
+    ];
+  };
+
   const getRequirements = async (req: x402PaymentRequirements[]) => {
     const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
       .blockhash;
@@ -228,6 +242,7 @@ export const createFacilitatorHandler = (
   };
 
   return {
+    getSupported,
     getRequirements,
     handleSettle,
   };

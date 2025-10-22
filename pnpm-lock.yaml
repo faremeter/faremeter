@@ -443,6 +443,9 @@ importers:
 
   packages/payment-solana:
     dependencies:
+      '@faremeter/info':
+        specifier: workspace:^
+        version: link:../info
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types

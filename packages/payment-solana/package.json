@@ -29,6 +29,7 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
+    "@faremeter/info": "workspace:^",
     "@faremeter/types": "workspace:^",
     "@logtape/logtape": "catalog:",
     "@solana-program/compute-budget": "catalog:",

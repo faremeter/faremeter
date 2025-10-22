@@ -9,6 +9,10 @@ export function isKnownCluster(c: string): c is KnownCluster {
   return knownClusters.includes(c as KnownCluster);
 }
 
+export const lookupX402Network = (network: string) => {
+  return `solana-${network}`;
+};
+
 type SPLTokenInfo = {
   cluster: Partial<Record<KnownCluster, { address: Base58Address }>>;
   toUnit: (v: UnitInput) => string;

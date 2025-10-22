@@ -6,6 +6,7 @@ import type {
 } from "@faremeter/types/x402";
 import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
+import { lookupX402Network } from "@faremeter/info/solana";
 import { fetchMint } from "@solana-program/token";
 import {
   address,
@@ -56,10 +57,6 @@ const TransactionString = type("string").pipe.try((tx) => {
 export const PaymentPayload = type({
   transaction: TransactionString,
 });
-
-export const lookupX402Network = (network: string) => {
-  return `solana-${network}`;
-};
 
 export function transactionErrorToString(t: TransactionError) {
   if (typeof t == "string") {

@@ -28,11 +28,8 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { type } from "arktype";
-import {
-  PaymentRequirementsExtra,
-  x402Scheme,
-  lookupX402Network,
-} from "./facilitator";
+import { PaymentRequirementsExtra, x402Scheme } from "./facilitator";
+import { lookupX402Network } from "@faremeter/info/solana";
 
 export type Wallet = {
   network: string;

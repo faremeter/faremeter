@@ -5,7 +5,10 @@ import * as literal from "./literal";
 
 await t.test("checkBasicMatching", (t) => {
   {
-    const basicMatcher = literal.caseInsensitiveLiteral("doIMatch");
+    const basicMatcher = literal.caseInsensitiveLiteral(
+      "doIMatch",
+      "idontmatch",
+    );
     const res = basicMatcher.assert("doimATCH");
     t.matchOnly(res, "doimatch");
   }

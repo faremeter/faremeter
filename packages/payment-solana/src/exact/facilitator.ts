@@ -132,16 +132,16 @@ export const createFacilitatorHandler = (
   );
 
   const getSupported = (): Promise<x402SupportedKind>[] => {
-    return [
+    return lookupX402Network(network).map((network) =>
       Promise.resolve({
         x402Version: 1,
         scheme: x402Scheme,
-        network: lookupX402Network(network),
+        network,
         extra: {
           feePayer: feePayerKeypair.publicKey.toString(),
         },
       }),
-    ];
+    );
   };
 
   const getRequirements = async (req: x402PaymentRequirements[]) => {

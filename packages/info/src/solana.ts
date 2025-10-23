@@ -81,14 +81,18 @@ export function x402Exact(args: x402ExactArgs) {
     throw new Error(`couldn't look up token '${args.asset}' on Solana cluster`);
   }
 
-  const req = addX402PaymentRequirementDefaults({
-    scheme: "exact",
-    network: `solana-${args.network}`,
-    maxAmountRequired: tokenInfo.toUnit(args.amount),
-    payTo: args.payTo,
-    asset: tokenInfo.address,
-    maxTimeoutSeconds: 60, // from coinbase/x402's middleware defaults
-  });
+  const networks = lookupX402Network(args.network);
+
+  const req = networks.map((network) =>
+    addX402PaymentRequirementDefaults({
+      scheme: "exact",
+      network,
+      maxAmountRequired: tokenInfo.toUnit(args.amount),
+      payTo: args.payTo,
+      asset: tokenInfo.address,
+      maxTimeoutSeconds: 60, // from coinbase/x402's middleware defaults
+    }),
+  );
 
   return req;
 }

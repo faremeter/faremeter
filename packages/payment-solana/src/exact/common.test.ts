@@ -27,6 +27,14 @@ await t.test("testBasicMatching", async (t) => {
 
     t.ok(!iVE(matchTuple(req)));
     t.ok(!iVE(matchTupleAndAsset(req)));
+    t.ok(
+      !iVE(
+        matchTupleAndAsset({
+          ...req,
+          network: "solana",
+        }),
+      ),
+    );
 
     t.ok(
       iVE(

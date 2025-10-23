@@ -10,7 +10,13 @@ export function isKnownCluster(c: string): c is KnownCluster {
 }
 
 export const lookupX402Network = (network: string) => {
-  return `solana-${network}`;
+  const networks = [`solana-${network}`];
+
+  if (network === "mainnet-beta") {
+    networks.push("solana");
+  }
+
+  return networks;
 };
 
 type SPLTokenInfo = {

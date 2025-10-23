@@ -4,7 +4,7 @@ import type {
   x402SettleResponse,
   x402SupportedKind,
 } from "@faremeter/types/x402";
-import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
+import { isValidationError } from "@faremeter/types";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import { lookupX402Network } from "@faremeter/info/solana";
 import { fetchMint } from "@solana-program/token";
@@ -28,8 +28,7 @@ import { Keypair, type PublicKey } from "@solana/web3.js";
 import { type } from "arktype";
 import { isValidTransaction } from "./verify";
 import { logger } from "./logger";
-
-export const x402Scheme = "exact";
+import { x402Scheme, generateMatcher } from "./common";
 
 export const PaymentRequirementsExtra = type({
   feePayer: "string",
@@ -127,13 +126,10 @@ export const createFacilitatorHandler = (
   maxRetries = 30,
   retryDelayMs = 1000,
 ): FacilitatorHandler => {
-  const checkTuple = type({
-    scheme: caseInsensitiveLiteral(x402Scheme),
-    network: caseInsensitiveLiteral(lookupX402Network(network)),
-  });
-  const checkTupleAndAsset = checkTuple.and({
-    asset: caseInsensitiveLiteral(mint.toBase58()),
-  });
+  const { matchTuple, matchTupleAndAsset } = generateMatcher(
+    network,
+    mint.toBase58(),
+  );
 
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return [
@@ -153,7 +149,7 @@ export const createFacilitatorHandler = (
       .blockhash;
     const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
     return req
-      .filter((x) => !isValidationError(checkTupleAndAsset(x)))
+      .filter((x) => !isValidationError(matchTupleAndAsset(x)))
       .map((x) => {
         return {
           ...x,
@@ -171,7 +167,7 @@ export const createFacilitatorHandler = (
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
   ) => {
-    if (isValidationError(checkTuple(payment))) {
+    if (isValidationError(matchTuple(payment))) {
       return null;
     }
 

@@ -1,9 +1,5 @@
 import type { x402PaymentRequirements } from "@faremeter/types/x402";
-import {
-  isValidationError,
-  throwValidationError,
-  caseInsensitiveLiteral,
-} from "@faremeter/types";
+import { isValidationError, throwValidationError } from "@faremeter/types";
 import type {
   PaymentExecer,
   PaymentHandler,
@@ -27,9 +23,8 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { type } from "arktype";
-import { PaymentRequirementsExtra, x402Scheme } from "./facilitator";
-import { lookupX402Network } from "@faremeter/info/solana";
+import { PaymentRequirementsExtra } from "./facilitator";
+import { generateMatcher } from "./common";
 
 export type Wallet = {
   network: string;
@@ -49,18 +44,17 @@ export function createPaymentHandler(
   mint: PublicKey,
   connection?: Connection,
 ): PaymentHandler {
-  const matcher = type({
-    scheme: caseInsensitiveLiteral(x402Scheme),
-    network: caseInsensitiveLiteral(lookupX402Network(wallet.network)),
-    asset: caseInsensitiveLiteral(mint ? mint.toBase58() : "sol"),
-  });
+  const { matchTupleAndAsset } = generateMatcher(
+    wallet.network,
+    mint ? mint.toBase58() : "sol",
+  );
 
   return async (
     context: RequestContext,
     accepts: x402PaymentRequirements[],
   ): Promise<PaymentExecer[]> => {
     const res = accepts
-      .filter((r) => !isValidationError(matcher(r)))
+      .filter((r) => !isValidationError(matchTupleAndAsset(r)))
       .map((requirements) => {
         const extra = PaymentRequirementsExtra(requirements.extra);
 

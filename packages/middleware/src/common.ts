@@ -101,7 +101,7 @@ type PossibleJSONResponse = object;
 
 export type CommonMiddlewareArgs = {
   facilitatorURL: string;
-  accepts: RelaxedRequirements[];
+  accepts: (RelaxedRequirements | RelaxedRequirements[])[];
   cacheConfig?: createPaymentRequiredResponseCacheOpts;
 };
 
@@ -119,7 +119,13 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
 export async function handleMiddlewareRequest<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
 ) {
-  const paymentRequiredResponse = await args.getPaymentRequiredResponse(args);
+  const accepts = args.accepts.flat();
+
+  const paymentRequiredResponse = await args.getPaymentRequiredResponse({
+    accepts,
+    facilitatorURL: args.facilitatorURL,
+    resource: args.resource,
+  });
 
   const sendPaymentRequired = () =>
     args.sendJSONResponse(402, paymentRequiredResponse);

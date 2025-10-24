@@ -10,6 +10,11 @@
       "require": "./dist/src/index.js",
       "import": "./dist/src/index.js",
       "types": "./dist/src/index.d.ts"
+    },
+    "./internal": {
+      "require": "./dist/src/internal.js",
+      "import": "./dist/src/internal.js",
+      "types": "./dist/src/internal.d.ts"
     }
   },
   "files": [

@@ -11,15 +11,6 @@ import {
   type x402PaymentPayload,
 } from "@faremeter/types/x402";
 
-type WrapOptions = {
-  handlers: PaymentHandler[];
-  payerChooser?: (execer: PaymentExecer[]) => Promise<PaymentExecer>;
-  phase1Fetch?: typeof fetch;
-  retryCount?: number;
-  initialRetryDelay?: number;
-  returnPaymentFailure?: boolean;
-};
-
 export class WrappedFetchError extends Error {
   constructor(
     message: string,
@@ -45,7 +36,16 @@ export function chooseFirstAvailable(
   return payer;
 }
 
-export function wrap(phase2Fetch: typeof fetch, options: WrapOptions) {
+type WrapOpts = {
+  handlers: PaymentHandler[];
+  payerChooser?: (execer: PaymentExecer[]) => Promise<PaymentExecer>;
+  phase1Fetch?: typeof fetch;
+  retryCount?: number;
+  initialRetryDelay?: number;
+  returnPaymentFailure?: boolean;
+};
+
+export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
   return async (input: RequestInfo | URL, init: RequestInit = {}) => {
     async function makeRequest() {
       const response = await (options.phase1Fetch ?? phase2Fetch)(input, init);

@@ -36,9 +36,52 @@ export function chooseFirstAvailable(
   return payer;
 }
 
-type WrapOpts = {
+export type ProcessPaymentRequiredResponseOpts = {
   handlers: PaymentHandler[];
   payerChooser?: (execer: PaymentExecer[]) => Promise<PaymentExecer>;
+};
+
+export async function processPaymentRequiredResponse(
+  ctx: RequestContext,
+  response: unknown,
+  options: ProcessPaymentRequiredResponseOpts,
+) {
+  const payerChooser = options.payerChooser ?? chooseFirstAvailable;
+
+  const payResp = x402PaymentRequiredResponse(response);
+
+  if (isValidationError(payResp)) {
+    throwValidationError("couldn't parse payment required response", payResp);
+  }
+
+  const possiblePayers: PaymentExecer[] = [];
+
+  for (const h of options.handlers) {
+    possiblePayers.push(...(await h(ctx, payResp.accepts)));
+  }
+
+  const payer = await payerChooser(possiblePayers);
+  const payerResult = await payer.exec();
+
+  const paymentPayload: x402PaymentPayload = {
+    x402Version: payResp.x402Version,
+    scheme: payer.requirements.scheme,
+    network: payer.requirements.network,
+    asset: payer.requirements.asset,
+    payload: payerResult.payload,
+  };
+
+  const paymentHeader = btoa(JSON.stringify(paymentPayload));
+
+  return {
+    payer,
+    payerResult,
+    paymentPayload,
+    paymentHeader,
+  };
+}
+
+export type WrapOpts = ProcessPaymentRequiredResponseOpts & {
   phase1Fetch?: typeof fetch;
   retryCount?: number;
   initialRetryDelay?: number;
@@ -54,41 +97,18 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
         return response;
       }
 
-      const payerChooser = options.payerChooser ?? chooseFirstAvailable;
-
-      const payResp = x402PaymentRequiredResponse(await response.json());
-
-      if (isValidationError(payResp)) {
-        throwValidationError(
-          "couldn't parse payment required response",
-          payResp,
-        );
-      }
-
       const ctx: RequestContext = {
         request: input,
       };
 
-      const possiblePayers: PaymentExecer[] = [];
+      const { paymentHeader } = await processPaymentRequiredResponse(
+        ctx,
+        await response.json(),
+        options,
+      );
 
-      for (const h of options.handlers) {
-        possiblePayers.push(...(await h(ctx, payResp.accepts)));
-      }
-
-      const payer = await payerChooser(possiblePayers);
-      const payerResult = await payer.exec();
-
-      const payload: x402PaymentPayload = {
-        x402Version: payResp.x402Version,
-        scheme: payer.requirements.scheme,
-        network: payer.requirements.network,
-        asset: payer.requirements.asset,
-        payload: payerResult.payload,
-      };
-
-      const xPaymentHeader = btoa(JSON.stringify(payload));
       const headers = new Headers(init.headers);
-      headers.set("X-PAYMENT", xPaymentHeader);
+      headers.set("X-PAYMENT", paymentHeader);
 
       const newInit: RequestInit = {
         ...init,

@@ -83,6 +83,18 @@ const knownAssets = {
     },
     toUnit: (v: UnitInput) => v.toString(),
   },
+  AxiosUSD: {
+    network: {
+      "eip155:2140350733": {
+        address: "0x61a26022927096f444994dA1e53F0FD9487EAfcf",
+        contractName: "Axios USD",
+        forwarder: "0x61a26022927096f444994dA1e53F0FD9487EAfcf",
+        forwarderName: "Axios USD",
+        forwarderVersion: "1",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
 } as const satisfies Record<string, AssetInfo>;
 export type KnownAsset = keyof typeof knownAssets;
 

@@ -32,6 +32,12 @@ const run = async () => {
           payTo,
           amount: "10000", // 0.01 USDC
         }),
+        x402Exact({
+          network: "eip155:2140350733",
+          asset: "AxiosUSD",
+          payTo,
+          amount: "10000", // 0.01 AxiosUSD
+        }),
       ],
     }),
     (_, res) => {

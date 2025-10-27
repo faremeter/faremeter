@@ -334,7 +334,7 @@ export async function createFacilitatorHandler(
         to: useForwarder ? domain.verifyingContract : asset,
         data,
         account: acct,
-        chain: undefined,
+        chain: null,
       });
 
       const serializedTransaction = await walletClient.signTransaction(request);

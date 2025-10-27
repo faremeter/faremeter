@@ -6,6 +6,9 @@
 - pnpm
 - bash (v4 or newer)
 - GNU make
+- opsh
+
+Note: A recent version of `opsh` is included in the repository. You can set your `PATH` to include `bin` to use that version, rather than install it directly.
 
 ## Setting Up Your Environment
 

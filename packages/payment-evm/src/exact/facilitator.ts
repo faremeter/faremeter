@@ -90,13 +90,11 @@ export async function createFacilitatorHandler(
   const account = privateKeyToAccount(privateKey);
 
   const publicClient = createPublicClient({
-    chain,
     transport,
   });
 
   const walletClient = createWalletClient({
     account,
-    chain,
     transport,
   });
 

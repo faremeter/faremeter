@@ -156,7 +156,6 @@ export async function createLedgerEvmWallet(
 
   const client = createWalletClient({
     account: ledgerAccount,
-    chain: chain,
     transport: http(chain.rpcUrls.default.http[0]),
   });
 

@@ -16,37 +16,48 @@ import {
   type Instruction,
 } from "@solana/kit";
 import { PaymentRequirementsExtra } from "./facilitator";
+import { logger } from "./logger";
 
-function verifyComputeUnitLimitInstruction(instruction: Instruction): boolean {
+function verifyComputeUnitLimitInstruction(instruction: Instruction): {
+  valid: boolean;
+  units?: number;
+} {
   if (!instruction.data) {
-    return false;
+    return { valid: false };
   }
 
   try {
-    parseSetComputeUnitLimitInstruction({
+    const parsed = parseSetComputeUnitLimitInstruction({
       programAddress: instruction.programAddress,
       data: new Uint8Array(instruction.data),
     });
-    return true;
+    return { valid: true, units: parsed.data.units };
   } catch {
-    return false;
+    return { valid: false };
   }
 }
 
-function verifyComputeUnitPriceInstruction(instruction: Instruction): boolean {
+function verifyComputeUnitPriceInstruction(instruction: Instruction): {
+  valid: boolean;
+  microLamports?: bigint;
+} {
   if (!instruction.data) {
-    return false;
+    return { valid: false };
   }
 
   try {
-    parseSetComputeUnitPriceInstruction({
+    const parsed = parseSetComputeUnitPriceInstruction({
       programAddress: instruction.programAddress,
       data: new Uint8Array(instruction.data),
     });
-    return true;
+    return { valid: true, microLamports: parsed.data.microLamports };
   } catch {
-    return false;
+    return { valid: false };
   }
+}
+
+function calculatePriorityFee(units: number, microLamports: bigint): number {
+  return (units * Number(microLamports)) / 1_000_000;
 }
 
 async function verifyTransferInstruction(
@@ -96,6 +107,7 @@ function verifyCreateATAInstruction(instruction: Instruction): boolean {
 export async function isValidTransaction(
   transactionMessage: CompilableTransactionMessage,
   paymentRequirements: x402PaymentRequirements,
+  maxPriorityFee?: number,
 ): Promise<boolean> {
   const extra = PaymentRequirementsExtra(paymentRequirements.extra);
   if (isValidationError(extra)) {
@@ -121,19 +133,66 @@ export async function isValidTransaction(
       return false;
     }
 
-    return (
-      verifyComputeUnitLimitInstruction(ix0) &&
-      verifyComputeUnitPriceInstruction(ix1) &&
-      (await verifyTransferInstruction(ix2, paymentRequirements, destination))
+    const limitResult = verifyComputeUnitLimitInstruction(ix0);
+    const priceResult = verifyComputeUnitPriceInstruction(ix1);
+
+    if (!limitResult.valid || !priceResult.valid) {
+      return false;
+    }
+
+    if (
+      maxPriorityFee !== undefined &&
+      limitResult.units !== undefined &&
+      priceResult.microLamports !== undefined
+    ) {
+      const priorityFee = calculatePriorityFee(
+        limitResult.units,
+        priceResult.microLamports,
+      );
+      if (priorityFee > maxPriorityFee) {
+        logger.error(
+          `Priority fee ${priorityFee} exceeds maximum ${maxPriorityFee}`,
+        );
+        return false;
+      }
+    }
+
+    return await verifyTransferInstruction(
+      ix2,
+      paymentRequirements,
+      destination,
     );
   } else if (instructions.length === 4) {
     const [ix0, ix1, ix2, ix3] = instructions;
     if (!ix0 || !ix1 || !ix2 || !ix3) {
       return false;
     }
+
+    const limitResult = verifyComputeUnitLimitInstruction(ix0);
+    const priceResult = verifyComputeUnitPriceInstruction(ix1);
+
+    if (!limitResult.valid || !priceResult.valid) {
+      return false;
+    }
+
+    if (
+      maxPriorityFee !== undefined &&
+      limitResult.units !== undefined &&
+      priceResult.microLamports !== undefined
+    ) {
+      const priorityFee = calculatePriorityFee(
+        limitResult.units,
+        priceResult.microLamports,
+      );
+      if (priorityFee > maxPriorityFee) {
+        logger.error(
+          `Priority fee ${priorityFee} exceeds maximum ${maxPriorityFee}`,
+        );
+        return false;
+      }
+    }
+
     return (
-      verifyComputeUnitLimitInstruction(ix0) &&
-      verifyComputeUnitPriceInstruction(ix1) &&
       verifyCreateATAInstruction(ix2) &&
       (await verifyTransferInstruction(ix3, paymentRequirements, destination))
     );

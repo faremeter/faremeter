@@ -28,7 +28,6 @@ export async function createLocalWallet(
   const account = privateKeyToAccount(privateKey);
   const client = createWalletClient({
     account,
-    chain: chain,
     transport: http(chain.rpcUrls.default.http[0]),
   });
 

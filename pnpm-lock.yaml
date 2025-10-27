@@ -10,8 +10,8 @@ catalogs:
       specifier: 9.34.0
       version: 9.34.0
     '@faremeter/x-solana-settlement':
-      specifier: 0.1.1
-      version: 0.1.1
+      specifier: 0.3.1
+      version: 0.3.1
     '@hono/node-server':
       specifier: 1.19.1
       version: 1.19.1
@@ -160,7 +160,7 @@ importers:
         version: link:../../packages/types
       '@faremeter/x-solana-settlement':
         specifier: 'catalog:'
-        version: 0.1.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
+        version: 0.3.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@hono/node-server':
         specifier: 'catalog:'
         version: 1.19.1(hono@4.9.0)
@@ -785,7 +785,7 @@ importers:
         version: link:../packages/wallet-solana-squads
       '@faremeter/x-solana-settlement':
         specifier: 'catalog:'
-        version: 0.1.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
+        version: 0.3.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@hono/node-server':
         specifier: 'catalog:'
         version: 1.19.1(hono@4.9.0)
@@ -1158,11 +1158,11 @@ packages:
   '@ethersproject/web@5.8.0':
     resolution: {integrity: sha512-j7+Ksi/9KfGviws6Qtf9Q7KCqRhpwrYKQPs+JBA/rKVFF/yaWLHJEH3zfVP2plVu+eys0d2DlFmhoQJayFewcw==}
 
-  '@faremeter/types@0.1.1':
-    resolution: {integrity: sha512-3bpXI2idDto600WGKXMmOPQhqli/SSHT7uwe0XPXJlwuCKC747eC05bf0FNy0fR2qBUiRyetWSLzVo3YwiXk/Q==}
+  '@faremeter/types@0.9.0':
+    resolution: {integrity: sha512-/KbH4ILmTDzmIvmleGdy2nartQwD5WNFtYtBivKJnKsbegPzqZvCmBp61pFRzHnLxVp53FeROsFrW6HwBgh9vg==}
 
-  '@faremeter/x-solana-settlement@0.1.1':
-    resolution: {integrity: sha512-jb/wF3Y5VJyZfvXjpOxVwn90O4HmykWiRpCjzCq5KUfTSl+gk8XGDqhjq8tae1xF2NtVdDY2ZUDMBXlOxI3NgA==}
+  '@faremeter/x-solana-settlement@0.3.1':
+    resolution: {integrity: sha512-Lc6+pSRARl4K2vZRSQ/GecCwlSmVJ/fEFUqSMH6lRufIFgdKJv1eTxpZZEViLvQRnZ4XSJVm0kYLyQBYws/bwg==}
 
   '@hey-api/client-fetch@0.8.1':
     resolution: {integrity: sha512-AaVNVLBl7N9Fun7QDnb00YDubAFjB9ICi5U6kmzcJSnnQTQGRMsuBBRupQV5ERdMMFt71zjSDym7Z+gLVe8m3A==}
@@ -1349,6 +1349,9 @@ packages:
   '@noble/curves@1.9.7':
     resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
     engines: {node: ^14.21.3 || >=16}
+
+  '@noble/ed25519@2.3.0':
+    resolution: {integrity: sha512-M7dvXL2B92/M7dw9+gzuydL8qn/jiqNHaoR3Q+cb1q1GHV7uwE17WCyFMG+Y+TZb5izcaXk5TdJRrDUxHXL78A==}
 
   '@noble/hashes@1.7.1':
     resolution: {integrity: sha512-B8XBPsn4vT/KJAGqDzbwztd+6Yte3P4V7iafm24bxgDe/mlRuK6xmWPuCNrKt2vDafZ8MfJLlchDG/vYafQEjQ==}
@@ -4707,14 +4710,16 @@ snapshots:
       '@ethersproject/properties': 5.8.0
       '@ethersproject/strings': 5.8.0
 
-  '@faremeter/types@0.1.1':
+  '@faremeter/types@0.9.0':
     dependencies:
       arktype: 2.1.21
 
-  '@faremeter/x-solana-settlement@0.1.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)':
+  '@faremeter/x-solana-settlement@0.3.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)':
     dependencies:
       '@coral-xyz/anchor': 0.31.1(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
-      '@faremeter/types': 0.1.1
+      '@faremeter/types': 0.9.0
+      '@logtape/logtape': 1.0.4
+      '@noble/ed25519': 2.3.0
       '@solana/spl-token': 0.4.13(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)
       arktype: 2.1.21
@@ -5035,6 +5040,8 @@ snapshots:
   '@noble/curves@1.9.7':
     dependencies:
       '@noble/hashes': 1.8.0
+
+  '@noble/ed25519@2.3.0': {}
 
   '@noble/hashes@1.7.1': {}
 

@@ -36,6 +36,11 @@ export const PaymentRequirementsExtra = type({
   recentBlockhash: "string?",
 });
 
+interface FacilitatorOptions {
+  maxRetries?: number;
+  retryDelayMs?: number;
+}
+
 function errorResponse(msg: string): x402SettleResponse {
   logger.error(msg);
   return {
@@ -123,13 +128,14 @@ export const createFacilitatorHandler = (
   rpc: Rpc<SolanaRpcApi>,
   feePayerKeypair: Keypair,
   mint: PublicKey,
-  maxRetries = 30,
-  retryDelayMs = 1000,
+  config?: FacilitatorOptions,
 ): FacilitatorHandler => {
   const { matchTuple, matchTupleAndAsset } = generateMatcher(
     network,
     mint.toBase58(),
   );
+
+  const { maxRetries = 30, retryDelayMs = 1000 } = config ?? {};
 
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return lookupX402Network(network).map((network) =>

@@ -39,6 +39,9 @@ export const PaymentRequirementsExtra = type({
 interface FacilitatorOptions {
   maxRetries?: number;
   retryDelayMs?: number;
+  // Maximum priority fee in lamports
+  // Calculated as: (CU limit * CU price in microlamports) / 1,000,000
+  maxPriorityFee?: number;
 }
 
 function errorResponse(msg: string): x402SettleResponse {
@@ -135,7 +138,11 @@ export const createFacilitatorHandler = (
     mint.toBase58(),
   );
 
-  const { maxRetries = 30, retryDelayMs = 1000 } = config ?? {};
+  const {
+    maxRetries = 30,
+    retryDelayMs = 1000,
+    maxPriorityFee = 100_000,
+  } = config ?? {};
 
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return lookupX402Network(network).map((network) =>
@@ -195,7 +202,13 @@ export const createFacilitatorHandler = (
     }
 
     try {
-      if (!(await isValidTransaction(transactionMessage, requirements))) {
+      if (
+        !(await isValidTransaction(
+          transactionMessage,
+          requirements,
+          maxPriorityFee,
+        ))
+      ) {
         logger.error("Invalid transaction");
         return errorResponse("Invalid transaction");
       }

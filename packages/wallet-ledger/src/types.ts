@@ -3,13 +3,13 @@ import type {
   WalletClient,
   TransactionSerializable,
   TypedDataDefinition,
-  Chain,
 } from "viem";
+import { evm } from "@faremeter/types";
 import type { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import type Transport from "@ledgerhq/hw-transport";
 
 export interface LedgerEvmWallet {
-  chain: Chain;
+  chain: evm.ChainInfo;
   address: Hex;
   client: WalletClient;
   signTransaction: (tx: TransactionSerializable) => Promise<Hex>;

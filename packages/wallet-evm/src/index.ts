@@ -1,22 +1,16 @@
-import { isPrivateKey } from "@faremeter/types/evm";
-import {
-  createWalletClient,
-  http,
-  type WalletClient,
-  type Hex,
-  type Chain,
-} from "viem";
+import { isPrivateKey, type ChainInfo } from "@faremeter/types/evm";
+import { createWalletClient, http, type WalletClient, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 export interface EvmWallet {
-  chain: Chain;
+  chain: ChainInfo;
   address: Hex;
   client: WalletClient;
   account: ReturnType<typeof privateKeyToAccount>;
 }
 
 export async function createLocalWallet(
-  chain: Chain,
+  chain: ChainInfo,
   privateKey: string,
 ): Promise<EvmWallet> {
   if (!isPrivateKey(privateKey)) {

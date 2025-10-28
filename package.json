@@ -1,7 +1,7 @@
 {
   "name": "faremeter",
   "license": "GPL-3.0-only",
-  "packageManager": "pnpm@10.12.1",
+  "packageManager": "pnpm@10.19.0",
   "private": true,
   "devDependencies": {
     "@eslint/js": "catalog:",

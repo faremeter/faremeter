@@ -13,7 +13,7 @@ import fs from "fs";
 const { PAYTO_KEYPAIR_PATH } = process.env;
 
 if (!PAYTO_KEYPAIR_PATH) {
-  throw new Error("ADMIN_KEYPAIR_PATH must be set in your environment");
+  throw new Error("PAYTO_KEYPAIR_PATH must be set in your environment");
 }
 
 const payToKeypair = Keypair.fromSecretKey(

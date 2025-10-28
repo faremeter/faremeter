@@ -2,7 +2,6 @@ import {
   createWalletClient,
   http,
   type Hex,
-  type Chain,
   type LocalAccount,
   type TransactionSerializable,
   type TypedDataDomain,
@@ -10,13 +9,14 @@ import {
   hashStruct,
 } from "viem";
 import Eth from "@ledgerhq/hw-app-eth/lib-es/Eth";
+import { type ChainInfo } from "@faremeter/types/evm";
 import { type } from "arktype";
 import { createTransport } from "./transport";
 import type { LedgerEvmWallet, UserInterface } from "./types";
 
 export async function createLedgerEvmWallet(
   ui: UserInterface,
-  chain: Chain,
+  chain: ChainInfo,
   derivationPath: string,
 ): Promise<LedgerEvmWallet> {
   const transport = await createTransport();

@@ -6,11 +6,11 @@ import type {
 } from "@faremeter/types/x402";
 
 import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
-import { isPrivateKey } from "@faremeter/types/evm";
+import { isPrivateKey, type ChainInfo } from "@faremeter/types/evm";
 import { type FacilitatorHandler } from "@faremeter/types/facilitator";
 
 import { type } from "arktype";
-import type { Hex, Account, Chain, Transport } from "viem";
+import type { Hex, Account, Transport } from "viem";
 import {
   createPublicClient,
   createWalletClient,
@@ -62,7 +62,7 @@ type CreateFacilitatorHandlerOpts = {
   transport?: Transport;
 };
 export async function createFacilitatorHandler(
-  chain: Chain,
+  chain: ChainInfo,
   privateKey: string,
   assetNameOrInfo: AssetNameOrContractInfo,
   opts: CreateFacilitatorHandlerOpts = {},

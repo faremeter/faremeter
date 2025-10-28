@@ -17,6 +17,7 @@ import {
 } from "@solana/kit";
 import { PaymentRequirementsExtra } from "./facilitator";
 import { logger } from "./logger";
+import type { PublicKey } from "@solana/web3.js";
 
 function verifyComputeUnitLimitInstruction(instruction: Instruction): {
   valid: boolean;
@@ -64,6 +65,7 @@ async function verifyTransferInstruction(
   instruction: Instruction,
   paymentRequirements: x402PaymentRequirements,
   destination: string,
+  facilitatorAddress: string,
 ): Promise<boolean> {
   if (!instruction.data || !instruction.accounts) {
     return false;
@@ -77,6 +79,24 @@ async function verifyTransferInstruction(
       data: new Uint8Array(instruction.data),
     });
   } catch {
+    return false;
+  }
+
+  if (transfer.accounts.authority.address === facilitatorAddress) {
+    logger.error(
+      "Dropping transfer where the transfer authority is the facilitator",
+    );
+    return false;
+  }
+
+  const [facilitatorATA] = await findAssociatedTokenPda({
+    mint: address(paymentRequirements.asset),
+    owner: address(facilitatorAddress),
+    tokenProgram: TOKEN_PROGRAM_ADDRESS,
+  });
+
+  if (transfer.accounts.source.address === facilitatorATA) {
+    logger.error("Dropping transfer where the source is the facilitator");
     return false;
   }
 
@@ -107,6 +127,7 @@ function verifyCreateATAInstruction(instruction: Instruction): boolean {
 export async function isValidTransaction(
   transactionMessage: CompilableTransactionMessage,
   paymentRequirements: x402PaymentRequirements,
+  facilitatorAddress: PublicKey,
   maxPriorityFee?: number,
 ): Promise<boolean> {
   const extra = PaymentRequirementsExtra(paymentRequirements.extra);
@@ -161,6 +182,7 @@ export async function isValidTransaction(
       ix2,
       paymentRequirements,
       destination,
+      facilitatorAddress.toBase58(),
     );
   } else if (instructions.length === 4) {
     const [ix0, ix1, ix2, ix3] = instructions;
@@ -194,7 +216,12 @@ export async function isValidTransaction(
 
     return (
       verifyCreateATAInstruction(ix2) &&
-      (await verifyTransferInstruction(ix3, paymentRequirements, destination))
+      (await verifyTransferInstruction(
+        ix3,
+        paymentRequirements,
+        destination,
+        facilitatorAddress.toBase58(),
+      ))
     );
   }
 

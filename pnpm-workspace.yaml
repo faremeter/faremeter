@@ -53,6 +53,10 @@ onlyBuiltDependencies:
   - node-hid
   - usb
 
+overrides:
+  abitype: 1.1.0
+  typescript: 5.9.3
+
 peerDependencyRules:
   ignoreMissing:
     - react-dom

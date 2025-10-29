@@ -13,6 +13,7 @@ import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import type { Hex } from "viem";
 import { isAddress } from "viem";
 import { type } from "arktype";
+import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
 import {
   X402_EXACT_SCHEME,
   EIP712_TYPES,
@@ -54,12 +55,17 @@ export function createPaymentHandler(
     );
   }
 
+  const matchTuple = type({
+    scheme: caseInsensitiveLiteral(X402_EXACT_SCHEME),
+    network: caseInsensitiveLiteral(x402Network),
+  });
+
   return async function handlePayment(
     context: RequestContext,
     accepts: x402PaymentRequirements[],
   ): Promise<PaymentExecer[]> {
     const compatibleRequirements = accepts.filter(
-      (req) => req.scheme === X402_EXACT_SCHEME && req.network === x402Network,
+      (r) => !isValidationError(matchTuple(r)),
     );
 
     return compatibleRequirements.map((requirements) => ({

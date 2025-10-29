@@ -58,6 +58,7 @@ export function createPaymentHandler(
   const matchTuple = type({
     scheme: caseInsensitiveLiteral(X402_EXACT_SCHEME),
     network: caseInsensitiveLiteral(x402Network),
+    asset: caseInsensitiveLiteral(assetInfo.address),
   });
 
   return async function handlePayment(

@@ -129,12 +129,9 @@ export async function createFacilitatorHandler(
     }
   }
 
-  const checkTuple = type({
+  const checkTupleAndAsset = type({
     scheme: caseInsensitiveLiteral(X402_EXACT_SCHEME),
     network: caseInsensitiveLiteral(network),
-  });
-
-  const checkTupleAndAsset = checkTuple.and({
     asset: caseInsensitiveLiteral(asset),
   });
 
@@ -171,7 +168,7 @@ export async function createFacilitatorHandler(
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
   ): Promise<x402SettleResponse | null> => {
-    const tupleMatches = checkTuple(payment);
+    const tupleMatches = checkTupleAndAsset(payment);
 
     if (isValidationError(tupleMatches)) {
       return null; // Not for us, let another handler try

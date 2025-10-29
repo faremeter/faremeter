@@ -14,10 +14,7 @@ await t.test("testBasicMatching", async (t) => {
       return;
     }
 
-    const { matchTuple, matchTupleAndAsset } = generateMatcher(
-      "mainnet-beta",
-      tokenInfo.address,
-    );
+    const { matchTuple } = generateMatcher("mainnet-beta", tokenInfo.address);
 
     const req = {
       network: "solana-mainnet-beta",
@@ -26,10 +23,9 @@ await t.test("testBasicMatching", async (t) => {
     };
 
     t.ok(!iVE(matchTuple(req)));
-    t.ok(!iVE(matchTupleAndAsset(req)));
     t.ok(
       !iVE(
-        matchTupleAndAsset({
+        matchTuple({
           ...req,
           network: "solana",
         }),

@@ -44,7 +44,7 @@ export function createPaymentHandler(
   mint: PublicKey,
   connection?: Connection,
 ): PaymentHandler {
-  const { matchTuple } = generateMatcher(
+  const { isMatchingRequirement } = generateMatcher(
     wallet.network,
     mint ? mint.toBase58() : "sol",
   );
@@ -53,113 +53,107 @@ export function createPaymentHandler(
     context: RequestContext,
     accepts: x402PaymentRequirements[],
   ): Promise<PaymentExecer[]> => {
-    const res = accepts
-      .filter((r) => !isValidationError(matchTuple(r)))
-      .map((requirements) => {
-        const extra = PaymentRequirementsExtra(requirements.extra);
+    const res = accepts.filter(isMatchingRequirement).map((requirements) => {
+      const extra = PaymentRequirementsExtra(requirements.extra);
 
-        if (isValidationError(extra)) {
-          throwValidationError(
-            "couldn't validate requirements extra field",
-            extra,
-          );
+      if (isValidationError(extra)) {
+        throwValidationError(
+          "couldn't validate requirements extra field",
+          extra,
+        );
+      }
+
+      const exec = async () => {
+        let recentBlockhash: string;
+
+        if (extra.recentBlockhash !== undefined) {
+          recentBlockhash = extra.recentBlockhash;
+        } else if (connection !== undefined) {
+          recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        } else {
+          throw new Error("couldn't get the latest Solana network block hash");
         }
 
-        const exec = async () => {
-          let recentBlockhash: string;
+        let decimals: number;
 
-          if (extra.recentBlockhash !== undefined) {
-            recentBlockhash = extra.recentBlockhash;
-          } else if (connection !== undefined) {
-            recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-          } else {
-            throw new Error(
-              "couldn't get the latest Solana network block hash",
-            );
-          }
+        if (extra.decimals !== undefined) {
+          decimals = extra.decimals;
+        } else if (connection !== undefined) {
+          const mintInfo = await getMint(connection, mint);
+          decimals = mintInfo.decimals;
+        } else {
+          throw new Error("couldn't get the decimal information for the mint");
+        }
 
-          let decimals: number;
+        const paymentRequirements = {
+          ...extra,
+          amount: Number(requirements.maxAmountRequired),
+          receiver: new PublicKey(requirements.payTo),
+        };
 
-          if (extra.decimals !== undefined) {
-            decimals = extra.decimals;
-          } else if (connection !== undefined) {
-            const mintInfo = await getMint(connection, mint);
-            decimals = mintInfo.decimals;
-          } else {
-            throw new Error(
-              "couldn't get the decimal information for the mint",
-            );
-          }
+        const sourceAccount = getAssociatedTokenAddressSync(
+          mint,
+          wallet.publicKey,
+        );
 
-          const paymentRequirements = {
-            ...extra,
-            amount: Number(requirements.maxAmountRequired),
-            receiver: new PublicKey(requirements.payTo),
-          };
+        const receiverAccount = getAssociatedTokenAddressSync(
+          mint,
+          paymentRequirements.receiver,
+        );
 
-          const sourceAccount = getAssociatedTokenAddressSync(
+        const instructions = [
+          ComputeBudgetProgram.setComputeUnitLimit({
+            units: 50_000,
+          }),
+          ComputeBudgetProgram.setComputeUnitPrice({
+            microLamports: 1,
+          }),
+          createTransferCheckedInstruction(
+            sourceAccount,
             mint,
+            receiverAccount,
             wallet.publicKey,
-          );
+            paymentRequirements.amount,
+            decimals,
+          ),
+        ];
 
-          const receiverAccount = getAssociatedTokenAddressSync(
-            mint,
-            paymentRequirements.receiver,
-          );
+        let tx: VersionedTransaction;
 
-          const instructions = [
-            ComputeBudgetProgram.setComputeUnitLimit({
-              units: 50_000,
-            }),
-            ComputeBudgetProgram.setComputeUnitPrice({
-              microLamports: 1,
-            }),
-            createTransferCheckedInstruction(
-              sourceAccount,
-              mint,
-              receiverAccount,
-              wallet.publicKey,
-              paymentRequirements.amount,
-              decimals,
-            ),
-          ];
+        if (wallet.buildTransaction) {
+          tx = await wallet.buildTransaction(instructions, recentBlockhash);
+        } else {
+          const message = new TransactionMessage({
+            instructions,
+            payerKey: new PublicKey(paymentRequirements.feePayer),
+            recentBlockhash,
+          }).compileToV0Message();
 
-          let tx: VersionedTransaction;
+          tx = new VersionedTransaction(message);
+        }
 
-          if (wallet.buildTransaction) {
-            tx = await wallet.buildTransaction(instructions, recentBlockhash);
-          } else {
-            const message = new TransactionMessage({
-              instructions,
-              payerKey: new PublicKey(paymentRequirements.feePayer),
-              recentBlockhash,
-            }).compileToV0Message();
+        if (wallet.updateTransaction) {
+          tx = await wallet.updateTransaction(tx);
+        }
 
-            tx = new VersionedTransaction(message);
-          }
+        const base64EncodedWireTransaction = getBase64EncodedWireTransaction({
+          messageBytes:
+            tx.message.serialize() as unknown as TransactionMessageBytes,
+          signatures: tx.signatures as unknown as SignaturesMap,
+        });
 
-          if (wallet.updateTransaction) {
-            tx = await wallet.updateTransaction(tx);
-          }
-
-          const base64EncodedWireTransaction = getBase64EncodedWireTransaction({
-            messageBytes:
-              tx.message.serialize() as unknown as TransactionMessageBytes,
-            signatures: tx.signatures as unknown as SignaturesMap,
-          });
-
-          const payload = {
-            transaction: base64EncodedWireTransaction,
-          };
-
-          return { payload };
+        const payload = {
+          transaction: base64EncodedWireTransaction,
         };
 
-        return {
-          exec,
-          requirements,
-        };
-      });
+        return { payload };
+      };
+
+      return {
+        exec,
+        requirements,
+      };
+    });
 
     return res;
   };

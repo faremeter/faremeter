@@ -13,7 +13,6 @@ import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import type { Hex } from "viem";
 import { isAddress } from "viem";
 import { type } from "arktype";
-import { isValidationError } from "@faremeter/types";
 import {
   EIP712_TYPES,
   eip712Domain,
@@ -56,15 +55,16 @@ export function createPaymentHandler(
     );
   }
 
-  const { matchTuple } = generateMatcher(x402Network, assetInfo.address);
+  const { isMatchingRequirement } = generateMatcher(
+    x402Network,
+    assetInfo.address,
+  );
 
   return async function handlePayment(
     context: RequestContext,
     accepts: x402PaymentRequirements[],
   ): Promise<PaymentExecer[]> {
-    const compatibleRequirements = accepts.filter(
-      (r) => !isValidationError(matchTuple(r)),
-    );
+    const compatibleRequirements = accepts.filter(isMatchingRequirement);
 
     return compatibleRequirements.map((requirements) => ({
       requirements,

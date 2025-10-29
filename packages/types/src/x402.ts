@@ -1,5 +1,6 @@
 import { type } from "arktype";
 import { caseInsensitiveLiteral } from "./literal";
+import { isValidationError } from "./validation";
 
 export const x402PaymentRequirements = type({
   scheme: "string",
@@ -94,7 +95,12 @@ export function generateRequirementsMatcher(
     asset: caseInsensitiveLiteral(...asset),
   });
 
+  const isMatchingRequirement = (req: typeof matchTuple.inferIn) => {
+    return !isValidationError(matchTuple(req));
+  };
+
   return {
     matchTuple,
+    isMatchingRequirement,
   };
 }

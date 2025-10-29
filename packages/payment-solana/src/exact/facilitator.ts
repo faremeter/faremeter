@@ -133,7 +133,7 @@ export const createFacilitatorHandler = (
   mint: PublicKey,
   config?: FacilitatorOptions,
 ): FacilitatorHandler => {
-  const { matchTuple } = generateMatcher(network, mint.toBase58());
+  const { isMatchingRequirement } = generateMatcher(network, mint.toBase58());
 
   const {
     maxRetries = 30,
@@ -158,26 +158,24 @@ export const createFacilitatorHandler = (
     const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
       .blockhash;
     const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
-    return req
-      .filter((x) => !isValidationError(matchTuple(x)))
-      .map((x) => {
-        return {
-          ...x,
-          asset: mint.toBase58(),
-          extra: {
-            feePayer: feePayerKeypair.publicKey.toString(),
-            decimals: mintInfo.data.decimals,
-            recentBlockhash,
-          },
-        };
-      });
+    return req.filter(isMatchingRequirement).map((x) => {
+      return {
+        ...x,
+        asset: mint.toBase58(),
+        extra: {
+          feePayer: feePayerKeypair.publicKey.toString(),
+          decimals: mintInfo.data.decimals,
+          recentBlockhash,
+        },
+      };
+    });
   };
 
   const handleSettle = async (
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
   ) => {
-    if (isValidationError(matchTuple(requirements))) {
+    if (!isMatchingRequirement(requirements)) {
       return null;
     }
 

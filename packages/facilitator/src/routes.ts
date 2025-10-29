@@ -106,6 +106,11 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
         continue;
       }
 
+      logger.debug(
+        "facilitator handler accepted settlement and returned: {*}",
+        t,
+      );
+
       logger.info(
         `${t.success ? "succeeded" : "failed"} settlement request: {*}`,
         {

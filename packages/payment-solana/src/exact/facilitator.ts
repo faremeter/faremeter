@@ -133,10 +133,7 @@ export const createFacilitatorHandler = (
   mint: PublicKey,
   config?: FacilitatorOptions,
 ): FacilitatorHandler => {
-  const { matchTuple, matchTupleAndAsset } = generateMatcher(
-    network,
-    mint.toBase58(),
-  );
+  const { matchTuple } = generateMatcher(network, mint.toBase58());
 
   const {
     maxRetries = 30,
@@ -162,7 +159,7 @@ export const createFacilitatorHandler = (
       .blockhash;
     const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
     return req
-      .filter((x) => !isValidationError(matchTupleAndAsset(x)))
+      .filter((x) => !isValidationError(matchTuple(x)))
       .map((x) => {
         return {
           ...x,

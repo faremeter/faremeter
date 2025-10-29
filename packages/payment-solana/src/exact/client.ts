@@ -44,7 +44,7 @@ export function createPaymentHandler(
   mint: PublicKey,
   connection?: Connection,
 ): PaymentHandler {
-  const { matchTupleAndAsset } = generateMatcher(
+  const { matchTuple } = generateMatcher(
     wallet.network,
     mint ? mint.toBase58() : "sol",
   );
@@ -54,7 +54,7 @@ export function createPaymentHandler(
     accepts: x402PaymentRequirements[],
   ): Promise<PaymentExecer[]> => {
     const res = accepts
-      .filter((r) => !isValidationError(matchTupleAndAsset(r)))
+      .filter((r) => !isValidationError(matchTuple(r)))
       .map((requirements) => {
         const extra = PaymentRequirementsExtra(requirements.extra);
 

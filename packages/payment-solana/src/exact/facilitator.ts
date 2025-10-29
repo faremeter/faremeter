@@ -177,7 +177,7 @@ export const createFacilitatorHandler = (
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
   ) => {
-    if (isValidationError(matchTuple(payment))) {
+    if (isValidationError(matchTuple(requirements))) {
       return null;
     }
 

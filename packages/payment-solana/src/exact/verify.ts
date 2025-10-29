@@ -107,17 +107,27 @@ async function verifyTransferInstruction(
   );
 }
 
-function verifyCreateATAInstruction(instruction: Instruction): boolean {
+function verifyCreateATAInstruction(
+  instruction: Instruction,
+  facilitatorAddress: string,
+): boolean {
   if (!instruction.data || !instruction.accounts) {
     return false;
   }
 
   try {
-    parseCreateAssociatedTokenInstruction({
+    const createInstruction = parseCreateAssociatedTokenInstruction({
       accounts: instruction.accounts,
       programAddress: instruction.programAddress,
       data: new Uint8Array(instruction.data),
     });
+
+    if (createInstruction.accounts.payer.address === facilitatorAddress) {
+      logger.error(
+        "Dropping transaction where the facilitator pays for a token account creation",
+      );
+      return false;
+    }
     return true;
   } catch {
     return false;
@@ -146,6 +156,7 @@ export async function isValidTransaction(
   });
 
   const instructions = transactionMessage.instructions;
+  const facilitatorBase58 = facilitatorAddress.toBase58();
 
   if (instructions.length === 3) {
     // Make typescript happy...
@@ -182,7 +193,7 @@ export async function isValidTransaction(
       ix2,
       paymentRequirements,
       destination,
-      facilitatorAddress.toBase58(),
+      facilitatorBase58,
     );
   } else if (instructions.length === 4) {
     const [ix0, ix1, ix2, ix3] = instructions;
@@ -215,12 +226,12 @@ export async function isValidTransaction(
     }
 
     return (
-      verifyCreateATAInstruction(ix2) &&
+      verifyCreateATAInstruction(ix2, facilitatorBase58) &&
       (await verifyTransferInstruction(
         ix3,
         paymentRequirements,
         destination,
-        facilitatorAddress.toBase58(),
+        facilitatorBase58,
       ))
     );
   }

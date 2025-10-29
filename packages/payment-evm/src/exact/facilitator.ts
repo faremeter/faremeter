@@ -168,7 +168,7 @@ export async function createFacilitatorHandler(
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
   ): Promise<x402SettleResponse | null> => {
-    const tupleMatches = matchTuple(payment);
+    const tupleMatches = matchTuple(requirements);
 
     if (isValidationError(tupleMatches)) {
       return null; // Not for us, let another handler try

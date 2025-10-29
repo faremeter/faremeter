@@ -5,7 +5,7 @@ import type {
   x402SupportedKind,
 } from "@faremeter/types/x402";
 
-import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
+import { isValidationError } from "@faremeter/types";
 import { isPrivateKey, type ChainInfo } from "@faremeter/types/evm";
 import { type FacilitatorHandler } from "@faremeter/types/facilitator";
 
@@ -36,7 +36,11 @@ import {
   x402ExactPayload,
 } from "./constants";
 
-import { generateDomain, generateForwarderDomain } from "./common";
+import {
+  generateMatcher,
+  generateDomain,
+  generateForwarderDomain,
+} from "./common";
 
 function errorResponse(msg: string): x402SettleResponse {
   return {
@@ -129,11 +133,7 @@ export async function createFacilitatorHandler(
     }
   }
 
-  const checkTupleAndAsset = type({
-    scheme: caseInsensitiveLiteral(X402_EXACT_SCHEME),
-    network: caseInsensitiveLiteral(network),
-    asset: caseInsensitiveLiteral(asset),
-  });
+  const { matchTuple } = generateMatcher(network, asset);
 
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return [
@@ -149,7 +149,7 @@ export async function createFacilitatorHandler(
     req: x402PaymentRequirements[],
   ): Promise<x402PaymentRequirements[]> => {
     return req
-      .filter((x) => !isValidationError(checkTupleAndAsset(x)))
+      .filter((x) => !isValidationError(matchTuple(x)))
       .map((x) => ({
         ...x,
         asset,
@@ -168,7 +168,7 @@ export async function createFacilitatorHandler(
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
   ): Promise<x402SettleResponse | null> => {
-    const tupleMatches = checkTupleAndAsset(payment);
+    const tupleMatches = matchTuple(payment);
 
     if (isValidationError(tupleMatches)) {
       return null; // Not for us, let another handler try

@@ -1,6 +1,10 @@
 import type { PublicClient, Hex } from "viem";
+import { generateRequirementsMatcher } from "@faremeter/types/x402";
 
-import { TRANSFER_WITH_AUTHORIZATION_ABI } from "./constants";
+import {
+  TRANSFER_WITH_AUTHORIZATION_ABI,
+  X402_EXACT_SCHEME,
+} from "./constants";
 
 export async function generateDomain(
   publicClient: PublicClient,
@@ -49,4 +53,8 @@ export function generateForwarderDomain(
     ...domainInfo,
     chainId,
   };
+}
+
+export function generateMatcher(network: string, asset: string) {
+  return generateRequirementsMatcher([X402_EXACT_SCHEME], [network], [asset]);
 }

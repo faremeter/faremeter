@@ -13,14 +13,15 @@ import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import type { Hex } from "viem";
 import { isAddress } from "viem";
 import { type } from "arktype";
-import { isValidationError, caseInsensitiveLiteral } from "@faremeter/types";
+import { isValidationError } from "@faremeter/types";
 import {
-  X402_EXACT_SCHEME,
   EIP712_TYPES,
   eip712Domain,
   type x402ExactPayload,
   type eip3009Authorization,
 } from "./constants";
+
+import { generateMatcher } from "./common";
 
 interface WalletForPayment {
   chain: {
@@ -55,11 +56,7 @@ export function createPaymentHandler(
     );
   }
 
-  const matchTuple = type({
-    scheme: caseInsensitiveLiteral(X402_EXACT_SCHEME),
-    network: caseInsensitiveLiteral(x402Network),
-    asset: caseInsensitiveLiteral(assetInfo.address),
-  });
+  const { matchTuple } = generateMatcher(x402Network, assetInfo.address);
 
   return async function handlePayment(
     context: RequestContext,

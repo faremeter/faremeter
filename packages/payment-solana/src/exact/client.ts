@@ -39,11 +39,39 @@ export type Wallet = {
   sendTransaction?: (tx: VersionedTransaction) => Promise<string>;
 };
 
+interface GetAssociatedTokenAddressSyncOptions {
+  allowOwnerOffCurve?: boolean;
+  programId?: PublicKey;
+  associatedTokenProgramId?: PublicKey;
+}
+
+function generateGetAssociatedTokenAddressSyncRest(
+  tokenConfig: GetAssociatedTokenAddressSyncOptions,
+) {
+  const { allowOwnerOffCurve, programId, associatedTokenProgramId } =
+    tokenConfig;
+
+  // NOTE: These map to the trailing default args of
+  // getAssociatedTokenAddressSync, so order matters. If things are
+  // refactored, they should be updated to match the reality of the
+  // implementation.
+
+  return [allowOwnerOffCurve, programId, associatedTokenProgramId] as const;
+}
+
+interface CreatePaymentHandlerOptions {
+  token?: GetAssociatedTokenAddressSyncOptions;
+}
+
 export function createPaymentHandler(
   wallet: Wallet,
   mint: PublicKey,
   connection?: Connection,
+  options?: CreatePaymentHandlerOptions,
 ): PaymentHandler {
+  const getAssociatedTokenAddressSyncRest =
+    generateGetAssociatedTokenAddressSyncRest(options?.token ?? {});
+
   const { isMatchingRequirement } = generateMatcher(
     wallet.network,
     mint ? mint.toBase58() : "sol",
@@ -94,11 +122,13 @@ export function createPaymentHandler(
         const sourceAccount = getAssociatedTokenAddressSync(
           mint,
           wallet.publicKey,
+          ...getAssociatedTokenAddressSyncRest,
         );
 
         const receiverAccount = getAssociatedTokenAddressSync(
           mint,
           paymentRequirements.receiver,
+          ...getAssociatedTokenAddressSyncRest,
         );
 
         const instructions = [

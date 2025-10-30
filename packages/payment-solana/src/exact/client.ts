@@ -94,11 +94,13 @@ export function createPaymentHandler(
         const sourceAccount = getAssociatedTokenAddressSync(
           mint,
           wallet.publicKey,
+          true
         );
 
         const receiverAccount = getAssociatedTokenAddressSync(
           mint,
           paymentRequirements.receiver,
+          true
         );
 
         const instructions = [

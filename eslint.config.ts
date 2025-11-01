@@ -36,4 +36,10 @@ export default defineConfig(
       },
     },
   },
+  {
+    files: ["packages/fetch/src/**/*.ts"],
+    rules: {
+      "no-console": "off", // Allow console.log for verbose debugging in x402 wrapper
+    },
+  },
 );

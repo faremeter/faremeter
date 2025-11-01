@@ -10,3 +10,5 @@ export async function createLocalWallet(network: string, keypair: Keypair) {
     },
   };
 }
+
+export type LocalWallet = Awaited<ReturnType<typeof createLocalWallet>>;

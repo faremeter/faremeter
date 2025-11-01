@@ -30,6 +30,7 @@ export function chooseFirstAvailable(
 export type ProcessPaymentRequiredResponseOpts = {
   handlers: PaymentHandler[];
   payerChooser?: (execer: PaymentExecer[]) => Promise<PaymentExecer>;
+  verbose?: boolean;
 };
 
 export async function processPaymentRequiredResponse(
@@ -37,22 +38,74 @@ export async function processPaymentRequiredResponse(
   response: unknown,
   options: ProcessPaymentRequiredResponseOpts,
 ) {
+  const verbose = options.verbose ?? false;
   const payerChooser = options.payerChooser ?? chooseFirstAvailable;
+
+  if (verbose) {
+    console.log("[x402] Processing payment required response...");
+  }
 
   const payResp = x402PaymentRequiredResponse(response);
 
   if (isValidationError(payResp)) {
+    if (verbose) {
+      console.log("[x402] Validation error parsing payment response:", payResp);
+    }
     throwValidationError("couldn't parse payment required response", payResp);
+  }
+
+  if (verbose) {
+    console.log("[x402] Parsed payment response:", {
+      x402Version: payResp.x402Version,
+      acceptsCount: payResp.accepts.length,
+      accepts: payResp.accepts,
+    });
   }
 
   const possiblePayers: PaymentExecer[] = [];
 
+  if (verbose) {
+    console.log("[x402] Checking handlers for applicable payers...");
+  }
+
   for (const h of options.handlers) {
-    possiblePayers.push(...(await h(ctx, payResp.accepts)));
+    const payers = await h(ctx, payResp.accepts);
+    if (verbose) {
+      console.log("[x402] Handler returned payers:", payers.length);
+    }
+    possiblePayers.push(...payers);
+  }
+
+  if (verbose) {
+    console.log("[x402] Total possible payers found:", possiblePayers.length);
+    if (possiblePayers.length > 0) {
+      console.log(
+        "[x402] Payer options:",
+        possiblePayers.map((p) => ({
+          scheme: p.requirements.scheme,
+          network: p.requirements.network,
+          asset: p.requirements.asset,
+        })),
+      );
+    }
   }
 
   const payer = await payerChooser(possiblePayers);
+
+  if (verbose) {
+    console.log("[x402] Selected payer:", {
+      scheme: payer.requirements.scheme,
+      network: payer.requirements.network,
+      asset: payer.requirements.asset,
+    });
+    console.log("[x402] Executing payment...");
+  }
+
   const payerResult = await payer.exec();
+
+  if (verbose) {
+    console.log("[x402] Payment execution completed");
+  }
 
   const paymentPayload: x402PaymentPayload = {
     x402Version: payResp.x402Version,
@@ -63,6 +116,15 @@ export async function processPaymentRequiredResponse(
   };
 
   const paymentHeader = btoa(JSON.stringify(paymentPayload));
+
+  if (verbose) {
+    console.log("[x402] Payment payload created:", {
+      x402Version: paymentPayload.x402Version,
+      scheme: paymentPayload.scheme,
+      network: paymentPayload.network,
+      asset: paymentPayload.asset,
+    });
+  }
 
   return {
     payer,

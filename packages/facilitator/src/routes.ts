@@ -35,6 +35,98 @@ function summarizeRequirements({
 export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
   const router = new Hono();
 
+  function sendVerifyError(
+    c: Context,
+    status: StatusCode,
+    msg: string | undefined,
+  ) {
+    const response: x.x402VerifyResponse = {
+      isValid: false,
+    };
+
+    if (msg !== undefined) {
+      response.invalidReason = msg;
+      logger.error(msg);
+    } else {
+      logger.error("unknown error during verification");
+    }
+
+    c.status(status);
+    return c.json(response);
+  }
+
+  router.post("/verify", async (c) => {
+    const x402Req = x.x402VerifyRequest(await c.req.json());
+
+    if (isValidationError(x402Req)) {
+      return sendVerifyError(
+        c,
+        400,
+        `couldn't validate request: ${x402Req.summary}`,
+      );
+    }
+
+    const paymentPayload = x.x402PaymentHeaderToPayload(x402Req.paymentHeader);
+
+    if (isValidationError(paymentPayload)) {
+      return sendVerifyError(
+        c,
+        400,
+        `couldn't validate x402 payload: ${paymentPayload.summary}`,
+      );
+    }
+
+    logger.debug("starting verifyment attempt for request: {*}", x402Req);
+
+    for (const handler of args.handlers) {
+      let t;
+
+      if (handler.handleVerify === undefined) {
+        continue;
+      }
+
+      try {
+        t = await handler.handleVerify(
+          x402Req.paymentRequirements,
+          paymentPayload,
+        );
+      } catch (e) {
+        let msg = undefined;
+
+        // XXX - We can do a better job of determining if it's a chain
+        // error, or some other issue.
+        if (e instanceof Error) {
+          msg = e.message;
+        } else {
+          msg = "unknown error handling verifyment";
+        }
+
+        return sendVerifyError(c, 500, msg);
+      }
+
+      if (t === null) {
+        continue;
+      }
+
+      logger.debug("facilitator handler agreed to verify and returned: {*}", t);
+
+      logger.info(
+        `${t.isValid ? "succeeded" : "failed"} verifying request: {*}`,
+        {
+          ...t,
+          requirements: summarizeRequirements(x402Req.paymentRequirements),
+        },
+      );
+
+      return c.json(t);
+    }
+    logger.warning(
+      "attempt to verify was made with no handler found, requirements summary was: {*}",
+      summarizeRequirements(x402Req.paymentRequirements),
+    );
+    return sendVerifyError(c, 400, "no matching payment handler found");
+  });
+
   function sendSettleError(
     c: Context,
     status: StatusCode,

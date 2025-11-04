@@ -204,6 +204,23 @@ export const createFacilitatorHandler = (
     };
   };
 
+  const handleVerify = async (
+    requirements: x402PaymentRequirements,
+    payment: x402PaymentPayload,
+  ) => {
+    if (!isMatchingRequirement(requirements)) {
+      return null;
+    }
+
+    const verifyResult = await verifyTransaction(requirements, payment);
+
+    if ("error" in verifyResult) {
+      return { isValid: false, invalidReason: verifyResult.error };
+    }
+
+    return { isValid: true };
+  };
+
   const handleSettle = async (
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
@@ -270,6 +287,7 @@ export const createFacilitatorHandler = (
   return {
     getSupported,
     getRequirements,
+    handleVerify,
     handleSettle,
   };
 };

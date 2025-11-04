@@ -232,7 +232,7 @@ export async function createFacilitatorHandler(
         !assetInfo.forwarderName ||
         !assetInfo.forwarder
       ) {
-        throw new Error("Secondary Forwardign Information Missing");
+        throw new Error("Secondary Forwarding Information Missing");
       }
 
       domain = generateForwarderDomain(chainId, {

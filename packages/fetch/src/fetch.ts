@@ -1,9 +1,12 @@
 import { type RequestContext } from "@faremeter/types/client";
+import { getLogger } from "@logtape/logtape";
 
 import {
   type ProcessPaymentRequiredResponseOpts,
   processPaymentRequiredResponse,
 } from "./internal";
+
+const logger = getLogger(["faremeter", "fetch"]);
 
 export class WrappedFetchError extends Error {
   constructor(
@@ -27,7 +30,7 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
     const verbose = options.verbose ?? false;
 
     if (verbose) {
-      console.log("[x402] Starting request:", {
+      logger.info("[x402] Starting request:", {
         url: input instanceof URL ? input.href : input,
         method: init.method ?? "GET",
       });
@@ -35,13 +38,13 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
 
     async function makeRequest() {
       if (verbose) {
-        console.log("[x402] Sending initial request...");
+        logger.info("[x402] Sending initial request...");
       }
 
       const response = await (options.phase1Fetch ?? phase2Fetch)(input, init);
 
       if (verbose) {
-        console.log("[x402] Received response:", {
+        logger.info("[x402] Received response:", {
           status: response.status,
           statusText: response.statusText,
         });
@@ -49,13 +52,13 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
 
       if (response.status !== 402) {
         if (verbose) {
-          console.log("[x402] No payment required, returning response");
+          logger.info("[x402] No payment required, returning response");
         }
         return response;
       }
 
       if (verbose) {
-        console.log(
+        logger.info(
           "[x402] Payment required (402), processing payment response...",
         );
       }
@@ -67,9 +70,8 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
       const responseJson = await response.json();
 
       if (verbose) {
-        console.log(
-          "[x402] Payment required response:",
-          JSON.stringify(responseJson, null, 2),
+        logger.info(
+          `[x402] Payment required response: ${JSON.stringify(responseJson, null, 2)}`,
         );
       }
 
@@ -77,15 +79,14 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
         await processPaymentRequiredResponse(ctx, responseJson, options);
 
       if (verbose) {
-        console.log("[x402] Payment processed:", {
+        logger.info("[x402] Payment processed:", {
           scheme: paymentPayload.scheme,
           network: paymentPayload.network,
           asset: paymentPayload.asset,
           payerRequirements: payer.requirements,
         });
-        console.log(
-          "[x402] Payment header generated (base64 length):",
-          paymentHeader.length,
+        logger.info(
+          `[x402] Payment header generated (base64 length): ${paymentHeader.length}`,
         );
       }
 
@@ -98,13 +99,13 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
       };
 
       if (verbose) {
-        console.log("[x402] Resending request with payment header...");
+        logger.info("[x402] Resending request with payment header...");
       }
 
       const secondResponse = await phase2Fetch(input, newInit);
 
       if (verbose) {
-        console.log("[x402] Second response received:", {
+        logger.info("[x402] Second response received:", {
           status: secondResponse.status,
           statusText: secondResponse.statusText,
         });
@@ -118,7 +119,7 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
     let response: Response;
 
     if (verbose) {
-      console.log("[x402] Starting retry loop:", {
+      logger.info("[x402] Starting retry loop:", {
         maxAttempts: attempt,
         initialRetryDelay: backoff,
       });
@@ -127,7 +128,7 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
     do {
       const attemptNumber = attempt;
       if (verbose && attemptNumber < (options.retryCount ?? 2) + 1) {
-        console.log(
+        logger.info(
           `[x402] Retry attempt ${(options.retryCount ?? 2) + 2 - attemptNumber}...`,
         );
       }
@@ -136,13 +137,15 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
 
       if (response.status != 402) {
         if (verbose) {
-          console.log("[x402] Request successful, returning response");
+          logger.info(
+            `[x402] Request successful, returning response: ${response.status}`,
+          );
         }
         return response;
       }
 
       if (verbose) {
-        console.log("[x402] Still receiving 402, will retry after backoff:", {
+        logger.info("[x402] Still receiving 402, will retry after backoff:", {
           backoffMs: backoff,
           remainingAttempts: attempt - 1,
         });
@@ -153,18 +156,18 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
     } while (--attempt > 0);
 
     if (verbose) {
-      console.log("[x402] All retry attempts exhausted");
+      logger.info("[x402] All retry attempts exhausted");
     }
 
     if (options.returnPaymentFailure) {
       if (verbose) {
-        console.log("[x402] Returning payment failure response");
+        logger.info("[x402] Returning payment failure response");
       }
       return response;
     }
 
     if (verbose) {
-      console.log("[x402] Throwing WrappedFetchError");
+      logger.info("[x402] Throwing WrappedFetchError");
     }
 
     throw new WrappedFetchError(

@@ -2,6 +2,7 @@ import type {
   x402PaymentRequirements,
   x402PaymentPayload,
   x402SettleResponse,
+  x402VerifyResponse,
   x402SupportedKind,
 } from "@faremeter/types/x402";
 
@@ -271,6 +272,23 @@ export async function createFacilitatorHandler(
     };
   };
 
+  const handleVerify = async (
+    requirements: x402PaymentRequirements,
+    payment: x402PaymentPayload,
+  ): Promise<x402VerifyResponse | null> => {
+    if (!isMatchingRequirement(requirements)) {
+      return null; // Not for us, let another handler try
+    }
+
+    const verifyResult = await verifyTransaction(requirements, payment);
+
+    if ("error" in verifyResult) {
+      return { isValid: false, invalidReason: verifyResult.error };
+    }
+
+    return { isValid: true };
+  };
+
   const handleSettle = async (
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
@@ -369,6 +387,7 @@ export async function createFacilitatorHandler(
   return {
     getSupported,
     getRequirements,
+    handleVerify,
     handleSettle,
   };
 }

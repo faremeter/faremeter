@@ -44,16 +44,6 @@ interface FacilitatorOptions {
   maxPriorityFee?: number;
 }
 
-function errorResponse(msg: string): x402SettleResponse {
-  logger.error(msg);
-  return {
-    success: false,
-    error: msg,
-    txHash: null,
-    networkId: null,
-  };
-}
-
 const TransactionString = type("string").pipe.try((tx) => {
   const decoder = getTransactionDecoder();
   const base64Encoder = getBase64Encoder();
@@ -170,14 +160,11 @@ export const createFacilitatorHandler = (
       };
     });
   };
-
-  const handleSettle = async (
+  const verifyTransaction = async (
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
   ) => {
-    if (!isMatchingRequirement(requirements)) {
-      return null;
-    }
+    const errorResponse = (error: string) => ({ error });
 
     const paymentPayload = PaymentPayload(payment.payload);
     if (isValidationError(paymentPayload)) {
@@ -211,6 +198,37 @@ export const createFacilitatorHandler = (
     } catch (cause) {
       throw new Error("Failed to validate transaction", { cause });
     }
+
+    return {
+      transaction,
+    };
+  };
+
+  const handleSettle = async (
+    requirements: x402PaymentRequirements,
+    payment: x402PaymentPayload,
+  ) => {
+    if (!isMatchingRequirement(requirements)) {
+      return null;
+    }
+
+    const errorResponse = (msg: string): x402SettleResponse => {
+      logger.error(msg);
+      return {
+        success: false,
+        error: msg,
+        txHash: null,
+        networkId: null,
+      };
+    };
+
+    const verifyResult = await verifyTransaction(requirements, payment);
+
+    if ("error" in verifyResult) {
+      return errorResponse(verifyResult.error);
+    }
+
+    const { transaction } = verifyResult;
 
     let signedTransaction;
     try {

@@ -13,18 +13,15 @@ export async function createMiddleware(args: createMiddlewareArgs) {
   );
 
   return async (req: Request, res: Response, next: NextFunction) => {
-    const response = await handleMiddlewareRequest({
+    return await handleMiddlewareRequest({
       ...args,
       resource: `${req.protocol}://${req.headers.host}${req.path}`,
       getPaymentRequiredResponse,
       getHeader: (key) => req.header(key),
       sendJSONResponse: (status, body) => res.status(status).json(body),
+      body: async () => {
+        next();
+      },
     });
-
-    if (response) {
-      return;
-    }
-
-    next();
   };
 }

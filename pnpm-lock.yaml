@@ -482,7 +482,7 @@ importers:
         version: 0.10.0(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))
       '@solana-program/token':
         specifier: 'catalog:'
-        version: 0.5.1(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))
+        version: 0.5.1(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
       '@solana/addresses':
         specifier: 'catalog:'
         version: 5.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
@@ -842,6 +842,49 @@ importers:
       '@faremeter/fetch':
         specifier: workspace:^
         version: link:../fetch
+      '@tapjs/asserts':
+        specifier: 'catalog:'
+        version: 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      eslint:
+        specifier: 'catalog:'
+        version: 9.34.0(jiti@2.5.1)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
+      tap:
+        specifier: 'catalog:'
+        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      tsc-esm-fix:
+        specifier: 'catalog:'
+        version: 3.1.2
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.42.0(eslint@9.34.0(jiti@2.5.1))(typescript@5.9.3)
+      typescript-language-server:
+        specifier: 'catalog:'
+        version: 4.4.0
+
+  packages/wallet-solana-swig:
+    dependencies:
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 1.0.4
+      '@solana/web3.js':
+        specifier: 'catalog:'
+        version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      '@swig-wallet/classic':
+        specifier: ^1.4.0
+        version: 1.4.0(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
+      fastestsmallesttextencoderdecoder:
+        specifier: ^1.0.22
+        version: 1.0.22
+    devDependencies:
+      '@eslint/js':
+        specifier: 'catalog:'
+        version: 9.34.0
       '@tapjs/asserts':
         specifier: 'catalog:'
         version: 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2077,6 +2120,17 @@ packages:
 
   '@swc/helpers@0.5.17':
     resolution: {integrity: sha512-5IKx/Y13RsYd+sauPb2x+U/xZikHjolzfuDgTAl/Tdf3Q8rslRvC19NKDLgAJQ6wsqADk10ntlv08nPFw/gO/A==}
+
+  '@swig-wallet/classic@1.4.0':
+    resolution: {integrity: sha512-fznly4mUzg0GYnChqK1Xnn0NhH1Nby63HbN+vZBRssugZJEb1Vl+V17rOJb6DjBZxrRCC0T/CDg/N9FKnDiOcA==}
+    peerDependencies:
+      '@solana/web3.js': ^1.98.0
+
+  '@swig-wallet/coder@1.4.0':
+    resolution: {integrity: sha512-5QqfH4WadLL6cEDb1GP2pbKToHOWL+TAORA55aK7u/DtHGGpeIWcNrX6bzVUNs5gp5UKlraPR1PyipkaSIM48A==}
+
+  '@swig-wallet/lib@1.4.0':
+    resolution: {integrity: sha512-E5JtX8exj4Re/tTETegx7YcPno3K3/2wEvlyxPpop7Cb7mfXSvPqtFwVn/TmtdvOueLlwBukV3PvV7akYg76+g==}
 
   '@tapjs/after-each@4.0.1':
     resolution: {integrity: sha512-YkVvfszKTLm57Bju8ET4hKCPXVsd9OCkWUBD8h8g0ZrX61r99Cf6jw/D4eTppPcWryOwE7WO/7aj/toBTp2W/Q==}
@@ -5452,7 +5506,7 @@ snapshots:
     dependencies:
       '@solana/kit': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
 
-  '@solana-program/token@0.5.1(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
+  '@solana-program/token@0.5.1(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
     dependencies:
       '@solana/kit': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
 
@@ -6237,6 +6291,40 @@ snapshots:
   '@swc/helpers@0.5.17':
     dependencies:
       tslib: 2.8.1
+
+  '@swig-wallet/classic@1.4.0(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)':
+    dependencies:
+      '@noble/curves': 1.9.7
+      '@solana-program/token': 0.5.1(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
+      '@solana/kit': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      '@swig-wallet/coder': 1.4.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
+      '@swig-wallet/lib': 1.4.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
+      bn.js: 5.2.2
+    transitivePeerDependencies:
+      - fastestsmallesttextencoderdecoder
+      - typescript
+      - ws
+
+  '@swig-wallet/coder@1.4.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)':
+    dependencies:
+      '@solana/kit': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+    transitivePeerDependencies:
+      - fastestsmallesttextencoderdecoder
+      - typescript
+      - ws
+
+  '@swig-wallet/lib@1.4.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)':
+    dependencies:
+      '@noble/curves': 1.9.7
+      '@solana-program/token': 0.5.1(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
+      '@solana/kit': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@swig-wallet/coder': 1.4.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
+      bn.js: 5.2.2
+    transitivePeerDependencies:
+      - fastestsmallesttextencoderdecoder
+      - typescript
+      - ws
 
   '@tapjs/after-each@4.0.1(@tapjs/core@4.0.1(@types/node@20.19.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:

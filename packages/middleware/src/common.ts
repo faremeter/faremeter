@@ -114,6 +114,10 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
       status: PossibleStatusCodes,
       obj: PossibleJSONResponse,
     ) => MiddlewareResponse;
+    body: (context: {
+      requirements: x402PaymentRequirements;
+      payload: x402PaymentPayload;
+    }) => Promise<MiddlewareResponse>;
   };
 
 export async function handleMiddlewareRequest<MiddlewareResponse>(
@@ -182,6 +186,8 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     logger.warning("failed to settle payment: {error}", settlementResponse);
     return sendPaymentRequired();
   }
+
+  return await args.body({ requirements: paymentRequirements, payload });
 }
 
 export type createPaymentRequiredResponseCacheOpts = AgedLRUCacheOpts & {

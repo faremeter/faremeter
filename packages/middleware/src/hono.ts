@@ -15,7 +15,7 @@ export async function createMiddleware(
   );
 
   return async (c, next) => {
-    const response = await handleMiddlewareRequest({
+    return await handleMiddlewareRequest({
       ...args,
       resource: c.req.url,
       getHeader: (key) => c.req.header(key),
@@ -24,12 +24,9 @@ export async function createMiddleware(
         c.status(status);
         return c.json(body);
       },
+      body: async () => {
+        await next();
+      },
     });
-
-    if (response) {
-      return response;
-    }
-
-    await next();
   };
 }

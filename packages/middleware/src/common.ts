@@ -4,6 +4,8 @@ import {
   type x402PaymentPayload,
   x402PaymentRequiredResponse,
   x402PaymentHeaderToPayload,
+  x402VerifyRequest,
+  x402VerifyResponse,
   x402SettleRequest,
   x402SettleResponse,
 } from "@faremeter/types/x402";
@@ -103,6 +105,7 @@ export type CommonMiddlewareArgs = {
   facilitatorURL: string;
   accepts: (RelaxedRequirements | RelaxedRequirements[])[];
   cacheConfig?: createPaymentRequiredResponseCacheOpts;
+  verifyFirstSettleAfter?: boolean;
 };
 
 export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
@@ -160,34 +163,85 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     return sendPaymentRequired();
   }
 
-  const settleRequest: x402SettleRequest = {
-    x402Version: 1,
-    paymentHeader,
-    paymentRequirements,
+  const settle = async () => {
+    const settleRequest: x402SettleRequest = {
+      x402Version: 1,
+      paymentHeader,
+      paymentRequirements,
+    };
+
+    const t = await fetch(`${args.facilitatorURL}/settle`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(settleRequest),
+    });
+    const settlementResponse = x402SettleResponse(await t.json());
+
+    if (isValidationError(settlementResponse)) {
+      const msg = `error getting response from facilitator for settlement: ${settlementResponse.summary}`;
+      logger.error(msg);
+      throw new Error(msg);
+    }
+
+    if (!settlementResponse.success) {
+      logger.warning("failed to settle payment: {error}", settlementResponse);
+      return sendPaymentRequired();
+    }
   };
 
-  const t = await fetch(`${args.facilitatorURL}/settle`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(settleRequest),
+  if (args.verifyFirstSettleAfter) {
+    const verifyRequest: x402VerifyRequest = {
+      x402Version: 1,
+      paymentHeader,
+      paymentRequirements,
+    };
+
+    const t = await fetch(`${args.facilitatorURL}/verify`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(verifyRequest),
+    });
+    const verifyResponse = x402VerifyResponse(await t.json());
+
+    if (isValidationError(verifyResponse)) {
+      const msg = `error getting response from facilitator for verification: ${verifyResponse.summary}`;
+      logger.error(msg);
+      throw new Error(msg);
+    }
+
+    if (!verifyResponse.isValid) {
+      logger.warning(
+        "failed to settle payment: {invalidReason}",
+        verifyResponse,
+      );
+      return sendPaymentRequired();
+    }
+  } else {
+    const resp = await settle();
+
+    if (resp) {
+      return resp;
+    }
+  }
+
+  const bodyResult = await args.body({
+    requirements: paymentRequirements,
+    payload,
   });
-  const settlementResponse = x402SettleResponse(await t.json());
 
-  if (isValidationError(settlementResponse)) {
-    const msg = `error getting response from facilitator for settlement: ${settlementResponse.summary}`;
-    logger.error(msg);
-    throw new Error(msg);
+  if (bodyResult !== undefined) {
+    return bodyResult;
   }
 
-  if (!settlementResponse.success) {
-    logger.warning("failed to settle payment: {error}", settlementResponse);
-    return sendPaymentRequired();
+  if (args.verifyFirstSettleAfter) {
+    return await settle();
   }
-
-  return await args.body({ requirements: paymentRequirements, payload });
 }
 
 export type createPaymentRequiredResponseCacheOpts = AgedLRUCacheOpts & {

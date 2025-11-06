@@ -50,8 +50,6 @@ function errorResponse(msg: string): x402SettleResponse {
   };
 }
 
-const usedNonces = new Set<string>();
-
 function parseSignature(signature: string): { v: number; r: Hex; s: Hex } {
   const sig = signature.slice(2); // Remove 0x
   const r = `0x${sig.slice(0, 64)}` as const;
@@ -205,12 +203,6 @@ export async function createFacilitatorHandler(
       return errorResponse("Invalid from address");
     }
 
-    // Check nonce hasn't been used (local check)
-    const nonceKey = `${authorization.from}-${authorization.nonce}`;
-    if (usedNonces.has(nonceKey)) {
-      return errorResponse("Nonce already used");
-    }
-
     // Check on-chain nonce status
     let onChainUsed: boolean;
     try {
@@ -340,8 +332,6 @@ export async function createFacilitatorHandler(
       if (receipt.status !== "success") {
         return errorResponse("Transaction failed");
       }
-
-      usedNonces.add(nonceKey);
 
       return {
         success: true,

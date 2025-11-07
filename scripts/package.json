@@ -17,6 +17,7 @@
     "@faremeter/wallet-crossmint": "workspace:^",
     "@faremeter/wallet-evm": "workspace:^",
     "@faremeter/wallet-ledger": "workspace:*",
+    "@faremeter/wallet-solana-swig": "workspace:^",
     "@faremeter/wallet-solana": "workspace:^",
     "@faremeter/wallet-solana-squads": "workspace:^",
     "@logtape/logtape": "catalog:",
@@ -34,7 +35,8 @@
     "hono": "catalog:",
     "reflect-metadata": "^0.1.14",
     "rxjs": "^7.8.1",
-    "viem": "catalog:"
+    "viem": "catalog:",
+    "@swig-wallet/classic": "^1.4.0"
   },
   "devDependencies": {
     "@tapjs/tsx": "catalog:",

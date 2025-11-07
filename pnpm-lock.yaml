@@ -10,8 +10,8 @@ catalogs:
       specifier: 9.34.0
       version: 9.34.0
     '@faremeter/x-solana-settlement':
-      specifier: 0.3.1
-      version: 0.3.1
+      specifier: 0.4.0
+      version: 0.4.0
     '@hono/node-server':
       specifier: 1.19.1
       version: 1.19.1
@@ -144,9 +144,6 @@ importers:
       tap:
         specifier: 'catalog:'
         version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.9.3)(utf-8-validate@5.0.10)
-      tsdoc-markdown:
-        specifier: 'catalog:'
-        version: 1.4.1(typescript@5.9.3)
       tsx:
         specifier: 'catalog:'
         version: 4.20.5
@@ -182,7 +179,7 @@ importers:
         version: link:../../packages/types
       '@faremeter/x-solana-settlement':
         specifier: 'catalog:'
-        version: 0.3.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
+        version: 0.4.0(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@hono/node-server':
         specifier: 'catalog:'
         version: 1.19.1(hono@4.9.0)
@@ -483,9 +480,6 @@ importers:
       '@solana-program/token':
         specifier: 'catalog:'
         version: 0.5.1(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))
-      '@solana/addresses':
-        specifier: 'catalog:'
-        version: 5.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
       '@solana/kit':
         specifier: 'catalog:'
         version: 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
@@ -948,9 +942,12 @@ importers:
       '@faremeter/wallet-solana-squads':
         specifier: workspace:^
         version: link:../packages/wallet-solana-squads
+      '@faremeter/wallet-solana-swig':
+        specifier: workspace:^
+        version: link:../packages/wallet-solana-swig
       '@faremeter/x-solana-settlement':
         specifier: 'catalog:'
-        version: 0.3.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
+        version: 0.4.0(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@hono/node-server':
         specifier: 'catalog:'
         version: 1.19.1(hono@4.9.0)
@@ -975,6 +972,9 @@ importers:
       '@sqds/multisig':
         specifier: ^2.1.4
         version: 2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      '@swig-wallet/classic':
+        specifier: ^1.4.0
+        version: 1.4.0(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10))(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
       bs58:
         specifier: 'catalog:'
         version: 6.0.0
@@ -1330,8 +1330,8 @@ packages:
   '@faremeter/types@0.9.0':
     resolution: {integrity: sha512-/KbH4ILmTDzmIvmleGdy2nartQwD5WNFtYtBivKJnKsbegPzqZvCmBp61pFRzHnLxVp53FeROsFrW6HwBgh9vg==}
 
-  '@faremeter/x-solana-settlement@0.3.1':
-    resolution: {integrity: sha512-Lc6+pSRARl4K2vZRSQ/GecCwlSmVJ/fEFUqSMH6lRufIFgdKJv1eTxpZZEViLvQRnZ4XSJVm0kYLyQBYws/bwg==}
+  '@faremeter/x-solana-settlement@0.4.0':
+    resolution: {integrity: sha512-igtR+oCARXqngtPsB/unZxydKsEAg4f6QNsQfRCXPteyE9vaeeTfbvHA/xsSl8ykaQZRKfKrYoWxfh7MYly/Hg==}
 
   '@hey-api/client-fetch@0.8.1':
     resolution: {integrity: sha512-AaVNVLBl7N9Fun7QDnb00YDubAFjB9ICi5U6kmzcJSnnQTQGRMsuBBRupQV5ERdMMFt71zjSDym7Z+gLVe8m3A==}
@@ -5068,7 +5068,7 @@ snapshots:
     dependencies:
       arktype: 2.1.21
 
-  '@faremeter/x-solana-settlement@0.3.1(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)':
+  '@faremeter/x-solana-settlement@0.4.0(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@coral-xyz/anchor': 0.31.1(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@faremeter/types': 0.9.0
@@ -5502,10 +5502,6 @@ snapshots:
     dependencies:
       '@solana/kit': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
 
-  '@solana-program/memo@0.10.0(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
-    dependencies:
-      '@solana/kit': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-
   '@solana-program/token@0.5.1(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3))':
     dependencies:
       '@solana/kit': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
@@ -5764,17 +5760,6 @@ snapshots:
       '@solana/codecs-strings': 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
       '@solana/errors': 2.3.0(typescript@5.9.3)
       '@solana/nominal-types': 2.3.0(typescript@5.9.3)
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-
-  '@solana/keys@5.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)':
-    dependencies:
-      '@solana/assertions': 5.0.0(typescript@5.9.3)
-      '@solana/codecs-core': 5.0.0(typescript@5.9.3)
-      '@solana/codecs-strings': 5.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
-      '@solana/errors': 5.0.0(typescript@5.9.3)
-      '@solana/nominal-types': 5.0.0(typescript@5.9.3)
       typescript: 5.9.3
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder

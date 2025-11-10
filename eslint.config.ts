@@ -28,6 +28,18 @@ export default defineConfig(
       "@typescript-eslint/require-await": 0,
       "@typescript-eslint/no-unnecessary-condition": 0,
       "@typescript-eslint/no-unsafe-argument": 0,
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          args: "all",
+          argsIgnorePattern: "^_",
+          caughtErrors: "all",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
     },
     languageOptions: {
       parserOptions: {

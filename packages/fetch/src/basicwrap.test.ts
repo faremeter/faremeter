@@ -26,7 +26,7 @@ function createFakeHandler(t: Test) {
     ],
   };
 
-  const fakeHandler: fmTypes.PaymentHandler = async (ctx, required) => {
+  const fakeHandler: fmTypes.PaymentHandler = async (_ctx, required) => {
     t.equal(required.length, 1);
     t.matchOnly(required, mockRequirements.accepts);
 
@@ -61,7 +61,7 @@ await t.test("basicWrap", async (t) => {
 
   const mockFetch = responseFeeder([
     createMockResponse,
-    async (input, init?: RequestInit) => {
+    async (_input, init?: RequestInit) => {
       if (init?.headers === undefined) {
         throw new Error("didn't get back request headers");
       }

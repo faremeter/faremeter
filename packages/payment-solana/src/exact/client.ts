@@ -78,7 +78,7 @@ export function createPaymentHandler(
   );
 
   return async (
-    context: RequestContext,
+    _context: RequestContext,
     accepts: x402PaymentRequirements[],
   ): Promise<PaymentExecer[]> => {
     const res = accepts.filter(isMatchingRequirement).map((requirements) => {

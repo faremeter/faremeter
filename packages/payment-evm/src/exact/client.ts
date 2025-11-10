@@ -61,7 +61,7 @@ export function createPaymentHandler(
   );
 
   return async function handlePayment(
-    context: RequestContext,
+    _context: RequestContext,
     accepts: x402PaymentRequirements[],
   ): Promise<PaymentExecer[]> {
     const compatibleRequirements = accepts.filter(isMatchingRequirement);

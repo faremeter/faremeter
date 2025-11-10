@@ -12,6 +12,7 @@
     "@faremeter/middleware": "workspace:^",
     "@faremeter/payment-evm": "workspace:^",
     "@faremeter/payment-solana": "workspace:^",
+    "@faremeter/rides": "workspace:^",
     "@faremeter/types": "workspace:^",
     "@faremeter/wallet-crossmint": "workspace:^",
     "@faremeter/wallet-evm": "workspace:^",

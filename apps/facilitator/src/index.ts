@@ -25,21 +25,11 @@ await configure({
 });
 
 const solanaHandlers =
-  argsFromEnv(["ADMIN_KEYPAIR_PATH"], (...envVars) =>
-    solana.createHandlers("devnet", ...envVars),
-  ) ?? [];
+  (await argsFromEnv(["ADMIN_KEYPAIR_PATH"], async (...envVars) =>
+    solana.createHandlers("mainnet-beta", ...envVars),
+  )) ?? [];
 
-const evmHandlers =
-  (await argsFromEnv(["EVM_PRIVATE_KEY"], async (privateKey) => [
-    await createEVMHandler(evmChains.baseSepolia, privateKey, "USDC"),
-  ])) ?? [];
-
-const skaleHandlers =
-  (await argsFromEnv(["EVM_PRIVATE_KEY"], async (privateKey) => [
-    await createEVMHandler(evmChains.skaleEuropaTestnet, privateKey, "USDC"),
-  ])) ?? [];
-
-const handlers = [...solanaHandlers, ...evmHandlers, ...skaleHandlers];
+const handlers = [...solanaHandlers];
 
 if (handlers.length === 0) {
   logger.error(
@@ -74,8 +64,5 @@ serve({ fetch: app.fetch, port: listenPort }, (info) => {
   logger.info(`Active payment handlers: ${handlers.length}`);
   if (solanaHandlers.length > 0) {
     logger.info("   - Solana (SOL & SPL Token)");
-  }
-  if (evmHandlers.length > 0) {
-    logger.info("   - EVM (Base Sepolia)");
   }
 });

@@ -1,14 +1,13 @@
 import { logger } from "./logger";
 
-import { createFacilitatorHandler as createSolanaHandler } from "@faremeter/x-solana-settlement/facilitator";
-import { createFacilitatorHandler as createFacilitatorHandlerExact } from "@faremeter/payment-solana/exact";
+import { createFacilitatorHandler } from "@faremeter/payment-solana/exactSettlement";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createSolanaRpc } from "@solana/kit";
 import { isKnownCluster, lookupKnownSPLToken } from "@faremeter/info/solana";
 import fs from "fs";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 
-export function createHandlers(network: string, keypairPath: string) {
+export async function createHandlers(network: string, keypairPath: string) {
   if (!isKnownCluster(network)) {
     logger.error(`Solana network '${network}' is invalid`);
     process.exit(1);
@@ -31,12 +30,7 @@ export function createHandlers(network: string, keypairPath: string) {
 
   // Add Solana handlers
   handlers.push(
-    // SOL
-    createSolanaHandler(network, connection, adminKeypair),
-    // SPL Token
-    createSolanaHandler(network, connection, adminKeypair, mint),
-    // SPL Token with exact scheme
-    createFacilitatorHandlerExact(network, rpc, adminKeypair, mint),
+    await createFacilitatorHandler(network, rpc, adminKeypair, mint),
   );
 
   logger.info(`Solana handlers configured for ${network}`);

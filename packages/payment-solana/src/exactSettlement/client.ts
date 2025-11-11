@@ -6,15 +6,18 @@ import type {
   RequestContext,
 } from "@faremeter/types/client";
 import {
+  createAssociatedTokenAccountInstruction,
   createTransferCheckedInstruction,
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
+
 import {
   getBase64EncodedWireTransaction,
   type SignaturesMap,
   type TransactionMessageBytes,
 } from "@solana/transactions";
+
 import {
   ComputeBudgetProgram,
   Connection,
@@ -22,6 +25,7 @@ import {
   TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
+  Keypair,
 } from "@solana/web3.js";
 import { PaymentRequirementsExtra } from "./facilitator";
 import { generateMatcher } from "./common";
@@ -36,7 +40,7 @@ export type Wallet = {
   updateTransaction?: (
     tx: VersionedTransaction,
   ) => Promise<VersionedTransaction>;
-  sendTransaction?: (tx: VersionedTransaction) => Promise<string>;
+  sendTransaction: (tx: VersionedTransaction) => Promise<string>;
 };
 
 interface GetAssociatedTokenAddressSyncOptions {
@@ -111,7 +115,7 @@ interface CreatePaymentHandlerOptions {
 export function createPaymentHandler(
   wallet: Wallet,
   mint: PublicKey,
-  connection?: Connection,
+  connection: Connection,
   options?: CreatePaymentHandlerOptions,
 ): PaymentHandler {
   const getAssociatedTokenAddressSyncRest =
@@ -135,15 +139,16 @@ export function createPaymentHandler(
             requirements,
           });
 
-        const sourceAccount = getAssociatedTokenAddressSync(
+        const sourceATA = getAssociatedTokenAddressSync(
           mint,
           wallet.publicKey,
           ...getAssociatedTokenAddressSyncRest,
         );
 
-        const receiverAccount = getAssociatedTokenAddressSync(
+        const settleKeypair = Keypair.generate();
+        const settleATA = getAssociatedTokenAddressSync(
           mint,
-          payTo,
+          settleKeypair.publicKey,
           ...getAssociatedTokenAddressSyncRest,
         );
 
@@ -154,15 +159,31 @@ export function createPaymentHandler(
           ComputeBudgetProgram.setComputeUnitPrice({
             microLamports: 1,
           }),
+        ];
+
+        const settleATAInfo = await connection.getAccountInfo(settleATA);
+
+        if (!settleATAInfo) {
+          instructions.push(
+            createAssociatedTokenAccountInstruction(
+              wallet.publicKey,
+              settleATA,
+              settleKeypair.publicKey,
+              mint,
+            ),
+          );
+        }
+
+        instructions.push(
           createTransferCheckedInstruction(
-            sourceAccount,
+            sourceATA,
             mint,
-            receiverAccount,
+            settleATA,
             wallet.publicKey,
             amount,
             decimals,
           ),
-        ];
+        );
 
         let tx: VersionedTransaction;
 
@@ -182,14 +203,17 @@ export function createPaymentHandler(
           tx = await wallet.updateTransaction(tx);
         }
 
-        const base64EncodedWireTransaction = getBase64EncodedWireTransaction({
-          messageBytes:
-            tx.message.serialize() as unknown as TransactionMessageBytes,
-          signatures: tx.signatures as unknown as SignaturesMap,
-        });
+        const settleSecretKey = Buffer.from(settleKeypair.secretKey).toString(
+          "base64",
+        );
+
+        console.log("@@@@@@@@@ sending transaction", tx);
+
+        const transactionSignature = await wallet.sendTransaction(tx);
 
         const payload = {
-          transaction: base64EncodedWireTransaction,
+          transactionSignature,
+          settleSecretKey,
         };
 
         return { payload };

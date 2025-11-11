@@ -1,8 +1,10 @@
 import "dotenv/config";
 import { logResponse } from "../logger";
 import { createCrossmintWallet } from "@faremeter/wallet-crossmint";
-import { createPaymentHandler } from "@faremeter/x-solana-settlement";
+import { createPaymentHandler } from "@faremeter/payment-solana/exactSettlement";
 import { wrap as wrapFetch } from "@faremeter/fetch";
+import { PublicKey, Connection, clusterApiUrl } from "@solana/web3.js";
+import { lookupKnownSPLToken } from "@faremeter/info/solana";
 
 // Address of your crossmint wallet
 const crossmintWallet = process.env.CROSSMINT_WALLET;
@@ -14,13 +16,35 @@ if (!crossmintWallet || !crossmintApi) {
   );
 }
 
+const network = "mainnet-beta";
+
+const splTokenName = "USDC";
+
+const usdcInfo = lookupKnownSPLToken(network, splTokenName);
+if (!usdcInfo) {
+  throw new Error(`couldn't look up SPLToken ${splTokenName} on ${network}!`);
+}
+
+console.log("using USDC info", usdcInfo);
+
+const connection = new Connection(clusterApiUrl(network));
+
+const mint = new PublicKey(usdcInfo.address);
+
 const wallet = await createCrossmintWallet(
-  "devnet",
+  network,
   crossmintApi,
   crossmintWallet,
 );
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [createPaymentHandler(wallet)],
+  handlers: [
+    createPaymentHandler(wallet, mint, connection, {
+      token: {
+        allowOwnerOffCurve: true,
+      },
+    }),
+  ],
+  retryCount: 0,
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

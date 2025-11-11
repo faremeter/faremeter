@@ -21,7 +21,7 @@ const payToKeypair = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYTO_KEYPAIR_PATH, "utf-8"))),
 );
 
-const network = "devnet";
+const network = "mainnet-beta";
 const splTokenName = "USDC";
 
 const usdcInfo = lookupKnownSPLToken(network, splTokenName);
@@ -38,20 +38,6 @@ app.get(
   await createMiddleware({
     facilitatorURL: "http://localhost:4000",
     accepts: [
-      // USDC xSolanaSettlement Payment
-      xSolanaSettlement({
-        network,
-        payTo,
-        asset: "USDC",
-        amount: "10000", // 0.01 USDC
-      }),
-      // Native SOL xSolanaSettlement Payment
-      xSolanaSettlement({
-        network,
-        payTo,
-        asset: "sol",
-        amount: "1000000",
-      }),
       // USDC Exact Payment
       x402Exact({
         network,

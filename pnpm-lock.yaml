@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@crossmint/wallets-sdk':
+      specifier: ^0.16.2
+      version: 0.16.2
     '@eslint/js':
       specifier: 9.34.0
       version: 9.34.0
@@ -836,6 +839,9 @@ importers:
 
   scripts:
     dependencies:
+      '@crossmint/wallets-sdk':
+        specifier: 'catalog:'
+        version: 0.16.2(@solana/web3.js@1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.22.4)
       '@faremeter/fetch':
         specifier: workspace:*
         version: link:../packages/fetch

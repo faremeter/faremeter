@@ -14,21 +14,40 @@ import {
   decompileTransactionMessage,
   getBase64Encoder,
   getCompiledTransactionMessageDecoder,
+  createTransactionMessage,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+  appendTransactionMessageInstructions,
+  signTransactionMessageWithSigners,
   type Rpc,
   type SolanaRpcApi,
+  type Transaction,
+  pipe,
 } from "@solana/kit";
 import {
   getBase64EncodedWireTransaction,
   getTransactionDecoder,
   partiallySignTransaction,
-  type Transaction,
 } from "@solana/transactions";
 import type { TransactionError } from "@solana/rpc-types";
-import { Keypair, type PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { type } from "arktype";
 import { isValidTransaction } from "./verify";
 import { logger } from "./logger";
 import { x402Scheme, generateMatcher } from "./common";
+import {
+  createAssociatedTokenAccountInstruction,
+  createTransferCheckedInstruction,
+  getAssociatedTokenAddressSync,
+  getMint,
+} from "@solana/spl-token";
+
+import {
+  TOKEN_PROGRAM_ADDRESS,
+  findAssociatedTokenPda,
+  getTransferCheckedInstruction,
+  getCloseAccountInstruction,
+} from "@solana-program/token";
 
 export const PaymentRequirementsExtra = type({
   feePayer: "string",
@@ -64,7 +83,10 @@ const TransactionString = type("string").pipe.try((tx) => {
 });
 
 export const PaymentPayload = type({
-  transaction: TransactionString,
+  transactionSignature: "string",
+  settleSecretKey: type("string.base64").pipe.try((s) =>
+    Uint8Array.from(Buffer.from(s, "base64")),
+  ),
 });
 
 export function transactionErrorToString(t: TransactionError) {
@@ -128,13 +150,13 @@ const sendTransaction = async (
   return { success: false, error: "Transaction confirmation timeout" };
 };
 
-export const createFacilitatorHandler = (
+export const createFacilitatorHandler = async (
   network: string,
   rpc: Rpc<SolanaRpcApi>,
   feePayerKeypair: Keypair,
   mint: PublicKey,
   config?: FacilitatorOptions,
-): FacilitatorHandler => {
+): Promise<FacilitatorHandler> => {
   const { isMatchingRequirement } = generateMatcher(network, mint.toBase58());
 
   const {
@@ -142,6 +164,8 @@ export const createFacilitatorHandler = (
     retryDelayMs = 1000,
     maxPriorityFee = 100_000,
   } = config ?? {};
+
+  const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
 
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return lookupX402Network(network).map((network) =>
@@ -159,7 +183,6 @@ export const createFacilitatorHandler = (
   const getRequirements = async (req: x402PaymentRequirements[]) => {
     const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
       .blockhash;
-    const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
     return req.filter(isMatchingRequirement).map((x) => {
       return {
         ...x,
@@ -186,46 +209,58 @@ export const createFacilitatorHandler = (
       return errorResponse(paymentPayload.summary);
     }
 
-    let transactionMessage, transaction;
-    try {
-      transaction = paymentPayload.transaction;
-      const compiledTransactionMessage =
-        getCompiledTransactionMessageDecoder().decode(transaction.messageBytes);
-      transactionMessage = decompileTransactionMessage(
-        compiledTransactionMessage,
-      );
-    } catch (cause) {
-      throw new Error("Failed to get compiled transaction message", { cause });
-    }
+    console.log("@@@@ REQUIREMENTS", requirements);
+    console.log("1!!! PAYMENT", payment);
+    console.log("1!!! PAYMENT PAYLOAD", paymentPayload);
 
-    try {
-      if (
-        !(await isValidTransaction(
-          transactionMessage,
-          requirements,
-          feePayerKeypair.publicKey,
-          maxPriorityFee,
-        ))
-      ) {
-        logger.error("Invalid transaction");
-        return errorResponse("Invalid transaction");
-      }
-    } catch (cause) {
-      throw new Error("Failed to validate transaction", { cause });
-    }
+    const feePayerSigner = await createKeyPairSignerFromBytes(
+      feePayerKeypair.secretKey,
+    );
+    const settleSigner = await createKeyPairSignerFromBytes(
+      paymentPayload.settleSecretKey,
+    );
 
-    let signedTransaction;
-    try {
-      const kitKeypair = await createKeyPairSignerFromBytes(
-        feePayerKeypair.secretKey,
-      );
-      signedTransaction = await partiallySignTransaction(
-        [kitKeypair.keyPair],
-        transaction,
-      );
-    } catch (cause) {
-      throw new Error("Failed to partially sign transaction", { cause });
-    }
+    const [settleATA] = await findAssociatedTokenPda({
+      mint: address(mint.toBase58()),
+      owner: settleSigner.address,
+      tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    });
+
+    const [payToATA] = await findAssociatedTokenPda({
+      mint: address(mint.toBase58()),
+      owner: address(requirements.payTo),
+      tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    });
+
+    const instructions = [
+      getTransferCheckedInstruction({
+        source: settleATA,
+        mint: address(mint.toBase58()),
+        destination: payToATA,
+        authority: settleSigner,
+        amount: BigInt(requirements.maxAmountRequired),
+        decimals: mintInfo.data.decimals,
+      }),
+      getCloseAccountInstruction({
+        account: settleATA,
+        destination: feePayerSigner.address,
+        owner: settleSigner,
+      }),
+    ];
+
+    const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+
+    // Build the transaction message
+    const transactionMessage = pipe(
+      createTransactionMessage({ version: 0 }),
+      (msg) => setTransactionMessageFeePayerSigner(feePayerSigner, msg),
+      (msg) =>
+        setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, msg),
+      (msg) => appendTransactionMessageInstructions(instructions, msg),
+    );
+
+    const signedTransaction =
+      await signTransactionMessageWithSigners(transactionMessage);
 
     let result;
     try {

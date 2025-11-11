@@ -14,6 +14,11 @@
       "require": "./dist/src/exact/index.js",
       "import": "./dist/src/exact/index.js",
       "types": "./dist/src/exact/index.d.ts"
+    },
+    "./exactSettlement": {
+      "require": "./dist/src/exactSettlement/index.js",
+      "import": "./dist/src/exactSettlement/index.js",
+      "types": "./dist/src/exactSettlement/index.d.ts"
     }
   },
   "devDependencies": {

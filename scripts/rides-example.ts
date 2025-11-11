@@ -7,4 +7,4 @@ await payer.addLocalWallet(process.env.EVM_PRIVATE_KEY);
 
 const req = await payer.fetch("http://localhost:3000/protected");
 
-logResponse(req);
+await logResponse(req);

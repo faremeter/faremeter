@@ -10,6 +10,7 @@ catalog:
   "@hono/node-server": 1.19.1
   "@logtape/logtape": 1.0.4
   "@solana-program/compute-budget": 0.8.0
+  "@solana-program/memo": ^0.10.0
   "@solana-program/token": 0.5.1
   "@solana/kit": 2.3.0
   "@solana/rpc-types": 3.0.3

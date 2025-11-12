@@ -49,6 +49,8 @@ import {
   getCloseAccountInstruction,
 } from "@solana-program/token";
 
+import { getAddMemoInstruction } from "@solana-program/memo";
+
 export const PaymentRequirementsExtra = type({
   feePayer: "string",
   decimals: "number?",
@@ -233,6 +235,7 @@ export const createFacilitatorHandler = async (
     });
 
     const instructions = [
+      getAddMemoInstruction({ memo: crypto.randomUUID() }),
       getTransferCheckedInstruction({
         source: settleATA,
         mint: address(mint.toBase58()),

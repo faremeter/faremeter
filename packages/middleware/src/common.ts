@@ -4,6 +4,8 @@ import {
   type x402PaymentPayload,
   x402PaymentRequiredResponse,
   x402PaymentHeaderToPayload,
+  x402VerifyRequest,
+  x402VerifyResponse,
   x402SettleRequest,
   x402SettleResponse,
 } from "@faremeter/types/x402";
@@ -118,6 +120,7 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
       paymentRequirements: x402PaymentRequirements;
       paymentPayload: x402PaymentPayload;
       settle: () => Promise<MiddlewareResponse | undefined>;
+      verify: () => Promise<MiddlewareResponse | undefined>;
     }) => Promise<MiddlewareResponse | undefined>;
   };
 
@@ -190,10 +193,43 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     }
   };
 
+  const verify = async () => {
+    const verifyRequest: x402VerifyRequest = {
+      x402Version: 1,
+      paymentHeader,
+      paymentRequirements,
+    };
+
+    const t = await fetch(`${args.facilitatorURL}/verify`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(verifyRequest),
+    });
+    const verifyResponse = x402VerifyResponse(await t.json());
+
+    if (isValidationError(verifyResponse)) {
+      const msg = `error getting response from facilitator for verification: ${verifyResponse.summary}`;
+      logger.error(msg);
+      throw new Error(msg);
+    }
+
+    if (!verifyResponse.isValid) {
+      logger.warning(
+        "failed to settle payment: {invalidReason}",
+        verifyResponse,
+      );
+      return sendPaymentRequired();
+    }
+  };
+
   return await args.body({
     paymentRequirements,
     paymentPayload,
     settle,
+    verify,
   });
 }
 

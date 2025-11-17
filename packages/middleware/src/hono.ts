@@ -5,7 +5,9 @@ import {
 } from "./common";
 import type { MiddlewareHandler } from "hono";
 
-type CreateMiddlewareArgs = CommonMiddlewareArgs;
+type CreateMiddlewareArgs = {
+  verifyBeforeSettle?: boolean;
+} & CommonMiddlewareArgs;
 
 export async function createMiddleware(
   args: CreateMiddlewareArgs,
@@ -24,13 +26,40 @@ export async function createMiddleware(
         c.status(status);
         return c.json(body);
       },
-      body: async ({ settle }) => {
-        const response = await settle();
-        if (response !== undefined) {
-          return response;
+      body: async ({ verify, settle }) => {
+        if (args.verifyBeforeSettle) {
+          // If configured, try to verify the transaction before running
+          // the next operation.
+          const verifyResult = await verify();
+          if (verifyResult !== undefined) {
+            return verifyResult;
+          }
+        } else {
+          // Otherwise just settle the payment beforehand, like we've
+          // done historically.
+          const settleResult = await settle();
+          if (settleResult !== undefined) {
+            return settleResult;
+          }
         }
 
         await next();
+
+        if (args.verifyBeforeSettle) {
+          // Close out the verification, by actually settling the
+          // payment.
+          const settleResult = await settle();
+          if (settleResult !== undefined) {
+            // If the settlement fails, we need to explicitly
+            // overwrite the downstream result.  See:
+            //
+            // https://hono.dev/docs/guides/middleware#modify-the-response-after-next
+            //
+
+            c.res = undefined;
+            c.res = settleResult;
+          }
+        }
       },
     });
   };

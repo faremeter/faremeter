@@ -117,7 +117,8 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
     body: (context: {
       paymentRequirements: x402PaymentRequirements;
       paymentPayload: x402PaymentPayload;
-    }) => Promise<MiddlewareResponse>;
+      settle: () => Promise<MiddlewareResponse | undefined>;
+    }) => Promise<MiddlewareResponse | undefined>;
   };
 
 export async function handleMiddlewareRequest<MiddlewareResponse>(
@@ -160,34 +161,40 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     return sendPaymentRequired();
   }
 
-  const settleRequest: x402SettleRequest = {
-    x402Version: 1,
-    paymentHeader,
-    paymentRequirements,
+  const settle = async () => {
+    const settleRequest: x402SettleRequest = {
+      x402Version: 1,
+      paymentHeader,
+      paymentRequirements,
+    };
+
+    const t = await fetch(`${args.facilitatorURL}/settle`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(settleRequest),
+    });
+    const settlementResponse = x402SettleResponse(await t.json());
+
+    if (isValidationError(settlementResponse)) {
+      const msg = `error getting response from facilitator for settlement: ${settlementResponse.summary}`;
+      logger.error(msg);
+      throw new Error(msg);
+    }
+
+    if (!settlementResponse.success) {
+      logger.warning("failed to settle payment: {error}", settlementResponse);
+      return sendPaymentRequired();
+    }
   };
 
-  const t = await fetch(`${args.facilitatorURL}/settle`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(settleRequest),
+  return await args.body({
+    paymentRequirements,
+    paymentPayload,
+    settle,
   });
-  const settlementResponse = x402SettleResponse(await t.json());
-
-  if (isValidationError(settlementResponse)) {
-    const msg = `error getting response from facilitator for settlement: ${settlementResponse.summary}`;
-    logger.error(msg);
-    throw new Error(msg);
-  }
-
-  if (!settlementResponse.success) {
-    logger.warning("failed to settle payment: {error}", settlementResponse);
-    return sendPaymentRequired();
-  }
-
-  return await args.body({ paymentRequirements, paymentPayload });
 }
 
 export type createPaymentRequiredResponseCacheOpts = AgedLRUCacheOpts & {

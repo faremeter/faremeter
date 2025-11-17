@@ -24,7 +24,12 @@ export async function createMiddleware(
         c.status(status);
         return c.json(body);
       },
-      body: async () => {
+      body: async ({ settle }) => {
+        const response = await settle();
+        if (response !== undefined) {
+          return response;
+        }
+
         await next();
       },
     });

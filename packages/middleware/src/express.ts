@@ -19,7 +19,12 @@ export async function createMiddleware(args: createMiddlewareArgs) {
       getPaymentRequiredResponse,
       getHeader: (key) => req.header(key),
       sendJSONResponse: (status, body) => res.status(status).json(body),
-      body: async () => {
+      body: async ({ settle }) => {
+        const response = await settle();
+        if (response !== undefined) {
+          return response;
+        }
+
         next();
       },
     });

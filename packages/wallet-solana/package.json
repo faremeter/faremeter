@@ -1,6 +1,15 @@
 {
   "name": "@faremeter/wallet-solana",
   "version": "0.12.0",
+  "description": "Solana keypair wallet adapter for Faremeter payments",
+  "keywords": [
+    "faremeter",
+    "typescript",
+    "sdk",
+    "api",
+    "x402",
+    "ai"
+  ],
   "license": "LGPL-3.0-only",
   "type": "module",
   "main": "dist/src/index.js",

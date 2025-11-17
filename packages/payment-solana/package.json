@@ -1,6 +1,15 @@
 {
   "name": "@faremeter/payment-solana",
   "version": "0.12.0",
+  "description": "Solana payment scheme implementations for x402 protocol (SPL token transfers)",
+  "keywords": [
+    "faremeter",
+    "typescript",
+    "sdk",
+    "api",
+    "x402",
+    "ai"
+  ],
   "license": "LGPL-3.0-only",
   "type": "module",
   "main": "dist/src/index.js",

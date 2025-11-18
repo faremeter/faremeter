@@ -66,14 +66,20 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       );
     }
 
-    const paymentPayload = x.x402PaymentHeaderToPayload(x402Req.paymentHeader);
+    let paymentPayload = x402Req.paymentPayload;
 
-    if (isValidationError(paymentPayload)) {
-      return sendVerifyError(
-        c,
-        400,
-        `couldn't validate x402 payload: ${paymentPayload.summary}`,
-      );
+    if (paymentPayload === undefined) {
+      const decodedHeader = x.x402PaymentHeaderToPayload(x402Req.paymentHeader);
+
+      if (isValidationError(decodedHeader)) {
+        return sendVerifyError(
+          c,
+          400,
+          `couldn't validate x402 payload: ${decodedHeader.summary}`,
+        );
+      }
+
+      paymentPayload = decodedHeader;
     }
 
     logger.debug("starting verifyment attempt for request: {*}", x402Req);
@@ -160,14 +166,20 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       );
     }
 
-    const paymentPayload = x.x402PaymentHeaderToPayload(x402Req.paymentHeader);
+    let paymentPayload = x402Req.paymentPayload;
 
-    if (isValidationError(paymentPayload)) {
-      return sendSettleError(
-        c,
-        400,
-        `couldn't validate x402 payload: ${paymentPayload.summary}`,
-      );
+    if (paymentPayload === undefined) {
+      const decodedHeader = x.x402PaymentHeaderToPayload(x402Req.paymentHeader);
+
+      if (isValidationError(decodedHeader)) {
+        return sendSettleError(
+          c,
+          400,
+          `couldn't validate x402 payload: ${decodedHeader.summary}`,
+        );
+      }
+
+      paymentPayload = decodedHeader;
     }
 
     logger.debug("starting settlement attempt for request: {*}", x402Req);

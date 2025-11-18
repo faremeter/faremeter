@@ -59,6 +59,51 @@ function generateGetAssociatedTokenAddressSyncRest(
   return [allowOwnerOffCurve, programId, associatedTokenProgramId] as const;
 }
 
+async function extractMetadata(args: {
+  connection: Connection | undefined;
+  mint: PublicKey;
+  requirements: x402PaymentRequirements;
+}) {
+  const { connection, mint, requirements } = args;
+
+  const extra = PaymentRequirementsExtra(requirements.extra);
+
+  if (isValidationError(extra)) {
+    throwValidationError("couldn't validate requirements extra field", extra);
+  }
+
+  let recentBlockhash: string;
+  if (extra.recentBlockhash !== undefined) {
+    recentBlockhash = extra.recentBlockhash;
+  } else if (connection !== undefined) {
+    recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+  } else {
+    throw new Error("couldn't get the latest Solana network block hash");
+  }
+
+  let decimals: number;
+
+  if (extra.decimals !== undefined) {
+    decimals = extra.decimals;
+  } else if (connection !== undefined) {
+    const mintInfo = await getMint(connection, mint);
+    decimals = mintInfo.decimals;
+  } else {
+    throw new Error("couldn't get the decimal information for the mint");
+  }
+
+  const payerKey = new PublicKey(extra.feePayer);
+  const payTo = new PublicKey(requirements.payTo);
+  const amount = Number(requirements.maxAmountRequired);
+  return {
+    recentBlockhash,
+    decimals,
+    payTo,
+    amount,
+    payerKey,
+  };
+}
+
 interface CreatePaymentHandlerOptions {
   token?: GetAssociatedTokenAddressSyncOptions;
 }
@@ -82,42 +127,13 @@ export function createPaymentHandler(
     accepts: x402PaymentRequirements[],
   ): Promise<PaymentExecer[]> => {
     const res = accepts.filter(isMatchingRequirement).map((requirements) => {
-      const extra = PaymentRequirementsExtra(requirements.extra);
-
-      if (isValidationError(extra)) {
-        throwValidationError(
-          "couldn't validate requirements extra field",
-          extra,
-        );
-      }
-
       const exec = async () => {
-        let recentBlockhash: string;
-
-        if (extra.recentBlockhash !== undefined) {
-          recentBlockhash = extra.recentBlockhash;
-        } else if (connection !== undefined) {
-          recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-        } else {
-          throw new Error("couldn't get the latest Solana network block hash");
-        }
-
-        let decimals: number;
-
-        if (extra.decimals !== undefined) {
-          decimals = extra.decimals;
-        } else if (connection !== undefined) {
-          const mintInfo = await getMint(connection, mint);
-          decimals = mintInfo.decimals;
-        } else {
-          throw new Error("couldn't get the decimal information for the mint");
-        }
-
-        const paymentRequirements = {
-          ...extra,
-          amount: Number(requirements.maxAmountRequired),
-          receiver: new PublicKey(requirements.payTo),
-        };
+        const { recentBlockhash, decimals, payTo, amount, payerKey } =
+          await extractMetadata({
+            connection,
+            mint,
+            requirements,
+          });
 
         const sourceAccount = getAssociatedTokenAddressSync(
           mint,
@@ -127,7 +143,7 @@ export function createPaymentHandler(
 
         const receiverAccount = getAssociatedTokenAddressSync(
           mint,
-          paymentRequirements.receiver,
+          payTo,
           ...getAssociatedTokenAddressSyncRest,
         );
 
@@ -143,7 +159,7 @@ export function createPaymentHandler(
             mint,
             receiverAccount,
             wallet.publicKey,
-            paymentRequirements.amount,
+            amount,
             decimals,
           ),
         ];
@@ -155,7 +171,7 @@ export function createPaymentHandler(
         } else {
           const message = new TransactionMessage({
             instructions,
-            payerKey: new PublicKey(paymentRequirements.feePayer),
+            payerKey,
             recentBlockhash,
           }).compileToV0Message();
 

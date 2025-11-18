@@ -136,22 +136,22 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     return sendPaymentRequired();
   }
 
-  const payload = x402PaymentHeaderToPayload(paymentHeader);
+  const paymentPayload = x402PaymentHeaderToPayload(paymentHeader);
 
-  if (isValidationError(payload)) {
-    logger.debug(`couldn't validate client payload: ${payload.summary}`);
+  if (isValidationError(paymentPayload)) {
+    logger.debug(`couldn't validate client payload: ${paymentPayload.summary}`);
     return sendPaymentRequired();
   }
 
   const paymentRequirements = findMatchingPaymentRequirements(
     paymentRequiredResponse.accepts,
-    payload,
+    paymentPayload,
   );
 
   if (!paymentRequirements) {
     logger.warning(
       `couldn't find matching payment requirements for payload`,
-      payload,
+      paymentPayload,
     );
     return sendPaymentRequired();
   }

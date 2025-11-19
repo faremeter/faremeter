@@ -190,6 +190,19 @@ export const createFacilitatorHandler = async (
     };
   };
 
+  const determinePaymentPayload = function (
+    requirements: x402PaymentRequirements,
+    possiblePayload: object,
+  ) {
+    const paymentPayload = PaymentPayloadTransaction(possiblePayload);
+
+    if (isValidationError(paymentPayload)) {
+      return paymentPayload;
+    }
+
+    return processTransaction(requirements, paymentPayload);
+  };
+
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return lookupX402Network(network).map((network) =>
       Promise.resolve({
@@ -232,13 +245,13 @@ export const createFacilitatorHandler = async (
       invalidReason,
     });
 
-    const paymentPayload = PaymentPayloadTransaction(payment.payload);
+    const processor = determinePaymentPayload(requirements, payment.payload);
 
-    if (isValidationError(paymentPayload)) {
-      return errorResponse(paymentPayload.summary);
+    if (isValidationError(processor)) {
+      return errorResponse(processor.summary);
     }
 
-    const verifyResult = await processTransaction(requirements, paymentPayload);
+    const verifyResult = await processor;
 
     if ("error" in verifyResult) {
       return errorResponse(verifyResult.error);
@@ -265,13 +278,13 @@ export const createFacilitatorHandler = async (
       };
     };
 
-    const paymentPayload = PaymentPayloadTransaction(payment.payload);
+    const processor = determinePaymentPayload(requirements, payment.payload);
 
-    if (isValidationError(paymentPayload)) {
-      return errorResponse(paymentPayload.summary);
+    if (isValidationError(processor)) {
+      return errorResponse(processor.summary);
     }
 
-    const verifyResult = await processTransaction(requirements, paymentPayload);
+    const verifyResult = await processor;
 
     if ("error" in verifyResult) {
       return errorResponse(verifyResult.error);

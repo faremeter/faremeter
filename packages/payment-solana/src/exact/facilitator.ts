@@ -131,6 +131,8 @@ export const createFacilitatorHandler = async (
     maxPriorityFee = 100_000,
   } = config ?? {};
 
+  const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
+
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return lookupX402Network(network).map((network) =>
       Promise.resolve({
@@ -147,7 +149,6 @@ export const createFacilitatorHandler = async (
   const getRequirements = async (req: x402PaymentRequirements[]) => {
     const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
       .blockhash;
-    const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
     return req.filter(isMatchingRequirement).map((x) => {
       return {
         ...x,

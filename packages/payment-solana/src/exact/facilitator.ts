@@ -136,7 +136,6 @@ export const createFacilitatorHandler = async (
 
   const processTransaction = async (
     requirements: x402PaymentRequirements,
-    payment: x402PaymentPayload,
     paymentPayload: PaymentPayloadTransaction,
   ) => {
     const errorResponse = (error: string) => ({ error });
@@ -184,27 +183,8 @@ export const createFacilitatorHandler = async (
           throw new Error("Failed to partially sign transaction", { cause });
         }
 
-        let result;
-        try {
-          result = await sendTransaction(
-            rpc,
-            signedTransaction,
-            maxRetries,
-            retryDelayMs,
-          );
-        } catch (cause) {
-          throw new Error("Failed to send transaction", { cause });
-        }
-
-        if (!result.success) {
-          return errorResponse(result.error);
-        }
-
         return {
-          success: true,
-          error: null,
-          txHash: result.signature,
-          networkId: payment.network,
+          signedTransaction,
         };
       },
     };
@@ -258,11 +238,7 @@ export const createFacilitatorHandler = async (
       return errorResponse(paymentPayload.summary);
     }
 
-    const verifyResult = await processTransaction(
-      requirements,
-      payment,
-      paymentPayload,
-    );
+    const verifyResult = await processTransaction(requirements, paymentPayload);
 
     if ("error" in verifyResult) {
       return errorResponse(verifyResult.error);
@@ -295,23 +271,36 @@ export const createFacilitatorHandler = async (
       return errorResponse(paymentPayload.summary);
     }
 
-    const verifyResult = await processTransaction(
-      requirements,
-      payment,
-      paymentPayload,
-    );
+    const verifyResult = await processTransaction(requirements, paymentPayload);
 
     if ("error" in verifyResult) {
       return errorResponse(verifyResult.error);
     }
 
-    const settleResult = await verifyResult.settle();
+    const { signedTransaction } = await verifyResult.settle();
 
-    if ("error" in settleResult && settleResult.error !== null) {
-      return errorResponse(settleResult.error);
+    let result;
+    try {
+      result = await sendTransaction(
+        rpc,
+        signedTransaction,
+        maxRetries,
+        retryDelayMs,
+      );
+    } catch (cause) {
+      throw new Error("Failed to send transaction", { cause });
     }
 
-    return settleResult;
+    if (!result.success) {
+      return errorResponse(result.error);
+    }
+
+    return {
+      success: true,
+      error: null,
+      txHash: result.signature,
+      networkId: payment.network,
+    };
   };
 
   return {

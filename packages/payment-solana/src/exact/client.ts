@@ -59,6 +59,12 @@ function generateGetAssociatedTokenAddressSyncRest(
   return [allowOwnerOffCurve, programId, associatedTokenProgramId] as const;
 }
 
+const PaymentMode = {
+  ToSpec: "toSpec",
+} as const;
+
+type PaymentMode = (typeof PaymentMode)[keyof typeof PaymentMode];
+
 async function extractMetadata(args: {
   connection: Connection | undefined;
   mint: PublicKey;
@@ -95,12 +101,14 @@ async function extractMetadata(args: {
   const payerKey = new PublicKey(extra.feePayer);
   const payTo = new PublicKey(requirements.payTo);
   const amount = Number(requirements.maxAmountRequired);
+  const paymentMode = PaymentMode.ToSpec;
   return {
     recentBlockhash,
     decimals,
     payTo,
     amount,
     payerKey,
+    paymentMode,
   };
 }
 
@@ -128,24 +136,18 @@ export function createPaymentHandler(
   ): Promise<PaymentExecer[]> => {
     const res = accepts.filter(isMatchingRequirement).map((requirements) => {
       const exec = async () => {
-        const { recentBlockhash, decimals, payTo, amount, payerKey } =
-          await extractMetadata({
-            connection,
-            mint,
-            requirements,
-          });
-
-        const sourceAccount = getAssociatedTokenAddressSync(
-          mint,
-          wallet.publicKey,
-          ...getAssociatedTokenAddressSyncRest,
-        );
-
-        const receiverAccount = getAssociatedTokenAddressSync(
-          mint,
+        const {
+          recentBlockhash,
+          decimals,
           payTo,
-          ...getAssociatedTokenAddressSyncRest,
-        );
+          amount,
+          payerKey,
+          paymentMode,
+        } = await extractMetadata({
+          connection,
+          mint,
+          requirements,
+        });
 
         const instructions = [
           ComputeBudgetProgram.setComputeUnitLimit({
@@ -154,15 +156,36 @@ export function createPaymentHandler(
           ComputeBudgetProgram.setComputeUnitPrice({
             microLamports: 1,
           }),
-          createTransferCheckedInstruction(
-            sourceAccount,
-            mint,
-            receiverAccount,
-            wallet.publicKey,
-            amount,
-            decimals,
-          ),
         ];
+
+        const sourceAccount = getAssociatedTokenAddressSync(
+          mint,
+          wallet.publicKey,
+          ...getAssociatedTokenAddressSyncRest,
+        );
+
+        switch (paymentMode) {
+          case PaymentMode.ToSpec: {
+            const receiverAccount = getAssociatedTokenAddressSync(
+              mint,
+              payTo,
+              ...getAssociatedTokenAddressSyncRest,
+            );
+
+            instructions.push(
+              createTransferCheckedInstruction(
+                sourceAccount,
+                mint,
+                receiverAccount,
+                wallet.publicKey,
+                amount,
+                decimals,
+              ),
+            );
+
+            break;
+          }
+        }
 
         let tx: VersionedTransaction;
 

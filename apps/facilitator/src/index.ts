@@ -25,9 +25,9 @@ await configure({
 });
 
 const solanaHandlers =
-  argsFromEnv(["ADMIN_KEYPAIR_PATH"], (...envVars) =>
+  (await argsFromEnv(["ADMIN_KEYPAIR_PATH"], (...envVars) =>
     solana.createHandlers("devnet", ...envVars),
-  ) ?? [];
+  )) ?? [];
 
 const evmHandlers =
   (await argsFromEnv(["EVM_PRIVATE_KEY"], async (privateKey) => [

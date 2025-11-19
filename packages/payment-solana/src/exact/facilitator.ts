@@ -116,13 +116,13 @@ const sendTransaction = async (
   return { success: false, error: "Transaction confirmation timeout" };
 };
 
-export const createFacilitatorHandler = (
+export const createFacilitatorHandler = async (
   network: string,
   rpc: Rpc<SolanaRpcApi>,
   feePayerKeypair: Keypair,
   mint: PublicKey,
   config?: FacilitatorOptions,
-): FacilitatorHandler => {
+): Promise<FacilitatorHandler> => {
   const { isMatchingRequirement } = generateMatcher(network, mint.toBase58());
 
   const {

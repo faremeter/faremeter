@@ -133,35 +133,6 @@ export const createFacilitatorHandler = async (
 
   const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
 
-  const getSupported = (): Promise<x402SupportedKind>[] => {
-    return lookupX402Network(network).map((network) =>
-      Promise.resolve({
-        x402Version: 1,
-        scheme: x402Scheme,
-        network,
-        extra: {
-          feePayer: feePayerKeypair.publicKey.toString(),
-        },
-      }),
-    );
-  };
-
-  const getRequirements = async (req: x402PaymentRequirements[]) => {
-    const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
-      .blockhash;
-    return req.filter(isMatchingRequirement).map((x) => {
-      return {
-        ...x,
-        asset: mint.toBase58(),
-        extra: {
-          feePayer: feePayerKeypair.publicKey.toString(),
-          decimals: mintInfo.data.decimals,
-          recentBlockhash,
-        },
-      };
-    });
-  };
-
   const processTransaction = async (
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
@@ -240,6 +211,35 @@ export const createFacilitatorHandler = async (
         };
       },
     };
+  };
+
+  const getSupported = (): Promise<x402SupportedKind>[] => {
+    return lookupX402Network(network).map((network) =>
+      Promise.resolve({
+        x402Version: 1,
+        scheme: x402Scheme,
+        network,
+        extra: {
+          feePayer: feePayerKeypair.publicKey.toString(),
+        },
+      }),
+    );
+  };
+
+  const getRequirements = async (req: x402PaymentRequirements[]) => {
+    const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
+      .blockhash;
+    return req.filter(isMatchingRequirement).map((x) => {
+      return {
+        ...x,
+        asset: mint.toBase58(),
+        extra: {
+          feePayer: feePayerKeypair.publicKey.toString(),
+          decimals: mintInfo.data.decimals,
+          recentBlockhash,
+        },
+      };
+    });
   };
 
   const handleVerify = async (

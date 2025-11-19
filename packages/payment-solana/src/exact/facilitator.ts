@@ -161,7 +161,8 @@ export const createFacilitatorHandler = async (
       };
     });
   };
-  const verifyTransaction = async (
+
+  const processTransaction = async (
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
   ) => {
@@ -201,7 +202,43 @@ export const createFacilitatorHandler = async (
     }
 
     return {
-      transaction,
+      settle: async () => {
+        let signedTransaction;
+        try {
+          const kitKeypair = await createKeyPairSignerFromBytes(
+            feePayerKeypair.secretKey,
+          );
+          signedTransaction = await partiallySignTransaction(
+            [kitKeypair.keyPair],
+            transaction,
+          );
+        } catch (cause) {
+          throw new Error("Failed to partially sign transaction", { cause });
+        }
+
+        let result;
+        try {
+          result = await sendTransaction(
+            rpc,
+            signedTransaction,
+            maxRetries,
+            retryDelayMs,
+          );
+        } catch (cause) {
+          throw new Error("Failed to send transaction", { cause });
+        }
+
+        if (!result.success) {
+          return errorResponse(result.error);
+        }
+
+        return {
+          success: true,
+          error: null,
+          txHash: result.signature,
+          networkId: payment.network,
+        };
+      },
     };
   };
 
@@ -213,7 +250,7 @@ export const createFacilitatorHandler = async (
       return null;
     }
 
-    const verifyResult = await verifyTransaction(requirements, payment);
+    const verifyResult = await processTransaction(requirements, payment);
 
     if ("error" in verifyResult) {
       return { isValid: false, invalidReason: verifyResult.error };
@@ -240,49 +277,19 @@ export const createFacilitatorHandler = async (
       };
     };
 
-    const verifyResult = await verifyTransaction(requirements, payment);
+    const verifyResult = await processTransaction(requirements, payment);
 
     if ("error" in verifyResult) {
       return errorResponse(verifyResult.error);
     }
 
-    const { transaction } = verifyResult;
+    const settleResult = await verifyResult.settle();
 
-    let signedTransaction;
-    try {
-      const kitKeypair = await createKeyPairSignerFromBytes(
-        feePayerKeypair.secretKey,
-      );
-      signedTransaction = await partiallySignTransaction(
-        [kitKeypair.keyPair],
-        transaction,
-      );
-    } catch (cause) {
-      throw new Error("Failed to partially sign transaction", { cause });
+    if ("error" in settleResult && settleResult.error !== null) {
+      return errorResponse(settleResult.error);
     }
 
-    let result;
-    try {
-      result = await sendTransaction(
-        rpc,
-        signedTransaction,
-        maxRetries,
-        retryDelayMs,
-      );
-    } catch (cause) {
-      throw new Error("Failed to send transaction", { cause });
-    }
-
-    if (!result.success) {
-      return errorResponse(result.error);
-    }
-
-    return {
-      success: true,
-      error: null,
-      txHash: result.signature,
-      networkId: payment.network,
-    };
+    return settleResult;
   };
 
   return {

@@ -51,9 +51,10 @@ const TransactionString = type("string").pipe.try((tx) => {
   return decoder.decode(transactionBytes);
 });
 
-export const PaymentPayload = type({
+export const PaymentPayloadTransaction = type({
   transaction: TransactionString,
 });
+export type PaymentPayloadTransaction = typeof PaymentPayloadTransaction.infer;
 
 export function transactionErrorToString(t: TransactionError) {
   if (typeof t == "string") {
@@ -136,13 +137,9 @@ export const createFacilitatorHandler = async (
   const processTransaction = async (
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
+    paymentPayload: PaymentPayloadTransaction,
   ) => {
     const errorResponse = (error: string) => ({ error });
-
-    const paymentPayload = PaymentPayload(payment.payload);
-    if (isValidationError(paymentPayload)) {
-      return errorResponse(paymentPayload.summary);
-    }
 
     let transactionMessage, transaction;
     try {
@@ -250,10 +247,25 @@ export const createFacilitatorHandler = async (
       return null;
     }
 
-    const verifyResult = await processTransaction(requirements, payment);
+    const errorResponse = (invalidReason: string) => ({
+      isValid: false,
+      invalidReason,
+    });
+
+    const paymentPayload = PaymentPayloadTransaction(payment.payload);
+
+    if (isValidationError(paymentPayload)) {
+      return errorResponse(paymentPayload.summary);
+    }
+
+    const verifyResult = await processTransaction(
+      requirements,
+      payment,
+      paymentPayload,
+    );
 
     if ("error" in verifyResult) {
-      return { isValid: false, invalidReason: verifyResult.error };
+      return errorResponse(verifyResult.error);
     }
 
     return { isValid: true };
@@ -277,7 +289,17 @@ export const createFacilitatorHandler = async (
       };
     };
 
-    const verifyResult = await processTransaction(requirements, payment);
+    const paymentPayload = PaymentPayloadTransaction(payment.payload);
+
+    if (isValidationError(paymentPayload)) {
+      return errorResponse(paymentPayload.summary);
+    }
+
+    const verifyResult = await processTransaction(
+      requirements,
+      payment,
+      paymentPayload,
+    );
 
     if ("error" in verifyResult) {
       return errorResponse(verifyResult.error);

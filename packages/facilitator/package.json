@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/facilitator",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Facilitator server implementation for x402 protocol payment settlement and validation",
   "keywords": [
     "faremeter",

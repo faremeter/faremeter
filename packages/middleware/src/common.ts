@@ -168,6 +168,7 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     const settleRequest: x402SettleRequest = {
       x402Version: 1,
       paymentHeader,
+      paymentPayload,
       paymentRequirements,
     };
 
@@ -197,6 +198,7 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     const verifyRequest: x402VerifyRequest = {
       x402Version: 1,
       paymentHeader,
+      paymentPayload,
       paymentRequirements,
     };
 

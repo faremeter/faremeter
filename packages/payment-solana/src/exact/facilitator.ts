@@ -1,8 +1,8 @@
-import type {
-  x402PaymentPayload,
+import {
   x402PaymentRequirements,
-  x402SettleResponse,
-  x402SupportedKind,
+  type x402PaymentPayload,
+  type x402SettleResponse,
+  type x402SupportedKind,
 } from "@faremeter/types/x402";
 import { isValidationError } from "@faremeter/types";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
@@ -14,26 +14,49 @@ import {
   decompileTransactionMessage,
   getBase64Encoder,
   getCompiledTransactionMessageDecoder,
+  createTransactionMessage,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+  appendTransactionMessageInstructions,
+  signTransactionMessageWithSigners,
+  pipe,
   type Rpc,
   type SolanaRpcApi,
+  type Transaction,
 } from "@solana/kit";
 import {
   getBase64EncodedWireTransaction,
   getTransactionDecoder,
   partiallySignTransaction,
-  type Transaction,
 } from "@solana/transactions";
 import type { TransactionError } from "@solana/rpc-types";
-import { Keypair, type PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { type } from "arktype";
 import { isValidTransaction } from "./verify";
 import { logger } from "./logger";
 import { x402Scheme, generateMatcher } from "./common";
 
+import {
+  TOKEN_PROGRAM_ADDRESS,
+  findAssociatedTokenPda,
+  getTransferCheckedInstruction,
+  getCloseAccountInstruction,
+} from "@solana-program/token";
+
+import { getAddMemoInstruction } from "@solana-program/memo";
+
+export const PaymentRequirementsExtraFeatures = type({
+  xSettlementAccountSupported: "boolean?",
+});
+
+export type PaymentRequirementsExtraFeatures =
+  typeof PaymentRequirementsExtraFeatures.infer;
+
 export const PaymentRequirementsExtra = type({
   feePayer: "string",
   decimals: "number?",
   recentBlockhash: "string?",
+  features: PaymentRequirementsExtraFeatures.optional(),
 });
 
 interface FacilitatorOptions {
@@ -42,6 +65,9 @@ interface FacilitatorOptions {
   // Maximum priority fee in lamports
   // Calculated as: (CU limit * CU price in microlamports) / 1,000,000
   maxPriorityFee?: number;
+  features?: {
+    enableSettlementAccounts?: boolean;
+  };
 }
 
 const TransactionString = type("string").pipe.try((tx) => {
@@ -55,6 +81,15 @@ export const PaymentPayloadTransaction = type({
   transaction: TransactionString,
 });
 export type PaymentPayloadTransaction = typeof PaymentPayloadTransaction.infer;
+
+export const PaymentPayloadSettlementAccount = type({
+  transactionSignature: "string",
+  settleSecretKey: type("string.base64").pipe.try((s) =>
+    Uint8Array.from(Buffer.from(s, "base64")),
+  ),
+});
+export type PaymentPayloadSettlementAccount =
+  typeof PaymentPayloadSettlementAccount.infer;
 
 export function transactionErrorToString(t: TransactionError) {
   if (typeof t == "string") {
@@ -134,6 +169,107 @@ export const createFacilitatorHandler = async (
 
   const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
 
+  const features: PaymentRequirementsExtraFeatures = {};
+
+  if (config?.features?.enableSettlementAccounts) {
+    features.xSettlementAccountSupported = true;
+  }
+
+  const processSettlementAccount = async (
+    requirements: x402PaymentRequirements,
+    paymentPayload: PaymentPayloadSettlementAccount,
+  ) => {
+    const errorResponse = (error: string) => ({ error });
+
+    // XXX - It would be nicer to do this check in the arktype
+    // validation.  Unfortunately getting match to generate things
+    // properly turned out to create excessive TypeScript types
+    // that caused tsc to error out.
+    if (!config?.features?.enableSettlementAccounts) {
+      return errorResponse("settlement accounts are not accepted");
+    }
+
+    const settleSigner = await createKeyPairSignerFromBytes(
+      paymentPayload.settleSecretKey,
+    );
+
+    const settleOwner = settleSigner.address;
+
+    const [settleATA] = await findAssociatedTokenPda({
+      mint: address(mint.toBase58()),
+      owner: settleOwner,
+      tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    });
+
+    const { value: accountBalance } = await rpc
+      .getTokenAccountBalance(settleATA, { commitment: "confirmed" })
+      .send();
+
+    logger.debug("settlement account info: {*}", {
+      settleOwner,
+      settleATA,
+      accountBalance,
+    });
+
+    if (
+      BigInt(accountBalance.amount) !== BigInt(requirements.maxAmountRequired)
+    ) {
+      return errorResponse(
+        "settlement account balance didn't match payment requirements",
+      );
+    }
+
+    const settle = async () => {
+      const feePayerSigner = await createKeyPairSignerFromBytes(
+        feePayerKeypair.secretKey,
+      );
+
+      const [payToATA] = await findAssociatedTokenPda({
+        mint: address(mint.toBase58()),
+        owner: address(requirements.payTo),
+        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+      });
+
+      const instructions = [
+        getAddMemoInstruction({ memo: crypto.randomUUID() }),
+        getTransferCheckedInstruction({
+          source: settleATA,
+          mint: address(mint.toBase58()),
+          destination: payToATA,
+          authority: settleSigner,
+          amount: BigInt(requirements.maxAmountRequired),
+          decimals: mintInfo.data.decimals,
+        }),
+        getCloseAccountInstruction({
+          account: settleATA,
+          destination: feePayerSigner.address,
+          owner: settleSigner,
+        }),
+      ];
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+
+      // Build the transaction message
+      const transactionMessage = pipe(
+        createTransactionMessage({ version: 0 }),
+        (msg) => setTransactionMessageFeePayerSigner(feePayerSigner, msg),
+        (msg) =>
+          setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, msg),
+        (msg) => appendTransactionMessageInstructions(instructions, msg),
+      );
+
+      const signedTransaction =
+        await signTransactionMessageWithSigners(transactionMessage);
+
+      return {
+        signedTransaction,
+      };
+    };
+
+    return {
+      settle,
+    };
+  };
+
   const processTransaction = async (
     requirements: x402PaymentRequirements,
     paymentPayload: PaymentPayloadTransaction,
@@ -194,13 +330,30 @@ export const createFacilitatorHandler = async (
     requirements: x402PaymentRequirements,
     possiblePayload: object,
   ) {
-    const paymentPayload = PaymentPayloadTransaction(possiblePayload);
+    // XXX - It would be great to do this automatically using arktype,
+    // but because of the overlapping input types and the morphs, this
+    // ends up being more annoying than you'd think.  So instead, use
+    // hints to do the correct validation.
+    if (
+      config?.features?.enableSettlementAccounts &&
+      "settleSecretKey" in possiblePayload
+    ) {
+      const paymentPayload = PaymentPayloadSettlementAccount(possiblePayload);
 
-    if (isValidationError(paymentPayload)) {
-      return paymentPayload;
+      if (isValidationError(paymentPayload)) {
+        return paymentPayload;
+      }
+
+      return processSettlementAccount(requirements, paymentPayload);
+    } else {
+      const paymentPayload = PaymentPayloadTransaction(possiblePayload);
+
+      if (isValidationError(paymentPayload)) {
+        return paymentPayload;
+      }
+
+      return processTransaction(requirements, paymentPayload);
     }
-
-    return processTransaction(requirements, paymentPayload);
   };
 
   const getSupported = (): Promise<x402SupportedKind>[] => {
@@ -211,6 +364,7 @@ export const createFacilitatorHandler = async (
         network,
         extra: {
           feePayer: feePayerKeypair.publicKey.toString(),
+          features,
         },
       }),
     );
@@ -227,6 +381,7 @@ export const createFacilitatorHandler = async (
           feePayer: feePayerKeypair.publicKey.toString(),
           decimals: mintInfo.data.decimals,
           recentBlockhash,
+          features,
         },
       };
     });

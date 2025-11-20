@@ -6,6 +6,7 @@ import type {
   RequestContext,
 } from "@faremeter/types/client";
 import {
+  createAssociatedTokenAccountIdempotentInstruction,
   createTransferCheckedInstruction,
   getAssociatedTokenAddressSync,
   getMint,
@@ -22,6 +23,7 @@ import {
   TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
+  Keypair,
 } from "@solana/web3.js";
 import { PaymentRequirementsExtra } from "./facilitator";
 import { generateMatcher } from "./common";
@@ -61,6 +63,7 @@ function generateGetAssociatedTokenAddressSyncRest(
 
 const PaymentMode = {
   ToSpec: "toSpec",
+  SettlementAccount: "settlementAccount",
 } as const;
 
 type PaymentMode = (typeof PaymentMode)[keyof typeof PaymentMode];
@@ -69,8 +72,10 @@ async function extractMetadata(args: {
   connection: Connection | undefined;
   mint: PublicKey;
   requirements: x402PaymentRequirements;
+  options: CreatePaymentHandlerOptions | undefined;
+  wallet: Wallet;
 }) {
-  const { connection, mint, requirements } = args;
+  const { connection, mint, requirements, wallet, options } = args;
 
   const extra = PaymentRequirementsExtra(requirements.extra);
 
@@ -101,7 +106,16 @@ async function extractMetadata(args: {
   const payerKey = new PublicKey(extra.feePayer);
   const payTo = new PublicKey(requirements.payTo);
   const amount = Number(requirements.maxAmountRequired);
-  const paymentMode = PaymentMode.ToSpec;
+  let paymentMode: PaymentMode = PaymentMode.ToSpec;
+
+  if (
+    options?.features?.enableSettlementAccounts &&
+    extra.features?.xSettlementAccountSupported &&
+    wallet.sendTransaction
+  ) {
+    paymentMode = PaymentMode.SettlementAccount;
+  }
+
   return {
     recentBlockhash,
     decimals,
@@ -114,6 +128,9 @@ async function extractMetadata(args: {
 
 interface CreatePaymentHandlerOptions {
   token?: GetAssociatedTokenAddressSyncOptions;
+  features?: {
+    enableSettlementAccounts?: boolean;
+  };
 }
 
 export function createPaymentHandler(
@@ -147,6 +164,8 @@ export function createPaymentHandler(
           connection,
           mint,
           requirements,
+          wallet,
+          options,
         });
 
         const instructions = [
@@ -183,39 +202,100 @@ export function createPaymentHandler(
               ),
             );
 
-            break;
+            let tx: VersionedTransaction;
+
+            if (wallet.buildTransaction) {
+              tx = await wallet.buildTransaction(instructions, recentBlockhash);
+            } else {
+              const message = new TransactionMessage({
+                instructions,
+                payerKey,
+                recentBlockhash,
+              }).compileToV0Message();
+
+              tx = new VersionedTransaction(message);
+            }
+
+            if (wallet.updateTransaction) {
+              tx = await wallet.updateTransaction(tx);
+            }
+
+            const base64EncodedWireTransaction =
+              getBase64EncodedWireTransaction({
+                messageBytes:
+                  tx.message.serialize() as unknown as TransactionMessageBytes,
+                signatures: tx.signatures as unknown as SignaturesMap,
+              });
+
+            const payload = {
+              transaction: base64EncodedWireTransaction,
+            };
+
+            return { payload };
+          }
+
+          case PaymentMode.SettlementAccount: {
+            const settleKeypair = Keypair.generate();
+            const settleATA = getAssociatedTokenAddressSync(
+              mint,
+              settleKeypair.publicKey,
+              ...getAssociatedTokenAddressSyncRest,
+            );
+            instructions.push(
+              createAssociatedTokenAccountIdempotentInstruction(
+                wallet.publicKey,
+                settleATA,
+                settleKeypair.publicKey,
+                mint,
+              ),
+              createTransferCheckedInstruction(
+                sourceAccount,
+                mint,
+                settleATA,
+                wallet.publicKey,
+                amount,
+                decimals,
+              ),
+            );
+
+            let tx: VersionedTransaction;
+
+            if (wallet.buildTransaction) {
+              tx = await wallet.buildTransaction(instructions, recentBlockhash);
+            } else {
+              const message = new TransactionMessage({
+                instructions,
+                payerKey,
+                recentBlockhash,
+              }).compileToV0Message();
+
+              tx = new VersionedTransaction(message);
+            }
+
+            if (wallet.updateTransaction) {
+              tx = await wallet.updateTransaction(tx);
+            }
+
+            if (!wallet.sendTransaction) {
+              throw new Error(
+                "wallet must support sending transactions to use settlement accounts with exact",
+              );
+            }
+
+            const transactionSignature = await wallet.sendTransaction(tx);
+
+            const settleSecretKey = Buffer.from(
+              settleKeypair.secretKey,
+            ).toString("base64");
+
+            const payload = {
+              settleSecretKey,
+              transactionSignature,
+            };
+
+            return { payload };
           }
         }
-
-        let tx: VersionedTransaction;
-
-        if (wallet.buildTransaction) {
-          tx = await wallet.buildTransaction(instructions, recentBlockhash);
-        } else {
-          const message = new TransactionMessage({
-            instructions,
-            payerKey,
-            recentBlockhash,
-          }).compileToV0Message();
-
-          tx = new VersionedTransaction(message);
-        }
-
-        if (wallet.updateTransaction) {
-          tx = await wallet.updateTransaction(tx);
-        }
-
-        const base64EncodedWireTransaction = getBase64EncodedWireTransaction({
-          messageBytes:
-            tx.message.serialize() as unknown as TransactionMessageBytes,
-          signatures: tx.signatures as unknown as SignaturesMap,
-        });
-
-        const payload = {
-          transaction: base64EncodedWireTransaction,
-        };
-
-        return { payload };
       };
 
       return {

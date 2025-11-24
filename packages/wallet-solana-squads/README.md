@@ -18,6 +18,17 @@ pnpm install @faremeter/wallet-solana-squads
 ## API Reference
 
 <!-- TSDOC_START -->
+
+## Functions
+
+- [createSquadsWallet](#createsquadswallet)
+
+### createSquadsWallet
+
+| Function             | Type                                                                                                                                                                                                                                           |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createSquadsWallet` | `(network: string, connection: Connection, keypair: Keypair, multisigPda: PublicKey, squadMember: Keypair) => Promise<{ network: string; publicKey: PublicKey; buildTransaction: (instructions: TransactionInstruction[]) => Promise<...>; }>` |
+
 <!-- TSDOC_END -->
 
 ## Related Packages

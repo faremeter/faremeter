@@ -18,6 +18,30 @@ pnpm install @faremeter/wallet-evm
 ## API Reference
 
 <!-- TSDOC_START -->
+
+## Functions
+
+- [createLocalWallet](#createlocalwallet)
+
+### createLocalWallet
+
+| Function            | Type                                                           |
+| ------------------- | -------------------------------------------------------------- |
+| `createLocalWallet` | `(chain: ChainInfo, privateKey: string) => Promise<EvmWallet>` |
+
+## Interfaces
+
+- [EvmWallet](#evmwallet)
+
+### EvmWallet
+
+| Property  | Type                                                                                                                                                                                                                                                                                                                                        | Description |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `chain`   | `ChainInfo`                                                                                                                                                                                                                                                                                                                                 |             |
+| `address` | `0x${string}`                                                                                                                                                                                                                                                                                                                               |             |
+| `client`  | `{ account: Account or undefined; batch?: { multicall?: boolean or { batchSize?: number or undefined; deployless?: boolean or undefined; wait?: number or undefined; } or undefined; } or undefined; ... 34 more ...; extend: <const client extends { ...; } and ExactPartial<...>>(fn: (client: Client<...>) => client) => Client<...>...` |             |
+| `account` | `{ address: `0x${string}`; nonceManager?: NonceManager or undefined; sign: (parameters: { hash: `0x${string}`; }) => Promise<`0x${string}`>; signAuthorization: (parameters: AuthorizationRequest) => Promise<...>; ... 5 more ...; type: "local"; }`                                                                                       |             |
+
 <!-- TSDOC_END -->
 
 ## Related Packages

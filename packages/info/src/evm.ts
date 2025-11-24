@@ -80,6 +80,16 @@ const knownAssets = {
         address: "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
         contractName: "USDC",
       },
+      // Monad Mainnet
+      "eip155:143": {
+        address: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+        contractName: "USDC",
+      },
+      // Monad Testnet
+      "eip155:10143": {
+        address: "0x534b2f3A21130d7a60830c2Df862319e593943A3",
+        contractName: "USDC",
+      },
     },
     toUnit: (v: UnitInput) => v.toString(),
   },

@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/wallet-ledger",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Ledger hardware wallet integration for secure Faremeter payments on Solana and EVM",
   "keywords": [
     "faremeter",

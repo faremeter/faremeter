@@ -39,7 +39,17 @@ const skaleHandlers =
     await createEVMHandler(evmChains.skaleEuropaTestnet, privateKey, "USDC"),
   ])) ?? [];
 
-const handlers = [...solanaHandlers, ...evmHandlers, ...skaleHandlers];
+const monadHandlers =
+  (await argsFromEnv(["EVM_PRIVATE_KEY"], async (privateKey) => [
+    await createEVMHandler(evmChains.monadTestnet, privateKey, "USDC"),
+  ])) ?? [];
+
+const handlers = [
+  ...solanaHandlers,
+  ...evmHandlers,
+  ...skaleHandlers,
+  ...monadHandlers,
+];
 
 if (handlers.length === 0) {
   logger.error(

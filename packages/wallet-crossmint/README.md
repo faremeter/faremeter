@@ -18,6 +18,17 @@ pnpm install @faremeter/wallet-crossmint
 ## API Reference
 
 <!-- TSDOC_START -->
+
+## Functions
+
+- [createCrossmintWallet](#createcrossmintwallet)
+
+### createCrossmintWallet
+
+| Function                | Type                                                                                                                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `createCrossmintWallet` | `(network: string, crossmintApiKey: string, crossmintWalletAddress: string) => Promise<{ network: string; publicKey: PublicKey; sendTransaction: (tx: VersionedTransaction) => Promise<...>; }>` |
+
 <!-- TSDOC_END -->
 
 ## Related Packages

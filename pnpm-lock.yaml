@@ -93,6 +93,9 @@ catalogs:
     tsc-esm-fix:
       specifier: 3.1.2
       version: 3.1.2
+    tsdoc-markdown:
+      specifier: ^1.4.1
+      version: 1.4.1
     tsx:
       specifier: 4.20.5
       version: 4.20.5
@@ -132,6 +135,9 @@ importers:
       tap:
         specifier: 'catalog:'
         version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react@18.3.1)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      tsdoc-markdown:
+        specifier: 'catalog:'
+        version: 1.4.1(typescript@5.9.3)
       tsx:
         specifier: 'catalog:'
         version: 4.20.5
@@ -4199,6 +4205,12 @@ packages:
     resolution: {integrity: sha512-1/OpZssMcEp2ae6DyZV+yvDviofuCdDf7dEWEaBvm/ac8vtS04lFyl0LVs8LQE56vjKHytgzVjPIL9udM4QuNg==}
     engines: {node: '>=18.0.0'}
     hasBin: true
+
+  tsdoc-markdown@1.4.1:
+    resolution: {integrity: sha512-N+yt68b/L22zVr1T4yyRjG0OihgfExkDlNTPJyhFa7yh/27h4y8qNzKqSzloLjelQn9R5laDeTY6iwMpURHnLw==}
+    hasBin: true
+    peerDependencies:
+      typescript: 5.9.3
 
   tshy@3.0.3:
     resolution: {integrity: sha512-bUX6HQCvVdPyPLy2VZuKw95CtYD5aRSEgYEK7IPV9l9xN/z284kl5/hIwOfLY/mZOOdhrO34dFOOcL1VUMVyaw==}
@@ -9103,6 +9115,10 @@ snapshots:
       fs-extra: 11.3.1
       json5: 2.2.3
       type-flag: 3.0.0
+
+  tsdoc-markdown@1.4.1(typescript@5.9.3):
+    dependencies:
+      typescript: 5.9.3
 
   tshy@3.0.3:
     dependencies:

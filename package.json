@@ -9,6 +9,7 @@
     "jiti": "catalog:",
     "prettier": "catalog:",
     "tap": "catalog:",
+    "tsdoc-markdown": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",

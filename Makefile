@@ -1,7 +1,7 @@
 export PATH			:=		$(PWD)/bin:$(PATH)
 export INSIDE_STAGING_DIR	:=		false
 
-all: lint build test
+all: lint build doc test
 
 pre-build: FORCE
 	rm -f .eslintcache .build-finished
@@ -19,6 +19,10 @@ test:
 
 format:
 	pnpm prettier -w .
+
+doc: FORCE
+	for pkg in packages/*; do cd $$pkg && pnpm tsdoc --src=src/index.ts --dest=README.md --types --noemoji && cd ../..; done
+	pnpm prettier -w packages/*/README.md
 
 packages/%: FORCE
 	cd $@ && rm -rf dist && pnpm tsc && pnpm tsc-esm-fix

@@ -1,2 +1,2 @@
-export { createPaymentHandler } from "./client.js";
-export { createFacilitatorHandler } from "./facilitator.js";
+export { createPaymentHandler } from "./client";
+export { createFacilitatorHandler } from "./facilitator";

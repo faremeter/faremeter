@@ -23,6 +23,11 @@
       "require": "./dist/src/exact/index.js",
       "import": "./dist/src/exact/index.js",
       "types": "./dist/src/exact/index.d.ts"
+    },
+    "./erc20": {
+      "require": "./dist/src/erc20.js",
+      "import": "./dist/src/erc20.js",
+      "types": "./dist/src/erc20.d.ts"
     }
   },
   "devDependencies": {

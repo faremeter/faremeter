@@ -10,7 +10,11 @@ catalog:
   "@solana-program/compute-budget": 0.8.0
   "@solana-program/memo": 0.10.0
   "@solana-program/token": 0.5.1
+  "@solana/addresses": 5.0.0
+  "@solana/errors": 5.0.0
   "@solana/kit": 2.3.0
+  "@solana/rpc": 5.0.0
+  "@solana/rpc-api": 5.0.0
   "@solana/spl-token": 0.4.13
   "@solana/transactions": 2.3.0
   "@solana/web3.js": 1.98.4

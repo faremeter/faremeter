@@ -23,6 +23,11 @@
       "require": "./dist/src/exact/index.js",
       "import": "./dist/src/exact/index.js",
       "types": "./dist/src/exact/index.d.ts"
+    },
+    "./splToken": {
+      "require": "./dist/src/splToken.js",
+      "import": "./dist/src/splToken.js",
+      "types": "./dist/src/splToken.d.ts"
     }
   },
   "devDependencies": {
@@ -44,7 +49,10 @@
     "@solana-program/compute-budget": "catalog:",
     "@solana-program/memo": "catalog:",
     "@solana-program/token": "catalog:",
+    "@solana/addresses": "catalog:",
     "@solana/kit": "catalog:",
+    "@solana/rpc": "catalog:",
+    "@solana/rpc-api": "catalog:",
     "@solana/rpc-types": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/transactions": "catalog:",

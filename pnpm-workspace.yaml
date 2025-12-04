@@ -7,6 +7,7 @@ catalog:
   "@eslint/js": 9.34.0
   "@faremeter/x-solana-settlement": 0.3.1
   "@hono/node-server": 1.19.1
+  "@logtape/logtape": 1.0.4
   "@solana-program/compute-budget": 0.8.0
   "@solana-program/memo": 0.10.0
   "@solana-program/token": 0.5.1
@@ -15,6 +16,7 @@ catalog:
   "@solana/kit": 2.3.0
   "@solana/rpc": 5.0.0
   "@solana/rpc-api": 5.0.0
+  "@solana/rpc-types": 3.0.3
   "@solana/spl-token": 0.4.13
   "@solana/transactions": 2.3.0
   "@solana/web3.js": 1.98.4
@@ -37,13 +39,11 @@ catalog:
   tsc-esm-fix: 3.1.2
   tsdoc-markdown: ^1.4.1
   tsx: 4.20.5
+  typescript: 5.9.3
   typescript-eslint: 8.42.0
   typescript-language-server: 4.4.0
-  typescript: 5.9.3
   viem: 2.37.2
   zx: 8.8.1
-  "@logtape/logtape": 1.0.4
-  "@solana/rpc-types": 3.0.3
 
 catalogMode: prefer
 

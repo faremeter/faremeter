@@ -7,7 +7,7 @@ import {
 } from "@faremeter/info/solana";
 import { createLocalWallet } from "@faremeter/wallet-solana";
 import { exact } from "@faremeter/payment-solana";
-import { type PaymentHandler } from "@faremeter/types/client";
+import { type WalletAdapter } from "./types";
 import { isValidationError } from "@faremeter/types";
 import { PublicKey, Keypair, clusterApiUrl, Connection } from "@solana/web3.js";
 import { readLocalFile } from "./common";
@@ -95,7 +95,7 @@ export function createAdapter(opts: CreateAdapterOptions) {
         return null;
       }
 
-      const handlers: PaymentHandler[] = [];
+      const res: WalletAdapter[] = [];
 
       for (const { cluster, mints } of clusters) {
         for (const mint of mints) {
@@ -105,11 +105,17 @@ export function createAdapter(opts: CreateAdapterOptions) {
           );
 
           const wallet = await createLocalWallet(cluster, privateKey);
-          handlers.push(exact.createPaymentHandler(wallet, mint, connection));
+          res.push({
+            paymentHandler: exact.createPaymentHandler(
+              wallet,
+              mint,
+              connection,
+            ),
+          });
         }
       }
 
-      return handlers;
+      return res;
     },
   };
 }

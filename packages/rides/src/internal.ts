@@ -68,7 +68,7 @@ export function createPayer(args?: CreatePayerArgs) {
           continue;
         }
 
-        newHandlers.push(...res);
+        newHandlers.push(...res.map((x) => x.paymentHandler));
       }
 
       if (newHandlers.length === 0) {

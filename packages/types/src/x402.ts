@@ -2,6 +2,14 @@ import { type } from "arktype";
 import { caseInsensitiveLiteral } from "./literal";
 import { isValidationError } from "./validation";
 
+export const x402PaymentId = type({
+  scheme: "string",
+  network: "string",
+  asset: "string",
+});
+
+export type x402PaymentId = typeof x402PaymentId.infer;
+
 export const x402PaymentRequirements = type({
   scheme: "string",
   network: "string",

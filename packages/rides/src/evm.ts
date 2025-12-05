@@ -6,7 +6,7 @@ import {
 import { createLocalWallet } from "@faremeter/wallet-evm";
 import { exact } from "@faremeter/payment-evm";
 import { isValidationError } from "@faremeter/types";
-import { type PaymentHandler } from "@faremeter/types/client";
+import { type WalletAdapter } from "./types";
 import { type ChainInfo, PrivateKey } from "@faremeter/types/evm";
 
 import * as chains from "viem/chains";
@@ -67,20 +67,21 @@ export function createAdapter(opts: CreateAdapterOptions) {
         return null;
       }
 
-      const handlers: PaymentHandler[] = [];
+      const res: WalletAdapter[] = [];
 
       for (const { chain, contractInfo } of chains) {
         for (const asset of contractInfo) {
           const wallet = await createLocalWallet(chain, privateKey);
-          handlers.push(
-            exact.createPaymentHandler(wallet, {
+
+          res.push({
+            paymentHandler: exact.createPaymentHandler(wallet, {
               asset,
             }),
-          );
+          });
         }
       }
 
-      return handlers;
+      return res;
     },
   };
 }

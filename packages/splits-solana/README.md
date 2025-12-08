@@ -74,6 +74,12 @@ if (await isCascadeSplit(rpc, vault)) {
 
 Merchants provide `splitConfig` as payTo. Facilitators derive the vault using standard ATA derivation: `ATA(owner=payTo, mint)`.
 
+## API Reference
+
+<!-- TSDOC_START -->
+
+<!-- TSDOC_END -->
+
 ## API
 
 | Function           | Purpose                                   |

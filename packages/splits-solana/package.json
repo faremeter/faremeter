@@ -1,0 +1,51 @@
+{
+  "name": "@faremeter/splits-solana",
+  "version": "0.14.0",
+  "description": "Cascade Splits integration for Solana payments",
+  "keywords": [
+    "faremeter",
+    "typescript",
+    "sdk",
+    "api",
+    "x402",
+    "ai",
+    "cascade-splits",
+    "solana"
+  ],
+  "license": "LGPL-3.0-only",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "packageManager": "pnpm@10.19.0",
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@tapjs/asserts": "catalog:",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "tap": "catalog:",
+    "tsc-esm-fix": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "typescript-language-server": "catalog:"
+  },
+  "dependencies": {
+    "@cascade-fyi/splits-sdk": "~0.10.0",
+    "@logtape/logtape": "catalog:",
+    "@solana/kit": "catalog:",
+    "@solana/transactions": "catalog:",
+    "@solana-program/compute-budget": "catalog:"
+  },
+  "tap": {
+    "plugin": [
+      "@tapjs/tsx",
+      "!@tapjs/typescript"
+    ]
+  }
+}

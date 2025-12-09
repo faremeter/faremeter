@@ -36,7 +36,7 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
-    "@cascade-fyi/splits-sdk": "~0.10.0",
+    "@cascade-fyi/splits-sdk": "~0.11.1",
     "@logtape/logtape": "catalog:",
     "@solana/kit": "catalog:",
     "@solana/transactions": "catalog:",

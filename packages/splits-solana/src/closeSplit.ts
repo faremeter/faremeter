@@ -4,17 +4,17 @@ import type {
   SolanaRpcApi,
   TransactionSigner,
 } from "@solana/kit";
-import { USDC_MINT } from "@cascade-fyi/splits-sdk";
+import { USDC_MINT } from "@cascade-fyi/splits-sdk/core";
 import {
   deriveSplitConfig,
   deriveVault,
-  getSplitConfigFromVault,
+  getSplitConfig,
   getVaultBalance,
   detectTokenProgram,
   labelToSeed,
   closeSplitConfig,
-} from "@cascade-fyi/splits-sdk/solana";
-import { VaultNotFoundError } from "@cascade-fyi/splits-sdk";
+  SplitConfigNotFoundError,
+} from "@cascade-fyi/splits-sdk/core";
 import { sendTx, type SendTxOptions } from "./internal/sendTx.js";
 import { logger } from "./logger.js";
 
@@ -79,9 +79,9 @@ export async function closeSplit(
     // 2. Check if config exists
     let existingConfig;
     try {
-      existingConfig = await getSplitConfigFromVault(rpc, vaultAddress);
+      existingConfig = await getSplitConfig(rpc, splitConfigAddress);
     } catch (e) {
-      if (e instanceof VaultNotFoundError) {
+      if (e instanceof SplitConfigNotFoundError) {
         logger.debug("Split not found for label={label}", { label });
         return { status: "NOT_FOUND" };
       }
@@ -118,8 +118,9 @@ export async function closeSplit(
 
     // 4. Build close instruction
     logger.debug("Building close instruction");
-    const instruction = await closeSplitConfig(rpc, {
-      vault: vaultAddress,
+    const instruction = await closeSplitConfig({
+      rpc,
+      splitConfig: splitConfigAddress,
       authority: signer.address,
       rentReceiver: rentReceiver ?? signer.address,
       tokenProgram,

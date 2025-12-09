@@ -36,7 +36,7 @@ export {
 // Re-exports from @cascade-fyi/splits-sdk for advanced users
 // =============================================================================
 
-export type { Recipient } from "@cascade-fyi/splits-sdk";
-export type { SplitConfig } from "@cascade-fyi/splits-sdk/solana";
+export type { Recipient } from "@cascade-fyi/splits-sdk/core";
+export type { SplitConfig } from "@cascade-fyi/splits-sdk/core";
 
-export { isCascadeSplit } from "@cascade-fyi/splits-sdk/solana";
+export { isCascadeSplit } from "@cascade-fyi/splits-sdk/core";

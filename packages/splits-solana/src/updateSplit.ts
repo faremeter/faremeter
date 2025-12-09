@@ -4,17 +4,17 @@ import type {
   SolanaRpcApi,
   TransactionSigner,
 } from "@solana/kit";
-import { USDC_MINT, type Recipient } from "@cascade-fyi/splits-sdk";
+import { USDC_MINT, type Recipient } from "@cascade-fyi/splits-sdk/core";
 import {
   deriveSplitConfig,
   deriveVault,
-  getSplitConfigFromVault,
+  getSplitConfig,
   getVaultBalance,
   detectTokenProgram,
   labelToSeed,
   updateSplitConfig as updateSplitInstruction,
-} from "@cascade-fyi/splits-sdk/solana";
-import { VaultNotFoundError } from "@cascade-fyi/splits-sdk";
+  SplitConfigNotFoundError,
+} from "@cascade-fyi/splits-sdk/core";
 import { sendTx, type SendTxOptions } from "./internal/sendTx.js";
 import { logger } from "./logger.js";
 
@@ -83,9 +83,9 @@ export async function updateSplit(
     // 2. Check if config exists
     let existingConfig;
     try {
-      existingConfig = await getSplitConfigFromVault(rpc, vaultAddress);
+      existingConfig = await getSplitConfig(rpc, splitConfigAddress);
     } catch (e) {
-      if (e instanceof VaultNotFoundError) {
+      if (e instanceof SplitConfigNotFoundError) {
         logger.debug("Split not found for label={label}", { label });
         return { status: "NOT_FOUND" };
       }
@@ -122,8 +122,9 @@ export async function updateSplit(
 
     // 4. Build update instruction
     logger.debug("Building update instruction");
-    const instruction = await updateSplitInstruction(rpc, {
-      vault: vaultAddress,
+    const instruction = await updateSplitInstruction({
+      rpc,
+      splitConfig: splitConfigAddress,
       authority: signer.address,
       recipients,
       tokenProgram,

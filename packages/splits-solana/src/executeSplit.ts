@@ -8,7 +8,9 @@ import {
   isCascadeSplit,
   executeSplit as executeSplitInstruction,
   getVaultBalance,
-} from "@cascade-fyi/splits-sdk/solana";
+  getSplitConfigAddressFromVault,
+  VaultNotFoundError,
+} from "@cascade-fyi/splits-sdk/core";
 import { sendTx, type SendTxOptions } from "./internal/sendTx.js";
 import { logger } from "./logger.js";
 
@@ -49,8 +51,20 @@ export async function executeSplit(
   logger.debug("Executing split for vault={vault}", { vault });
 
   try {
+    // Get splitConfig from vault (validates it's a token account with an owner)
+    let splitConfig: Address;
+    try {
+      splitConfig = await getSplitConfigAddressFromVault(rpc, vault);
+    } catch (e) {
+      if (e instanceof VaultNotFoundError) {
+        logger.debug("Vault not found or not a token account");
+        return { status: "SKIPPED", reason: "NOT_A_SPLIT" };
+      }
+      throw e;
+    }
+
     // Check if it's actually a Cascade split
-    const isSplit = await isCascadeSplit(rpc, vault);
+    const isSplit = await isCascadeSplit(rpc, splitConfig);
     if (!isSplit) {
       logger.debug("Vault is not a Cascade split");
       return { status: "SKIPPED", reason: "NOT_A_SPLIT" };
@@ -74,16 +88,18 @@ export async function executeSplit(
     logger.debug("Building execute instruction for balance={balance}", {
       balance,
     });
-    const execResult = await executeSplitInstruction(
+    const execResult = await executeSplitInstruction({
       rpc,
-      vault,
-      signer.address,
-    );
-    if (!execResult.ok) {
-      logger.error("executeSplit failed: {message}", {
-        message: execResult.reason,
-      });
-      return { status: "FAILED", message: execResult.reason };
+      splitConfig,
+      executor: signer.address,
+    });
+    if (execResult.status !== "success") {
+      const reason =
+        execResult.status === "not_found"
+          ? "Split config not found"
+          : "Not a cascade split";
+      logger.error("executeSplit failed: {reason}", { reason });
+      return { status: "FAILED", message: reason };
     }
 
     // Send transaction

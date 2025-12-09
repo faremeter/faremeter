@@ -1,5 +1,5 @@
 import type { Address } from "@solana/kit";
-import { labelToSeed, deriveSplitConfig } from "@cascade-fyi/splits-sdk/solana";
+import { labelToSeed, deriveSplitConfig } from "@cascade-fyi/splits-sdk/core";
 
 /**
  * Derive the splitConfig PDA address to use as `payTo`.

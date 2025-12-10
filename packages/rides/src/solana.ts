@@ -9,8 +9,10 @@ import {
 import { createLocalWallet } from "@faremeter/wallet-solana";
 import { exact } from "@faremeter/payment-solana";
 import { type WalletAdapter } from "./types";
+import { getTokenBalance } from "@faremeter/payment-solana/splToken";
 import { isValidationError } from "@faremeter/types";
 import { PublicKey, Keypair, clusterApiUrl, Connection } from "@solana/web3.js";
+import { createSolanaRpc } from "@solana/kit";
 import { readLocalFile } from "./common";
 
 const networkAliases = new Map<string, KnownCluster>(
@@ -23,7 +25,7 @@ const networkAliases = new Map<string, KnownCluster>(
 export function findNetworkMintCombinations(
   networks: readonly string[],
   assets: readonly string[],
-): { cluster: KnownCluster; mints: PublicKey[] }[] {
+) {
   const clusters = networks
     .map((n) => networkAliases.get(n))
     .filter((x) => x !== undefined);
@@ -36,7 +38,7 @@ export function findNetworkMintCombinations(
     const mints = assets
       .map((name) => lookupKnownSPLToken(cluster, name as KnownSPLToken))
       .filter((x) => x !== undefined)
-      .map((x) => new PublicKey(x.address));
+      .map(({ address, name }) => ({ address, name }));
 
     if (mints.length === 0) {
       return [];
@@ -99,6 +101,9 @@ export function createAdapter(opts: CreateAdapterOptions) {
       const res: WalletAdapter[] = [];
 
       for (const { cluster, mints } of clusters) {
+        const rpcURL = clusterApiUrl(cluster);
+        const rpcClient = createSolanaRpc(rpcURL);
+
         for (const mint of mints) {
           const connection = new Connection(
             clusterApiUrl(cluster),
@@ -109,14 +114,31 @@ export function createAdapter(opts: CreateAdapterOptions) {
           res.push({
             x402Id: lookupX402Network(cluster).map((network) => ({
               scheme: "exact",
-              asset: mint.toBase58(),
+              asset: mint.address,
               network,
             })),
             paymentHandler: exact.createPaymentHandler(
               wallet,
-              mint,
+              new PublicKey(mint.address),
               connection,
             ),
+            getBalance: async () => {
+              let balance = await getTokenBalance({
+                account: privateKey.publicKey.toBase58(),
+                asset: mint.address,
+                rpcClient,
+              });
+
+              balance ??= {
+                amount: 0n,
+                decimals: 0,
+              };
+
+              return {
+                ...balance,
+                name: mint.name,
+              };
+            },
           });
         }
       }

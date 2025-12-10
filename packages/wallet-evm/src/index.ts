@@ -1,11 +1,10 @@
 import { isPrivateKey, type ChainInfo } from "@faremeter/types/evm";
-import { createWalletClient, http, type WalletClient, type Hex } from "viem";
+import { type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 export interface EvmWallet {
   chain: ChainInfo;
   address: Hex;
-  client: WalletClient;
   account: ReturnType<typeof privateKeyToAccount>;
 }
 
@@ -20,15 +19,10 @@ export async function createLocalWallet(
   }
 
   const account = privateKeyToAccount(privateKey);
-  const client = createWalletClient({
-    account,
-    transport: http(chain.rpcUrls.default.http[0]),
-  });
 
   return {
     chain,
     address: account.address,
-    client,
     account,
   };
 }

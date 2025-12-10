@@ -1,6 +1,4 @@
 import {
-  createWalletClient,
-  http,
   type Hex,
   type LocalAccount,
   type TransactionSerializable,
@@ -154,15 +152,9 @@ export async function createLedgerEvmWallet(
     },
   };
 
-  const client = createWalletClient({
-    account: ledgerAccount,
-    transport: http(chain.rpcUrls.default.http[0]),
-  });
-
   return {
     chain,
     address: formattedAddress,
-    client,
     signTransaction: async (tx: TransactionSerializable) => {
       return await ledgerAccount.signTransaction(tx);
     },

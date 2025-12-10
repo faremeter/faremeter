@@ -49,6 +49,7 @@
     "@faremeter/wallet-evm": "workspace:^",
     "@faremeter/wallet-solana": "workspace:^",
     "@logtape/logtape": "catalog:",
+    "@solana/kit": "catalog:",
     "@solana/web3.js": "catalog:",
     "arktype": "catalog:",
     "viem": "catalog:"

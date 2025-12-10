@@ -6,10 +6,11 @@ import {
 } from "@faremeter/info/evm";
 import { createLocalWallet } from "@faremeter/wallet-evm";
 import { exact } from "@faremeter/payment-evm";
+import { getTokenBalance } from "@faremeter/payment-evm/erc20";
 import { isValidationError } from "@faremeter/types";
 import { type WalletAdapter } from "./types";
 import { PrivateKey } from "@faremeter/types/evm";
-import { type Chain } from "viem";
+import { createPublicClient, http, type Chain } from "viem";
 import * as chains from "viem/chains";
 
 const networkAliases = new Map<string, Chain>(
@@ -72,6 +73,11 @@ export function createAdapter(opts: CreateAdapterOptions) {
       const res: WalletAdapter[] = [];
 
       for (const { chain, contractInfo } of chains) {
+        const publicClient = createPublicClient({
+          chain,
+          transport: http(),
+        });
+
         for (const asset of contractInfo) {
           const wallet = await createLocalWallet(chain, privateKey);
 
@@ -86,6 +92,18 @@ export function createAdapter(opts: CreateAdapterOptions) {
             paymentHandler: exact.createPaymentHandler(wallet, {
               asset,
             }),
+            getBalance: async () => {
+              const balance = await getTokenBalance({
+                account: wallet.address,
+                asset: asset.address,
+                client: publicClient,
+              });
+
+              return {
+                ...balance,
+                name: asset.contractName,
+              };
+            },
           });
         }
       }

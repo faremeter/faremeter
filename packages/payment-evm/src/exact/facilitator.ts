@@ -6,7 +6,7 @@ import type {
   x402SupportedKind,
 } from "@faremeter/types/x402";
 
-import { isPrivateKey, type ChainInfo } from "@faremeter/types/evm";
+import { isPrivateKey, type ChainInfoWithRPC } from "@faremeter/types/evm";
 import { type FacilitatorHandler } from "@faremeter/types/facilitator";
 
 import { type } from "arktype";
@@ -55,7 +55,7 @@ type CreateFacilitatorHandlerOpts = {
   transport?: Transport;
 };
 export async function createFacilitatorHandler(
-  chain: ChainInfo,
+  chain: ChainInfoWithRPC,
   privateKey: string,
   assetNameOrInfo: AssetNameOrContractInfo,
   opts: CreateFacilitatorHandlerOpts = {},

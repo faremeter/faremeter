@@ -25,6 +25,9 @@ export function isPrivateKey(maybe: unknown): maybe is PrivateKey {
 export type ChainInfo = {
   id: number;
   name: string;
+};
+
+export type ChainInfoWithRPC = ChainInfo & {
   rpcUrls: {
     default: {
       http: readonly [string];

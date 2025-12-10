@@ -8,10 +8,11 @@ import { createLocalWallet } from "@faremeter/wallet-evm";
 import { exact } from "@faremeter/payment-evm";
 import { isValidationError } from "@faremeter/types";
 import { type WalletAdapter } from "./types";
-import { type ChainInfo, PrivateKey } from "@faremeter/types/evm";
-
+import { PrivateKey } from "@faremeter/types/evm";
+import { type Chain } from "viem";
 import * as chains from "viem/chains";
-const networkAliases = new Map<string, ChainInfo>(
+
+const networkAliases = new Map<string, Chain>(
   Object.entries({
     base: chains.base,
     "base-sepolia": chains.baseSepolia,
@@ -20,7 +21,7 @@ const networkAliases = new Map<string, ChainInfo>(
 export function findNetworkAssetCombinations(
   networks: readonly string[],
   assets: readonly string[],
-): { chain: ChainInfo; contractInfo: ContractInfo[] }[] {
+): { chain: Chain; contractInfo: ContractInfo[] }[] {
   const chains = networks
     .map((n) => networkAliases.get(n))
     .filter((x) => x !== undefined);

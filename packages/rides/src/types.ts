@@ -1,3 +1,4 @@
+import { x402PaymentId } from "@faremeter/types/x402";
 import { type PaymentHandler } from "@faremeter/types/client";
 
 export const KnownNetworks = [
@@ -12,6 +13,7 @@ export const KnownAssets = ["USDC"] as const;
 export type KnownAsset = (typeof KnownAssets)[number];
 
 export interface WalletAdapter {
+  x402Id: x402PaymentId[];
   paymentHandler: PaymentHandler;
 }
 

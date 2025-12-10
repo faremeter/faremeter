@@ -1,4 +1,5 @@
 import {
+  lookupX402Network,
   lookupKnownAsset,
   type KnownAsset,
   type ContractInfo,
@@ -74,6 +75,13 @@ export function createAdapter(opts: CreateAdapterOptions) {
           const wallet = await createLocalWallet(chain, privateKey);
 
           res.push({
+            x402Id: [
+              {
+                scheme: "exact",
+                asset: asset.address,
+                network: lookupX402Network(chain.id),
+              },
+            ],
             paymentHandler: exact.createPaymentHandler(wallet, {
               asset,
             }),

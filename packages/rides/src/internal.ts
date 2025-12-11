@@ -1,11 +1,20 @@
+import { x402PaymentId } from "@faremeter/types/x402";
 import { type PaymentHandler } from "@faremeter/types/client";
-import { wrap as wrapFetch, type WrapOpts } from "@faremeter/fetch";
+import {
+  wrap as wrapFetch,
+  type WrapOpts,
+  chooseFirstAvailable,
+} from "@faremeter/fetch";
+
+import { type PaymentExecer } from "@faremeter/types/client";
+
 import {
   KnownNetworks,
   type KnownNetwork,
   KnownAssets,
   type KnownAsset,
   type PayerAdapter,
+  type GetBalance,
 } from "./types";
 
 import * as solana from "./solana";
@@ -17,7 +26,12 @@ export interface CreatePayerArgs {
   fetch?: typeof globalThis.fetch;
   options?: {
     fetch?: WrapOpts;
+    disableBalanceChecks?: boolean;
   };
+}
+
+function idKey({ network, scheme, asset }: x402PaymentId) {
+  return `${network}\0${scheme}\0${asset}`;
 }
 
 export function createPayer(args?: CreatePayerArgs) {
@@ -28,6 +42,7 @@ export function createPayer(args?: CreatePayerArgs) {
   } = args ?? {};
 
   const paymentHandlers: PaymentHandler[] = [];
+  const balanceLookup = new Map<string, GetBalance>();
 
   const adapters: PayerAdapter[] = [];
 
@@ -39,13 +54,50 @@ export function createPayer(args?: CreatePayerArgs) {
     }
   }
 
+  const wrapFetchOptions = {
+    ...(args?.options?.fetch ?? {}),
+  };
+
+  if (!args?.options?.disableBalanceChecks) {
+    const finalChooser =
+      args?.options?.fetch?.payerChooser ?? chooseFirstAvailable;
+
+    wrapFetchOptions.payerChooser = async function (execer: PaymentExecer[]) {
+      const viableOptions = [];
+      for (const e of execer) {
+        const req = e.requirements;
+        const getBalance = balanceLookup.get(idKey(req));
+
+        if (getBalance === undefined) {
+          continue;
+        }
+
+        const balance = await getBalance();
+
+        // XXX - We need to do a better job of understanding decimals here.
+        if (balance.amount < BigInt(req.maxAmountRequired)) {
+          // eslint-disable-next-line no-console
+          console.log(
+            `Not paying with ${balance.name} on ${req.network} using the ${req.scheme} scheme: balance is ${balance.amount} which is less than ${req.maxAmountRequired}`,
+          );
+
+          continue;
+        }
+
+        viableOptions.push(e);
+      }
+
+      return finalChooser(viableOptions);
+    };
+  }
+
   const setupFetch = () => {
     if (paymentHandlers.length < 1) {
       throw new Error("no usable wallets have been attached to enable payment");
     }
 
     return wrapFetch(fetch, {
-      ...(args?.options?.fetch ?? {}),
+      ...wrapFetchOptions,
       handlers: paymentHandlers,
     });
   };
@@ -60,7 +112,7 @@ export function createPayer(args?: CreatePayerArgs) {
 
       _fetch = undefined;
 
-      const newHandlers = [];
+      const newWallets = [];
 
       for (const adapter of adapters) {
         const res = await adapter.addLocalWallet(input);
@@ -68,16 +120,22 @@ export function createPayer(args?: CreatePayerArgs) {
           continue;
         }
 
-        newHandlers.push(...res.map((x) => x.paymentHandler));
+        newWallets.push(...res);
       }
 
-      if (newHandlers.length === 0) {
+      if (newWallets.length === 0) {
         throw new Error(
           "couldn't find any way to use provided local wallet information",
         );
       }
 
-      paymentHandlers.push(...newHandlers);
+      paymentHandlers.push(...newWallets.map((x) => x.paymentHandler));
+
+      for (const wallet of newWallets) {
+        for (const id of wallet.x402Id) {
+          balanceLookup.set(idKey(id), wallet.getBalance);
+        }
+      }
     },
     fetch: async (
       input: RequestInfo | URL,

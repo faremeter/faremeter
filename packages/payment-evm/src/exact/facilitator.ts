@@ -18,6 +18,7 @@ import {
   verifyTypedData,
   encodeFunctionData,
   isAddress,
+  defineChain,
 } from "viem";
 
 import { privateKeyToAccount } from "viem/accounts";
@@ -86,7 +87,18 @@ export async function createFacilitatorHandler(
     transport,
   });
 
+  // XXX - Temporarily work around typing problems related to trying to have a chain be null.
+  const ersatzChain = defineChain({
+    ...chain,
+    nativeCurrency: {
+      decimals: 0,
+      name: "",
+      symbol: "",
+    },
+  });
+
   const walletClient = createWalletClient({
+    chain: defineChain(ersatzChain),
     account,
     transport,
   });
@@ -356,7 +368,6 @@ export async function createFacilitatorHandler(
         to: useForwarder ? domain.verifyingContract : asset,
         data,
         account: acct,
-        chain: null,
       });
 
       const serializedTransaction = await walletClient.signTransaction(request);

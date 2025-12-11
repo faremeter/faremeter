@@ -42,7 +42,7 @@ catalog:
   typescript: 5.9.3
   typescript-eslint: 8.42.0
   typescript-language-server: 4.4.0
-  viem: 2.37.2
+  viem: 2.41.2
   zx: 8.8.1
 
 catalogMode: prefer

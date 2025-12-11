@@ -92,10 +92,12 @@ export async function createLedgerEvmWallet(
         message: "object",
       });
 
+      type TypeDefinition = Record<string, { name: string; type: string }[]>;
+
       const validated = typedDataParams.assert(parameters);
       const { domain, types, primaryType, message } = validated as {
         domain?: TypedDataDomain;
-        types: Record<string, { name: string; type: string }[]>;
+        types: TypeDefinition;
         primaryType: string;
         message: Record<string, unknown>;
       };
@@ -106,7 +108,7 @@ export async function createLedgerEvmWallet(
         // for signing.
 
         // Build types with EIP712Domain
-        const typesWithDomain = {
+        const typesWithDomain: TypeDefinition = {
           EIP712Domain: [
             ...(domain?.name ? [{ name: "name", type: "string" }] : []),
             ...(domain?.version ? [{ name: "version", type: "string" }] : []),

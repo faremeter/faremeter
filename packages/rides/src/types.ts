@@ -4,6 +4,10 @@ import { type PaymentHandler } from "@faremeter/types/client";
 export const KnownNetworks = [
   "base",
   "base-sepolia",
+  "monad",
+  "monad-testnet",
+  "polygon",
+  "polygon-amoy",
   "solana",
   "solana-devnet",
 ] as const;

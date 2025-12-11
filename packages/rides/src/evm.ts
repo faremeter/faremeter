@@ -17,6 +17,10 @@ const networkAliases = new Map<string, Chain>(
   Object.entries({
     base: chains.base,
     "base-sepolia": chains.baseSepolia,
+    polygon: chains.polygon,
+    "polygon-amoy": chains.polygonAmoy,
+    monad: chains.monad,
+    "monad-testnet": chains.monadTestnet,
   } as const),
 );
 export function findNetworkAssetCombinations(

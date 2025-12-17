@@ -43,6 +43,10 @@ function processException<T>(step: string, e: unknown, cb: (msg: string) => T) {
     msg = `unknown error handling ${step}`;
   }
 
+  logger.error(`Caught exception during ${step}: {*}`, {
+    exception: e,
+  });
+
   return cb(msg);
 }
 

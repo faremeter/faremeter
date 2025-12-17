@@ -32,6 +32,20 @@ function summarizeRequirements({
   };
 }
 
+function processException<T>(step: string, e: unknown, cb: (msg: string) => T) {
+  let msg = undefined;
+
+  // XXX - We can do a better job of determining if it's a chain
+  // error, or some other issue.
+  if (e instanceof Error) {
+    msg = e.message;
+  } else {
+    msg = `unknown error handling ${step}`;
+  }
+
+  return cb(msg);
+}
+
 export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
   const router = new Hono();
 
@@ -97,17 +111,9 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
           paymentPayload,
         );
       } catch (e) {
-        let msg = undefined;
-
-        // XXX - We can do a better job of determining if it's a chain
-        // error, or some other issue.
-        if (e instanceof Error) {
-          msg = e.message;
-        } else {
-          msg = "unknown error handling verifyment";
-        }
-
-        return sendVerifyError(c, 500, msg);
+        return processException("verify", e, (msg) =>
+          sendVerifyError(c, 500, msg),
+        );
       }
 
       if (t === null) {
@@ -193,17 +199,9 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
           paymentPayload,
         );
       } catch (e) {
-        let msg = undefined;
-
-        // XXX - We can do a better job of determining if it's a chain
-        // error, or some other issue.
-        if (e instanceof Error) {
-          msg = e.message;
-        } else {
-          msg = "unknown error handling settlement";
-        }
-
-        return sendSettleError(c, 500, msg);
+        return processException("settle", e, (msg) =>
+          sendSettleError(c, 500, msg),
+        );
       }
 
       if (t === null) {

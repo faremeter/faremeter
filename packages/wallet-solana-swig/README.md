@@ -11,7 +11,7 @@ the resulting `VersionedTransaction` directly.
 ```ts
 import { clusterApiUrl, Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { fetchSwig } from '@swig-wallet/classic';
-import { createPaymentHandler } from '@faremeter/x-solana-settlement';
+import { createPaymentHandler } from '@faremeter/payment-solana/exact';
 import { createSwigWallet } from '@faremeter/wallet-solana-swig';
 
 const connection = new Connection(clusterApiUrl('devnet'));
@@ -34,6 +34,10 @@ const paymentHandler = createPaymentHandler(
   wallet,
   new PublicKey(process.env.MINT!),
   connection,
+  {
+    token: { allowOwnerOffCurve: true },
+    features: { enableSettlementAccounts: true },
+  },
 );
 ```
 

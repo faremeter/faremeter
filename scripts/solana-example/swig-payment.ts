@@ -3,7 +3,7 @@ import "dotenv/config";
 import { logResponse } from "../logger";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import { lookupKnownSPLToken } from "@faremeter/info/solana";
-import { createPaymentHandler } from "@faremeter/x-solana-settlement";
+import { createPaymentHandler } from "@faremeter/payment-solana/exact";
 import { createSwigWallet } from "@faremeter/wallet-solana-swig";
 import { Connection, Keypair, PublicKey, type Cluster } from "@solana/web3.js";
 import { fetchSwig } from "@swig-wallet/classic";
@@ -73,7 +73,10 @@ const mint = new PublicKey(usdcInfo.address);
 
 const fetchWithPayer = wrapFetch(fetch, {
   handlers: [
-    createPaymentHandler(wallet, mint, { token: { allowOwnerOffCurve: true } }),
+    createPaymentHandler(wallet, mint, connection, {
+      token: { allowOwnerOffCurve: true },
+      features: { enableSettlementAccounts: true },
+    }),
   ],
 });
 

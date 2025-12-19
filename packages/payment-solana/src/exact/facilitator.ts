@@ -2,6 +2,7 @@ import {
   x402PaymentRequirements,
   type x402PaymentPayload,
   type x402SettleResponse,
+  type x402VerifyResponse,
   type x402SupportedKind,
 } from "@faremeter/types/x402";
 import { isValidationError } from "@faremeter/types";
@@ -45,6 +46,28 @@ import {
 
 import { getAddMemoInstruction } from "@solana-program/memo";
 
+export interface HookBaseArgs {
+  network: string;
+  rpc: Rpc<SolanaRpcApi>;
+  feePayerKeypair: Keypair;
+  mint: PublicKey;
+  mintInfo: Awaited<ReturnType<typeof fetchMint>>;
+  requirements: x402PaymentRequirements;
+  payment: x402PaymentPayload;
+  logger: typeof logger;
+}
+
+export type HookResponseArgs<Response> = HookBaseArgs & { response: Response };
+
+export type HookResponseFuncs<Response> = (
+  args: HookResponseArgs<Response>,
+) => Promise<Response> | Promise<void>;
+
+export interface FacilitatorHooks {
+  afterVerify?: HookResponseFuncs<x402VerifyResponse>;
+  afterSettle?: HookResponseFuncs<x402SettleResponse>;
+}
+
 export const PaymentRequirementsExtraFeatures = type({
   xSettlementAccountSupported: "boolean?",
 });
@@ -68,6 +91,7 @@ interface FacilitatorOptions {
   features?: {
     enableSettlementAccounts?: boolean;
   };
+  hooks?: readonly FacilitatorHooks[];
 }
 
 const TransactionString = type("string").pipe.try((tx) => {
@@ -168,6 +192,15 @@ export const createFacilitatorHandler = async (
   } = config ?? {};
 
   const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
+
+  const hookArgs = {
+    network,
+    rpc,
+    feePayerKeypair,
+    mint,
+    mintInfo,
+    logger,
+  };
 
   const features: PaymentRequirementsExtraFeatures = {};
 
@@ -412,7 +445,35 @@ export const createFacilitatorHandler = async (
       return errorResponse(verifyResult.error);
     }
 
-    return { isValid: true };
+    let response: x402VerifyResponse = { isValid: true };
+
+    const hooks = config?.hooks;
+
+    if (hooks !== undefined) {
+      const args = {
+        ...hookArgs,
+        requirements,
+        payment,
+        response,
+      };
+
+      for (const hook of hooks) {
+        if (hook.afterVerify === undefined) {
+          continue;
+        }
+
+        const res = await hook.afterVerify({
+          ...args,
+          response,
+        });
+
+        if (res !== undefined) {
+          response = res;
+        }
+      }
+    }
+
+    return response;
   };
 
   const handleSettle = async (
@@ -463,12 +524,39 @@ export const createFacilitatorHandler = async (
       return errorResponse(result.error);
     }
 
-    return {
+    let response: x402SettleResponse = {
       success: true,
       error: null,
       txHash: result.signature,
       networkId: payment.network,
     };
+
+    const hooks = config?.hooks;
+    if (hooks !== undefined) {
+      const args = {
+        ...hookArgs,
+        requirements,
+        payment,
+        response,
+      };
+
+      for (const hook of hooks) {
+        if (hook.afterSettle === undefined) {
+          continue;
+        }
+
+        const res = await hook.afterSettle({
+          ...args,
+          response,
+        });
+
+        if (res !== undefined) {
+          response = res;
+        }
+      }
+    }
+
+    return response;
   };
 
   return {

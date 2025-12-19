@@ -9,21 +9,21 @@ the resulting `VersionedTransaction` directly.
 ## Usage
 
 ```ts
-import { clusterApiUrl, Connection, Keypair, PublicKey } from '@solana/web3.js';
-import { fetchSwig } from '@swig-wallet/classic';
-import { createPaymentHandler } from '@faremeter/payment-solana/exact';
-import { createSwigWallet } from '@faremeter/wallet-solana-swig';
+import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { fetchSwig } from "@swig-wallet/classic";
+import { createPaymentHandler } from "@faremeter/payment-solana/exact";
+import { createSwigWallet } from "@faremeter/wallet-solana-swig";
 
-const connection = new Connection(clusterApiUrl('devnet'));
+const connection = new Connection(clusterApiUrl("devnet"));
 const swigAddress = new PublicKey(process.env.SWIG_ADDRESS!);
 const swig = await fetchSwig(connection, swigAddress);
 
 const authority = Keypair.fromSecretKey(/* ... */);
 const authorityRole = swig.findRolesByEd25519SignerPk(authority.publicKey)[0];
-if (!authorityRole) throw new Error('role not found');
+if (!authorityRole) throw new Error("role not found");
 
 const wallet = await createSwigWallet({
-  network: 'devnet',
+  network: "devnet",
   connection,
   swig,
   roleId: authorityRole.id,

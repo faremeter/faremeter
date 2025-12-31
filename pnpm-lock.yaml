@@ -171,6 +171,9 @@ importers:
       '@faremeter/info':
         specifier: workspace:^
         version: link:../../packages/info
+      '@faremeter/logs':
+        specifier: workspace:^
+        version: link:../../packages/logs
       '@faremeter/payment-evm':
         specifier: workspace:^
         version: link:../../packages/payment-evm
@@ -186,9 +189,6 @@ importers:
       '@hono/node-server':
         specifier: 'catalog:'
         version: 1.19.1(hono@4.9.0)
-      '@logtape/logtape':
-        specifier: 'catalog:'
-        version: 1.0.4
       '@solana/kit':
         specifier: 'catalog:'
         version: 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
@@ -226,12 +226,12 @@ importers:
 
   packages/facilitator:
     dependencies:
+      '@faremeter/logs':
+        specifier: workspace:^
+        version: link:../logs
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
-      '@logtape/logtape':
-        specifier: 'catalog:'
-        version: 1.0.4
       hono:
         specifier: 'catalog:'
         version: 4.9.0
@@ -410,12 +410,12 @@ importers:
 
   packages/middleware:
     dependencies:
+      '@faremeter/logs':
+        specifier: workspace:^
+        version: link:../logs
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
-      '@logtape/logtape':
-        specifier: 'catalog:'
-        version: 1.0.4
       arktype:
         specifier: 'catalog:'
         version: 2.1.21
@@ -511,12 +511,12 @@ importers:
       '@faremeter/info':
         specifier: workspace:^
         version: link:../info
+      '@faremeter/logs':
+        specifier: workspace:^
+        version: link:../logs
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
-      '@logtape/logtape':
-        specifier: 'catalog:'
-        version: 1.0.4
       '@solana-program/compute-budget':
         specifier: 'catalog:'
         version: 0.8.0(@solana/kit@2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))
@@ -593,6 +593,9 @@ importers:
       '@faremeter/info':
         specifier: workspace:^
         version: link:../info
+      '@faremeter/logs':
+        specifier: workspace:^
+        version: link:../logs
       '@faremeter/payment-evm':
         specifier: workspace:^
         version: link:../payment-evm
@@ -608,9 +611,6 @@ importers:
       '@faremeter/wallet-solana':
         specifier: workspace:^
         version: link:../wallet-solana
-      '@logtape/logtape':
-        specifier: 'catalog:'
-        version: 1.0.4
       '@solana/kit':
         specifier: 'catalog:'
         version: 2.3.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
@@ -786,6 +786,9 @@ importers:
 
   packages/wallet-ledger:
     dependencies:
+      '@faremeter/logs':
+        specifier: workspace:^
+        version: link:../logs
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
@@ -804,9 +807,6 @@ importers:
       '@ledgerhq/hw-transport-webusb':
         specifier: ^6.29.0
         version: 6.29.9
-      '@logtape/logtape':
-        specifier: 'catalog:'
-        version: 1.0.4
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10)
@@ -860,12 +860,12 @@ importers:
 
   packages/wallet-solana-squads:
     dependencies:
+      '@faremeter/logs':
+        specifier: workspace:^
+        version: link:../logs
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
-      '@logtape/logtape':
-        specifier: 'catalog:'
-        version: 1.0.4
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10)
@@ -918,6 +918,9 @@ importers:
       '@faremeter/info':
         specifier: workspace:^
         version: link:../packages/info
+      '@faremeter/logs':
+        specifier: workspace:^
+        version: link:../packages/logs
       '@faremeter/middleware':
         specifier: workspace:^
         version: link:../packages/middleware
@@ -954,9 +957,6 @@ importers:
       '@hono/node-server':
         specifier: 'catalog:'
         version: 1.19.1(hono@4.9.0)
-      '@logtape/logtape':
-        specifier: 'catalog:'
-        version: 1.0.4
       '@nestjs/common':
         specifier: ^10.0.0
         version: 10.4.20(reflect-metadata@0.1.14)(rxjs@7.8.2)

@@ -31,8 +31,8 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
+    "@faremeter/logs": "workspace:^",
     "@faremeter/types": "workspace:^",
-    "@logtape/logtape": "catalog:",
     "@solana/web3.js": "catalog:",
     "@sqds/multisig": "^2.1.4",
     "bs58": "catalog:",

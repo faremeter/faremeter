@@ -10,19 +10,9 @@ import * as solana from "./solana";
 import { createFacilitatorHandler as createEVMHandler } from "@faremeter/payment-evm/exact";
 import * as evmChains from "viem/chains";
 
-import { configure, getConsoleSink } from "@logtape/logtape";
+import { configureApp } from "@faremeter/logs";
 
-await configure({
-  sinks: { console: getConsoleSink() },
-  loggers: [
-    {
-      category: ["logtape", "meta"],
-      lowestLevel: "warning",
-      sinks: ["console"],
-    },
-    { category: "faremeter", lowestLevel: "info", sinks: ["console"] },
-  ],
-});
+await configureApp();
 
 const solanaHandlers =
   (await argsFromEnv(["ADMIN_KEYPAIR_PATH"], (...envVars) =>

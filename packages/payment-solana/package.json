@@ -44,8 +44,8 @@
   },
   "dependencies": {
     "@faremeter/info": "workspace:^",
+    "@faremeter/logs": "workspace:^",
     "@faremeter/types": "workspace:^",
-    "@logtape/logtape": "catalog:",
     "@solana-program/compute-budget": "catalog:",
     "@solana-program/memo": "catalog:",
     "@solana-program/token": "catalog:",

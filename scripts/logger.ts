@@ -1,18 +1,8 @@
-import { configure, getConsoleSink, getLogger } from "@logtape/logtape";
+import { configureApp, getLogger } from "@faremeter/logs";
 
-await configure({
-  sinks: { console: getConsoleSink() },
-  loggers: [
-    {
-      category: ["logtape", "meta"],
-      lowestLevel: "warning",
-      sinks: ["console"],
-    },
-    { category: "faremeter", lowestLevel: "info", sinks: ["console"] },
-  ],
-});
+await configureApp();
 
-export const logger = getLogger(["faremeter", "scripts"]);
+export const logger = await getLogger(["faremeter", "scripts"]);
 
 export async function logResponse(r: Response) {
   logger.info(`Status: ${r.status}`);

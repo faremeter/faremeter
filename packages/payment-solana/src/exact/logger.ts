@@ -1,3 +1,3 @@
-import { getLogger } from "@logtape/logtape";
+import { getLogger } from "@faremeter/logs";
 
-export const logger = getLogger(["faremeter", "payment-solana-exact"]);
+export const logger = await getLogger(["faremeter", "payment-solana-exact"]);

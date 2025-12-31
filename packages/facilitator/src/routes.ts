@@ -1,4 +1,4 @@
-import { getLogger } from "@logtape/logtape";
+import { getLogger } from "@faremeter/logs";
 import { Hono, type Context } from "hono";
 import * as x from "@faremeter/types/x402";
 import { isValidationError } from "@faremeter/types";
@@ -6,7 +6,7 @@ import { type x402PaymentRequirements } from "@faremeter/types/x402";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import { allSettledWithTimeout } from "./promise";
 
-const logger = getLogger(["faremeter", "facilitator"]);
+const logger = await getLogger(["faremeter", "facilitator"]);
 
 type CreateFacilitatorRoutesArgs = {
   handlers: FacilitatorHandler[];

@@ -25,7 +25,7 @@ pnpm install @faremeter/rides
 
 ## Examples
 
-See the [basic example](https://github.com/faremeter/faremeter/blob/main/scripts/rides-example/basic.ts) in the faremeter repository.
+See the [basic example](https://github.com/faremeter/faremeter/blob/main/scripts/rides-example.ts) in the faremeter repository.
 
 ## Related Packages
 

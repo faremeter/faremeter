@@ -43,7 +43,7 @@ function processException<T>(step: string, e: unknown, cb: (msg: string) => T) {
     msg = `unknown error handling ${step}`;
   }
 
-  logger.error(`Caught exception during ${step}: {*}`, {
+  logger.error(`Caught exception during ${step}`, {
     exception: e,
   });
 
@@ -100,7 +100,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       paymentPayload = decodedHeader;
     }
 
-    logger.debug("starting verifyment attempt for request: {*}", x402Req);
+    logger.debug("starting verifyment attempt for request", x402Req);
 
     for (const handler of args.handlers) {
       let t;
@@ -124,20 +124,17 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
         continue;
       }
 
-      logger.debug("facilitator handler agreed to verify and returned: {*}", t);
+      logger.debug("facilitator handler agreed to verify and returned", t);
 
-      logger.info(
-        `${t.isValid ? "succeeded" : "failed"} verifying request: {*}`,
-        {
-          ...t,
-          requirements: summarizeRequirements(x402Req.paymentRequirements),
-        },
-      );
+      logger.info(`${t.isValid ? "succeeded" : "failed"} verifying request`, {
+        ...t,
+        requirements: summarizeRequirements(x402Req.paymentRequirements),
+      });
 
       return c.json(t);
     }
     logger.warning(
-      "attempt to verify was made with no handler found, requirements summary was: {*}",
+      "attempt to verify was made with no handler found, requirements summary was",
       summarizeRequirements(x402Req.paymentRequirements),
     );
     return sendVerifyError(c, 400, "no matching payment handler found");
@@ -192,7 +189,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       paymentPayload = decodedHeader;
     }
 
-    logger.debug("starting settlement attempt for request: {*}", x402Req);
+    logger.debug("starting settlement attempt for request", x402Req);
 
     for (const handler of args.handlers) {
       let t;
@@ -212,24 +209,18 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
         continue;
       }
 
-      logger.debug(
-        "facilitator handler accepted settlement and returned: {*}",
-        t,
-      );
+      logger.debug("facilitator handler accepted settlement and returned", t);
 
-      logger.info(
-        `${t.success ? "succeeded" : "failed"} settlement request: {*}`,
-        {
-          requirements: summarizeRequirements(x402Req.paymentRequirements),
-          txHash: t.txHash,
-        },
-      );
+      logger.info(`${t.success ? "succeeded" : "failed"} settlement request`, {
+        requirements: summarizeRequirements(x402Req.paymentRequirements),
+        txHash: t.txHash,
+      });
 
       return c.json(t);
     }
     sendSettleError(c, 400, "no matching payment handler found");
     logger.warning(
-      "attempt to settle was made with no handler found, requirements summary was: {*}",
+      "attempt to settle was made with no handler found, requirements summary was",
       summarizeRequirements(x402Req.paymentRequirements),
     );
   });
@@ -272,7 +263,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       }
     });
 
-    logger.debug(`returning ${accepts.length} accepts: {*}`, {
+    logger.debug(`returning ${accepts.length} accepts`, {
       accepts: accepts.map(summarizeRequirements),
     });
 
@@ -311,7 +302,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       }
     });
 
-    logger.debug(`returning ${kinds.length} kinds supported: {*}`, {
+    logger.debug(`returning ${kinds.length} kinds supported`, {
       kinds,
     });
 

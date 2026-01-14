@@ -36,7 +36,7 @@ export function findMatchingPaymentRequirements(
 
   if (possible.length > 1) {
     logger.warning(
-      `found ${possible.length} ambiguous matching requirements for client payment: {*}`,
+      `found ${possible.length} ambiguous matching requirements for client payment`,
       payload,
     );
   }

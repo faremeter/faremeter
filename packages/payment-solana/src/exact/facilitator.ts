@@ -147,7 +147,7 @@ const sendTransaction = async (
     .send();
 
   if (simResult.value.err) {
-    logger.error("transaction simulation failed: {*}", simResult.value);
+    logger.error("transaction simulation failed", simResult.value);
     return { success: false, error: "Transaction simulation failed" };
   }
 
@@ -238,7 +238,7 @@ export const createFacilitatorHandler = async (
       .getTokenAccountBalance(settleATA, { commitment: "confirmed" })
       .send();
 
-    logger.debug("settlement account info: {*}", {
+    logger.debug("settlement account info", {
       settleOwner,
       settleATA,
       accountBalance,

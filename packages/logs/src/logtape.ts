@@ -1,5 +1,5 @@
 import * as logtape from "@logtape/logtape";
-import type { Logger, LogArgs, Context } from "./types";
+import type { LogArgs, LoggingBackend, LogLevel, Context } from "./types";
 
 function convertArgs([msg, context]: LogArgs): [string, Context?] {
   if (context !== undefined) {
@@ -13,44 +13,42 @@ function convertArgs([msg, context]: LogArgs): [string, Context?] {
   return [msg];
 }
 
-export interface ConfigureAppArgs {
-  level?: logtape.LogLevel;
-}
+export const LogtapeBackend: LoggingBackend = {
+  async configureApp(args: { level: LogLevel }) {
+    const lowestLevel = args.level;
 
-export async function configureApp(args: ConfigureAppArgs = {}) {
-  const lowestLevel = args.level ?? "info";
+    await logtape.configure({
+      sinks: { console: logtape.getConsoleSink() },
+      loggers: [
+        {
+          category: ["logtape", "meta"],
+          lowestLevel: "warning",
+          sinks: ["console"],
+        },
+        { category: "faremeter", lowestLevel, sinks: ["console"] },
+      ],
+    });
+  },
 
-  await logtape.configure({
-    sinks: { console: logtape.getConsoleSink() },
-    loggers: [
-      {
-        category: ["logtape", "meta"],
-        lowestLevel: "warning",
-        sinks: ["console"],
+  getLogger(subsystem: readonly string[]) {
+    const impl = logtape.getLogger(subsystem);
+
+    return {
+      debug: (...args) => {
+        impl.debug(...convertArgs(args));
       },
-      { category: "faremeter", lowestLevel, sinks: ["console"] },
-    ],
-  });
-}
-
-export async function getLogger(subsystem: readonly string[]): Promise<Logger> {
-  const impl = logtape.getLogger(subsystem);
-
-  return {
-    debug: (...args) => {
-      impl.debug(...convertArgs(args));
-    },
-    info: (...args) => {
-      impl.info(...convertArgs(args));
-    },
-    warning: (...args) => {
-      impl.warning(...convertArgs(args));
-    },
-    error: (...args) => {
-      impl.error(...convertArgs(args));
-    },
-    fatal: (...args) => {
-      impl.fatal(...convertArgs(args));
-    },
-  };
-}
+      info: (...args) => {
+        impl.info(...convertArgs(args));
+      },
+      warning: (...args) => {
+        impl.warning(...convertArgs(args));
+      },
+      error: (...args) => {
+        impl.error(...convertArgs(args));
+      },
+      fatal: (...args) => {
+        impl.fatal(...convertArgs(args));
+      },
+    };
+  },
+};

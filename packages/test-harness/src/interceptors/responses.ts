@@ -1,0 +1,62 @@
+import type { x402PaymentRequirements } from "@faremeter/types/x402";
+
+export function jsonResponse(status: number, body: object): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export function verifyFailedResponse(reason: string): Response {
+  return jsonResponse(200, {
+    isValid: false,
+    invalidReason: reason,
+  });
+}
+
+export function verifySuccessResponse(): Response {
+  return jsonResponse(200, {
+    isValid: true,
+  });
+}
+
+export function settleFailedResponse(error: string): Response {
+  return jsonResponse(200, {
+    success: false,
+    error,
+    txHash: null,
+    networkId: null,
+  });
+}
+
+export function settleSuccessResponse(
+  txHash: string,
+  networkId: string,
+): Response {
+  return jsonResponse(200, {
+    success: true,
+    txHash,
+    networkId,
+  });
+}
+
+export function paymentRequiredResponse(
+  accepts: x402PaymentRequirements[],
+): Response {
+  return jsonResponse(402, {
+    x402Version: 1,
+    accepts,
+  });
+}
+
+export function networkError(message = "Network error"): Error {
+  return new Error(message);
+}
+
+export function timeoutError(): Error {
+  return new Error("Request timed out");
+}
+
+export function httpError(status: number, message: string): Response {
+  return jsonResponse(status, { error: message });
+}

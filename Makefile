@@ -6,7 +6,7 @@ all: lint build doc test
 pre-build: FORCE
 	rm -f .eslintcache .build-finished
 
-build: pre-build packages/logs packages/types packages/info packages/wallet-solana packages/wallet-evm $(wildcard packages/*) packages/test-harness scripts apps/facilitator
+build: pre-build packages/logs packages/types packages/info packages/wallet-solana packages/wallet-evm $(wildcard packages/*) packages/test-harness scripts apps/facilitator tests
 	touch .build-finished
 
 lint:
@@ -33,6 +33,9 @@ apps/%: FORCE
 scripts: FORCE
 	cd scripts && rm -rf dist && pnpm tsc
 	cd scripts/nestjs-example && rm -rf dist && pnpm tsc -p nestjs-example/tsconfig.json
+
+tests: FORCE
+	cd tests && pnpm tsc
 
 clean:
 	rm -f .env-checked .eslintcache .build-finished

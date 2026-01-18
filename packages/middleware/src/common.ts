@@ -109,6 +109,21 @@ export type CommonMiddlewareArgs = {
   cacheConfig?: createPaymentRequiredResponseCacheOpts;
 };
 
+export type SettleResult<MiddlewareResponse> =
+  | { success: true; facilitatorResponse: x402SettleResponse }
+  | { success: false; errorResponse: MiddlewareResponse };
+
+export type VerifyResult<MiddlewareResponse> =
+  | { success: true; facilitatorResponse: x402VerifyResponse }
+  | { success: false; errorResponse: MiddlewareResponse };
+
+export type MiddlewareBodyContext<MiddlewareResponse> = {
+  paymentRequirements: x402PaymentRequirements;
+  paymentPayload: x402PaymentPayload;
+  settle: () => Promise<SettleResult<MiddlewareResponse>>;
+  verify: () => Promise<VerifyResult<MiddlewareResponse>>;
+};
+
 export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
   CommonMiddlewareArgs & {
     resource: string;
@@ -118,12 +133,9 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
       status: PossibleStatusCodes,
       obj: PossibleJSONResponse,
     ) => MiddlewareResponse;
-    body: (context: {
-      paymentRequirements: x402PaymentRequirements;
-      paymentPayload: x402PaymentPayload;
-      settle: () => Promise<MiddlewareResponse | undefined>;
-      verify: () => Promise<MiddlewareResponse | undefined>;
-    }) => Promise<MiddlewareResponse | undefined>;
+    body: (
+      context: MiddlewareBodyContext<MiddlewareResponse>,
+    ) => Promise<MiddlewareResponse | undefined>;
     fetch?: typeof fetch;
   };
 
@@ -169,7 +181,7 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     return sendPaymentRequired();
   }
 
-  const settle = async () => {
+  const settle = async (): Promise<SettleResult<MiddlewareResponse>> => {
     const settleRequest: x402SettleRequest = {
       x402Version: 1,
       paymentHeader,
@@ -195,11 +207,13 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
 
     if (!settlementResponse.success) {
       logger.warning("failed to settle payment: {error}", settlementResponse);
-      return sendPaymentRequired();
+      return { success: false, errorResponse: sendPaymentRequired() };
     }
+
+    return { success: true, facilitatorResponse: settlementResponse };
   };
 
-  const verify = async () => {
+  const verify = async (): Promise<VerifyResult<MiddlewareResponse>> => {
     const verifyRequest: x402VerifyRequest = {
       x402Version: 1,
       paymentHeader,
@@ -225,11 +239,13 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
 
     if (!verifyResponse.isValid) {
       logger.warning(
-        "failed to settle payment: {invalidReason}",
+        "failed to verify payment: {invalidReason}",
         verifyResponse,
       );
-      return sendPaymentRequired();
+      return { success: false, errorResponse: sendPaymentRequired() };
     }
+
+    return { success: true, facilitatorResponse: verifyResponse };
   };
 
   return await args.body({

@@ -24,4 +24,4 @@
 | Property  | Type                                                                           | Description |
 | --------- | ------------------------------------------------------------------------------ | ----------- |
 | `level`   | `"trace" or "debug" or "info" or "warning" or "error" or "fatal" or undefined` |             |
-| `backend` | `LoggingBackend or undefined`                                                  |             |
+| `backend` | `LoggingBackend<BaseConfigArgs> or undefined`                                  |             |

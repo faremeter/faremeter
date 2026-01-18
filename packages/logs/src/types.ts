@@ -26,8 +26,11 @@ export interface Logger {
   fatal(...args: LogArgs): void;
 }
 
-// Backend interface for pluggable logging implementations
-export interface LoggingBackend {
-  configureApp(args: { level: LogLevel }): Promise<void>;
+export type BaseConfigArgs = { level: LogLevel };
+
+export interface LoggingBackend<
+  TConfig extends BaseConfigArgs = BaseConfigArgs,
+> {
+  configureApp(args: TConfig): Promise<void>;
   getLogger(subsystem: readonly string[]): Logger;
 }

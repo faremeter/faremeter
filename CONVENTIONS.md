@@ -4,6 +4,7 @@ This document describes the coding conventions, patterns, and best practices use
 
 ## Table of Contents
 
+- [Monorepo Structure](#monorepo-structure)
 - [Build and Development Commands](#build-and-development-commands)
 - [Quick Reference](#quick-reference)
 - [Philosophy](#philosophy)
@@ -18,6 +19,19 @@ This document describes the coding conventions, patterns, and best practices use
 - [Testing](#testing)
 - [Logging](#logging)
 - [Documentation](#documentation)
+
+---
+
+## Monorepo Structure
+
+This is a pnpm monorepo. When developing new TypeScript code:
+
+- **Applications** go in `apps/`
+- **Shared libraries** go in `packages/`
+- **Integration tests** go in `tests/`
+- **Utility scripts** go in `scripts/`
+
+Do not create standalone TypeScript files in the repository root.
 
 ---
 
@@ -63,6 +77,8 @@ See [DEV.md](./DEV.md) for complete development setup instructions.
 - Create classes unless necessary (prefer factory functions)
 - Ignore validation errors (always check with `isValidationError`)
 - Use `any` type (use `unknown` and narrow)
+- Use type assertions (`as Type`) - they indicate interface problems
+- Skip runtime validation in favor of type assertions (use arktype)
 - Commit without running `make lint`
 - Over-type code with explicit annotations the compiler can infer
 
@@ -142,6 +158,60 @@ Run `make format` to auto-format all files.
 | `camelCase`            | Regular variables           | `paymentRequiredResponse`, `recentBlockhash` |
 | `SCREAMING_SNAKE_CASE` | Constants, environment vars | `X402_EXACT_SCHEME`, `PAYER_KEYPAIR_PATH`    |
 | `_` prefix             | Unused parameters           | `_ctx`, `_unused`                            |
+
+### Acronyms in Names
+
+When using acronyms in camelCase or PascalCase names, preserve the acronym's capitalization based on the position:
+
+- **If the acronym starts with an uppercase letter**, keep it fully capitalized
+- **If the acronym starts with a lowercase letter**, keep it fully lowercase
+
+**Good:**
+
+```typescript
+// Acronyms at start of name
+function getURLFromRequestInfo(input: RequestInfo | URL): string { ... }
+const URLParser = { ... };
+const HTTPSConnection = { ... };
+
+// Acronyms in middle/end of name (starts uppercase)
+const requestURL = "https://example.com";
+const parseHTTPHeaders = () => { ... };
+const fetchJSONData = () => { ... };
+
+// Acronyms at start with lowercase initial
+const url = "https://example.com";
+const json = { ... };
+const http = require("http");
+```
+
+**Bad:**
+
+```typescript
+// Don't mix case within acronyms when the leading character would be uppercase
+function getUrlFromRequestInfo(input: RequestInfo | URL): string { ... } // Should be getURLFromRequestInfo
+const requestUrl = "..."; // Should be requestURL
+const HttpConnection = { ... }; // Should be HTTPConnection
+const JsonParser = { ... }; // Should be JSONParser
+
+// Exception: lowercase-starting acronyms stay lowercase
+const URL = "..."; // Should be url (if variable, not constant)
+const JSON = { ... }; // Should be json (if variable, not constant)
+```
+
+**Common acronyms to watch:**
+
+- URL (not Url)
+- HTTP, HTTPS (not Http, Https)
+- JSON (not Json)
+- API (not Api)
+- RPC (not Rpc)
+- HTML (not Html)
+- XML (not Xml)
+
+**Note:** "ID" is an abbreviation (not an acronym), so use standard camelCase rules: `userId`, `requestId`, `getId()`.
+
+This convention improves readability and prevents confusion between similar names like `requestURL` vs `requestUrl`.
 
 ### Types and Interfaces
 
@@ -320,6 +390,129 @@ const items: string[] = ["a", "b", "c"]; // Just use: const items = ["a", "b", "
 // Let callback parameter types be inferred from context
 handlers.map((h: Handler) => h.name); // Just use: handlers.map((h) => h.name);
 ```
+
+### Generic Constraints vs Index Signatures
+
+When creating extensible interfaces, prefer generic type parameters with constraints over index signatures.
+
+**Bad - Index signature (too permissive):**
+
+```typescript
+export interface LoggingBackend {
+  configureApp(args: {
+    level: LogLevel;
+    [key: string]: unknown;
+  }): Promise<void>;
+  getLogger(subsystem: readonly string[]): Logger;
+}
+```
+
+**Good - Generic with constraint (type-safe):**
+
+```typescript
+export type BaseConfigArgs = { level: LogLevel };
+
+export interface LoggingBackend<
+  TConfig extends BaseConfigArgs = BaseConfigArgs,
+> {
+  configureApp(args: TConfig): Promise<void>;
+  getLogger(subsystem: readonly string[]): Logger;
+}
+
+// Implementations can specify their exact config type
+export const LogtapeBackend: LoggingBackend<{
+  level: LogLevel;
+  sink?: Sink;
+}> = {
+  /* ... */
+};
+
+export const ConsoleBackend: LoggingBackend<{
+  level: LogLevel;
+}> = {
+  /* ... */
+};
+```
+
+**Benefits:**
+
+- Type safety - prevents accidental properties
+- Better IDE support and autocomplete
+- Self-documenting - types show exactly what's accepted
+- Optional generic parameter maintains backward compatibility
+
+**When to use each approach:**
+
+- **Generics:** When you need type-safe extension points (preferred)
+- **Index signature:** Only when truly dynamic keys are needed (rare)
+
+### Avoiding `any` and Type Assertions
+
+The `any` type defeats TypeScript's type safety and should not be used unless absolutely required. Similarly, type assertions (`as Type`) are usually a sign of a problem with the interfaces being used.
+
+**The `any` type:**
+
+- Use `unknown` instead of `any` when the type is truly unknown
+- Narrow `unknown` values using type guards or runtime validation
+- Only use `any` when interfacing with poorly-typed third-party libraries where no better option exists
+
+**Bad - Using `any`:**
+
+```typescript
+function processData(data: any) {
+  return data.value; // No type safety
+}
+```
+
+**Good - Using `unknown` with validation:**
+
+```typescript
+function processData(data: unknown) {
+  const validated = MyDataType(data);
+  if (isValidationError(validated)) {
+    throw new Error(`Invalid data: ${validated.summary}`);
+  }
+  return validated.value; // Type-safe
+}
+```
+
+**Type assertions are a code smell:**
+
+Type assertions (`as Type`) tell the compiler "trust me, I know better." This bypasses type checking and often indicates:
+
+- The interfaces don't accurately model the data
+- A type guard or validation step is missing
+- The code structure needs refactoring
+
+**Bad - Using type assertion:**
+
+```typescript
+const response = await fetch(url);
+const data = (await response.json()) as UserData; // Assumes the shape is correct
+```
+
+**Good - Using runtime validation:**
+
+```typescript
+import { isValidationError } from "@faremeter/types";
+
+const response = await fetch(url);
+const raw = await response.json();
+const data = UserData(raw); // arktype validator
+
+if (isValidationError(data)) {
+  throw new Error(`Invalid response: ${data.summary}`);
+}
+// data is now properly typed as UserData
+```
+
+**When type assertions might be acceptable:**
+
+- Interfacing with untyped JavaScript libraries with no `@types` package
+- Test code where you intentionally need to bypass type checking
+- Rare cases where TypeScript's inference is demonstrably incorrect
+
+Even in these cases, prefer wrapping the assertion in a small, well-documented function rather than scattering assertions throughout the codebase.
 
 ---
 
@@ -818,6 +1011,82 @@ Use sparingly, prefer self-documenting code. When needed:
 // FIXME - Known issue with edge case Y
 ```
 
+### Avoiding Redundant Comments
+
+Code should be self-documenting. Do not add comments that merely describe what the code obviously does.
+
+**Bad - Obvious comments:**
+
+```typescript
+// Base configuration type for all backends
+export type BaseConfigArgs = { level: LogLevel };
+
+// Backend interface for pluggable logging implementations
+export interface LoggingBackend<
+  TConfig extends BaseConfigArgs = BaseConfigArgs,
+> {
+  configureApp(args: TConfig): Promise<void>;
+  getLogger(subsystem: readonly string[]): Logger;
+}
+
+// Configure LogTape with silent sink before any tests run
+const globalTestSink = createTestSink();
+```
+
+**Good - Let code speak for itself:**
+
+```typescript
+export type BaseConfigArgs = { level: LogLevel };
+
+export interface LoggingBackend<
+  TConfig extends BaseConfigArgs = BaseConfigArgs,
+> {
+  configureApp(args: TConfig): Promise<void>;
+  getLogger(subsystem: readonly string[]): Logger;
+}
+
+const globalTestSink = createTestSink();
+```
+
+**Bad - Decorative section dividers:**
+
+```typescript
+// =============================================================================
+// Core Harness
+// =============================================================================
+
+export { TestHarness } from "./harness/harness";
+
+// =============================================================================
+// Interceptors
+// =============================================================================
+
+export { createFailureInterceptor } from "./interceptors/failures";
+```
+
+**Good - Let the structure speak for itself:**
+
+```typescript
+export { TestHarness } from "./harness/harness";
+
+export { createFailureInterceptor } from "./interceptors/failures";
+```
+
+Decorative comment blocks (ASCII art dividers, section headers) add visual noise without providing meaningful information. The structure of imports and exports is self-evident from the code organization.
+
+**When comments ARE useful:**
+
+- Complex algorithms that aren't immediately obvious
+- Non-obvious workarounds or edge cases
+- TODO/FIXME/XXX markers for future work
+- Business logic that requires explanation
+
+```typescript
+// XXX - Temporary workaround until Solana RPC fixes getRecentBlockhash race condition
+// TODO - Switch to getLatestBlockhash when minimum version is bumped
+const blockhash = await getRecentBlockhash();
+```
+
 ---
 
 ## ESLint Rules
@@ -841,3 +1110,61 @@ const handleRequest = async (_ctx, requirements) => { ... };
 // Bad - will error
 const handleRequest = async (ctx, requirements) => { ... };  // ctx unused
 ```
+
+---
+
+## Git Workflow
+
+### Setup
+
+Configure git hooks before making commits: `git config core.hooksPath .githooks`
+
+### Commit Messages
+
+- **Summary line**: Max 72 characters, non-empty
+- **Blank line**: Required between summary and body (if body exists)
+- **Body lines**: Max 72 characters each
+
+Summary lines MUST be english sentences with no abbreviations, no markup (e.g. feat, chore), and not end with any punctuation. Commits messages should not be overly verbose (e.g. a feature list is unnecessary).
+
+**Format:**
+
+- Write concise messages (1-2 sentences) that explain why, not what
+- Do not use bullet points or feature lists in commit messages
+- Focus on the purpose and context of the change
+- Do not include filenames in commit messages (e.g. avoid "Update DEV.md to add..." or "Fix bug in server.ts")
+
+**Good examples:**
+
+```
+Suppress LogTape test output and add generic backend types
+
+Add test harness package for in-process x402 protocol testing
+
+Fix race condition in transaction verification
+
+Document individual package build targets
+```
+
+**Bad examples:**
+
+```
+Suppress LogTape console output during tests and add generic types to LoggingBackend
+- Add createTestSink() to capture logs without console output
+- Support DEBUG_TESTS=true for debugging
+- Refactor LoggingBackend to use generics for type safety
+- Add BaseConfigArgs type and TConfig parameter
+- Update LogtapeBackend to accept optional sink parameter
+
+feat: add logging improvements
+
+Update logging (too vague)
+
+Document individual package build targets in DEV.md (includes filename)
+
+Fix bug in server.ts (includes filename)
+```
+
+The commit message body (if present) can provide additional context, but avoid turning it into a feature checklist. Describe the motivation and high-level approach instead.
+
+The pre-commit hook automatically runs `make lint` on staged files. See `.githooks/` for hook implementations.

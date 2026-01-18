@@ -26,8 +26,24 @@ pnpm install -r
 
 ## Building
 
+Build all packages:
+
 ```
 make build
+```
+
+Build a specific package (faster during development):
+
+```
+make packages/<package-name>
+```
+
+For example:
+
+```
+make packages/test-harness
+make packages/middleware
+make packages/types
 ```
 
 ## Testing

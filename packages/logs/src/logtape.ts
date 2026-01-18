@@ -1,4 +1,5 @@
 import * as logtape from "@logtape/logtape";
+import type { Sink } from "@logtape/logtape";
 import type { LogArgs, LoggingBackend, LogLevel, Context } from "./types";
 
 function convertArgs([msg, context]: LogArgs): [string, Context?] {
@@ -13,12 +14,15 @@ function convertArgs([msg, context]: LogArgs): [string, Context?] {
   return [msg];
 }
 
-export const LogtapeBackend: LoggingBackend = {
-  async configureApp(args: { level: LogLevel }) {
+export const LogtapeBackend: LoggingBackend<{
+  level: LogLevel;
+  sink?: Sink;
+}> = {
+  async configureApp(args: { level: LogLevel; sink?: Sink }) {
     const lowestLevel = args.level;
 
     await logtape.configure({
-      sinks: { console: logtape.getConsoleSink() },
+      sinks: { console: args.sink ?? logtape.getConsoleSink() },
       loggers: [
         {
           category: ["logtape", "meta"],

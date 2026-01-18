@@ -2,6 +2,8 @@
 /* eslint-disable no-console */
 
 import t from "tap";
+import * as logtape from "@logtape/logtape";
+import type { Sink, LogRecord } from "@logtape/logtape";
 import { ConsoleBackend } from "./console";
 import { LogtapeBackend } from "./logtape";
 import { configureApp, getLogger } from "./index";
@@ -59,6 +61,34 @@ function createConsoleSpy() {
 
   return spy;
 }
+
+function createTestSink() {
+  const records: LogRecord[] = [];
+  const debugMode = process.env.DEBUG_TESTS === "true";
+
+  const sink: Sink = (record: LogRecord) => {
+    records.push(record);
+    if (debugMode) {
+      // Pass through to console in debug mode
+      const consoleSink = logtape.getConsoleSink();
+      consoleSink(record);
+    }
+  };
+
+  return {
+    sink,
+    getRecords: () => records,
+    clear: () => {
+      records.length = 0;
+    },
+  };
+}
+
+const globalTestSink = createTestSink();
+await LogtapeBackend.configureApp({
+  level: "debug",
+  sink: globalTestSink.sink,
+});
 
 await t.test("shouldLog utility", async (t) => {
   t.equal(shouldLog("fatal", "debug"), true, "fatal should log at debug level");
@@ -197,10 +227,7 @@ await t.test("ConsoleBackend", async (t) => {
   t.end();
 });
 
-// LogtapeBackend can only be configured once per process without the reset flag.
 await t.test("LogtapeBackend", async (t) => {
-  await LogtapeBackend.configureApp({ level: "debug" });
-
   await t.test("has correct logger interface", async (t) => {
     const logger = LogtapeBackend.getLogger(["faremeter", "test"]);
 
@@ -216,6 +243,8 @@ await t.test("LogtapeBackend", async (t) => {
   await t.test("can log messages without throwing", async (t) => {
     const logger = LogtapeBackend.getLogger(["faremeter", "test", "logtape"]);
 
+    globalTestSink.clear();
+
     logger.debug("debug from logtape test");
     logger.info("info from logtape test");
     logger.warning("warning from logtape test");
@@ -223,6 +252,24 @@ await t.test("LogtapeBackend", async (t) => {
     logger.fatal("fatal from logtape test");
 
     t.pass("all log methods executed without error");
+
+    // Verify logs were captured
+    const records = globalTestSink.getRecords();
+    t.equal(records.length, 5, "should have captured 5 log records");
+    t.equal(records[0]?.level, "debug", "first record should be debug level");
+    t.equal(records[1]?.level, "info", "second record should be info level");
+    t.equal(
+      records[2]?.level,
+      "warning",
+      "third record should be warning level",
+    );
+    t.equal(records[3]?.level, "error", "fourth record should be error level");
+    t.equal(records[4]?.level, "fatal", "fifth record should be fatal level");
+    t.ok(
+      records[0]?.message[0]?.toString().includes("debug from logtape test"),
+      "should capture debug message content",
+    );
+
     t.end();
   });
 

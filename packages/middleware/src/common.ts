@@ -63,17 +63,19 @@ type getPaymentRequiredResponseArgs = {
   facilitatorURL: string;
   accepts: RelaxedRequirements[];
   resource: string;
+  fetch?: typeof fetch;
 };
 
 export async function getPaymentRequiredResponse(
   args: getPaymentRequiredResponseArgs,
 ) {
+  const fetchFn = args.fetch ?? fetch;
   const accepts = args.accepts.map((x) => ({
     ...x,
     resource: x.resource ?? args.resource,
   }));
 
-  const t = await fetch(`${args.facilitatorURL}/accepts`, {
+  const t = await fetchFn(`${args.facilitatorURL}/accepts`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -122,17 +124,20 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
       settle: () => Promise<MiddlewareResponse | undefined>;
       verify: () => Promise<MiddlewareResponse | undefined>;
     }) => Promise<MiddlewareResponse | undefined>;
+    fetch?: typeof fetch;
   };
 
 export async function handleMiddlewareRequest<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
 ) {
   const accepts = args.accepts.flat();
+  const fetchFn = args.fetch ?? fetch;
 
   const paymentRequiredResponse = await args.getPaymentRequiredResponse({
     accepts,
     facilitatorURL: args.facilitatorURL,
     resource: args.resource,
+    fetch: fetchFn,
   });
 
   const sendPaymentRequired = () =>
@@ -172,7 +177,7 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
       paymentRequirements,
     };
 
-    const t = await fetch(`${args.facilitatorURL}/settle`, {
+    const t = await fetchFn(`${args.facilitatorURL}/settle`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -202,7 +207,7 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
       paymentRequirements,
     };
 
-    const t = await fetch(`${args.facilitatorURL}/verify`, {
+    const t = await fetchFn(`${args.facilitatorURL}/verify`, {
       method: "POST",
       headers: {
         Accept: "application/json",

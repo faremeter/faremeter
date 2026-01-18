@@ -31,15 +31,15 @@ export async function createMiddleware(
           // If configured, try to verify the transaction before running
           // the next operation.
           const verifyResult = await verify();
-          if (verifyResult !== undefined) {
-            return verifyResult;
+          if (!verifyResult.success) {
+            return verifyResult.errorResponse;
           }
         } else {
           // Otherwise just settle the payment beforehand, like we've
           // done historically.
           const settleResult = await settle();
-          if (settleResult !== undefined) {
-            return settleResult;
+          if (!settleResult.success) {
+            return settleResult.errorResponse;
           }
         }
 
@@ -49,7 +49,7 @@ export async function createMiddleware(
           // Close out the verification, by actually settling the
           // payment.
           const settleResult = await settle();
-          if (settleResult !== undefined) {
+          if (!settleResult.success) {
             // If the settlement fails, we need to explicitly
             // overwrite the downstream result.  See:
             //
@@ -57,7 +57,7 @@ export async function createMiddleware(
             //
 
             c.res = undefined;
-            c.res = settleResult;
+            c.res = settleResult.errorResponse;
           }
         }
       },

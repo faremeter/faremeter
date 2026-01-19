@@ -25,7 +25,6 @@ import { privateKeyToAccount } from "viem/accounts";
 
 import {
   lookupX402Network,
-  type KnownX402Network,
   findAssetInfo,
   type AssetNameOrContractInfo,
 } from "@faremeter/info/evm";
@@ -52,7 +51,7 @@ function parseSignature(signature: string): { v: number; r: Hex; s: Hex } {
 }
 
 type CreateFacilitatorHandlerOpts = {
-  network?: KnownX402Network;
+  network?: string;
   transport?: Transport;
 };
 export async function createFacilitatorHandler(

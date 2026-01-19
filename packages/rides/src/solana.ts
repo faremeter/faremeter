@@ -1,7 +1,7 @@
 import { match } from "arktype";
 
 import {
-  lookupX402Network,
+  getV1NetworkIds,
   lookupKnownSPLToken,
   type KnownCluster,
   type KnownSPLToken,
@@ -112,7 +112,7 @@ export function createAdapter(opts: CreateAdapterOptions) {
 
           const wallet = await createLocalWallet(cluster, privateKey);
           res.push({
-            x402Id: lookupX402Network(cluster).map((network) => ({
+            x402Id: getV1NetworkIds(cluster).map((network) => ({
               scheme: "exact",
               asset: mint.address,
               network,

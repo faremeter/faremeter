@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 import type {
-  PaymentHandler,
-  PaymentExecer,
+  PaymentHandlerV2,
+  PaymentExecerV2,
   RequestContext,
 } from "@faremeter/types/client";
 import {
@@ -9,7 +9,7 @@ import {
   findAssetInfo,
   type AssetNameOrContractInfo,
 } from "@faremeter/info/evm";
-import type { x402PaymentRequirements } from "@faremeter/types/x402";
+import type { x402PaymentRequirementsV2 } from "@faremeter/types/x402v2";
 import type { Hex } from "viem";
 import { isAddress } from "viem";
 import { type } from "arktype";
@@ -45,7 +45,7 @@ export type CreatePaymentHandlerOpts = {
 export function createPaymentHandler(
   wallet: WalletForPayment,
   opts: CreatePaymentHandlerOpts = {},
-): PaymentHandler {
+): PaymentHandlerV2 {
   const x402Network = lookupX402Network(wallet.chain.id);
 
   const assetInfo = findAssetInfo(x402Network, opts.asset ?? "USDC");
@@ -62,8 +62,8 @@ export function createPaymentHandler(
 
   return async function handlePayment(
     _context: RequestContext,
-    accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> {
+    accepts: x402PaymentRequirementsV2[],
+  ): Promise<PaymentExecerV2[]> {
     const compatibleRequirements = accepts.filter(isMatchingRequirement);
 
     return compatibleRequirements.map((requirements) => ({
@@ -84,7 +84,7 @@ export function createPaymentHandler(
         const authorization: eip3009Authorization = {
           from: wallet.address,
           to: payToAddress,
-          value: requirements.maxAmountRequired, // String value of amount
+          value: requirements.amount, // String value of amount
           validAfter: validAfter.toString(),
           validBefore: validBefore.toString(),
           nonce: nonce,
@@ -119,7 +119,7 @@ export function createPaymentHandler(
         const message = {
           from: wallet.address,
           to: payToAddress,
-          value: BigInt(requirements.maxAmountRequired),
+          value: BigInt(requirements.amount),
           validAfter: BigInt(validAfter),
           validBefore: BigInt(validBefore),
           nonce: nonce,

@@ -3,7 +3,7 @@
 import t from "tap";
 
 import { isValidationError as iVE } from "@faremeter/types";
-import { lookupKnownSPLToken } from "@faremeter/info/solana";
+import { lookupKnownSPLToken, clusterToCAIP2 } from "@faremeter/info/solana";
 import { generateMatcher } from "./common";
 
 await t.test("testBasicMatching", async (t) => {
@@ -15,16 +15,29 @@ await t.test("testBasicMatching", async (t) => {
     }
 
     const { matchTuple } = generateMatcher("mainnet-beta", tokenInfo.address);
+    const caip2 = clusterToCAIP2("mainnet-beta");
 
     const req = {
-      network: "solana-mainnet-beta",
+      network: caip2,
       scheme: "exact",
       asset: tokenInfo.address,
     };
 
+    // CAIP-2 network identifier should match
     t.ok(!iVE(matchTuple(req)));
+
+    // Legacy network names should not match (normalization happens in
+    // the routes layer before dispatch, not in the handler matcher)
     t.ok(
-      !iVE(
+      iVE(
+        matchTuple({
+          ...req,
+          network: "solana-mainnet-beta",
+        }),
+      ),
+    );
+    t.ok(
+      iVE(
         matchTuple({
           ...req,
           network: "solana",

@@ -7,7 +7,12 @@ import {
 } from "@faremeter/types/x402";
 import { isValidationError } from "@faremeter/types";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
-import { lookupX402Network } from "@faremeter/info/solana";
+import {
+  clusterToCAIP2,
+  isKnownCluster,
+  caip2ToCluster,
+  type KnownCluster,
+} from "@faremeter/info/solana";
 import { fetchMint } from "@solana-program/token";
 import {
   address,
@@ -393,18 +398,29 @@ export const createFacilitatorHandler = async (
     }
   };
 
+  const resolveCluster = (): KnownCluster => {
+    if (isKnownCluster(network)) {
+      return network;
+    }
+    const resolved = caip2ToCluster(network);
+    if (resolved) {
+      return resolved;
+    }
+    throw new Error(`Unknown Solana network: ${network}`);
+  };
+
   const getSupported = (): Promise<x402SupportedKind>[] => {
-    return lookupX402Network(network).map((network) =>
+    return [
       Promise.resolve({
         x402Version: 1,
         scheme: x402Scheme,
-        network,
+        network: clusterToCAIP2(resolveCluster()),
         extra: {
           feePayer: feePayerKeypair.publicKey.toString(),
           features,
         },
       }),
-    );
+    ];
   };
 
   const getRequirements = async (req: x402PaymentRequirements[]) => {

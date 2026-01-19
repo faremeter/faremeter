@@ -2,41 +2,85 @@ import { type UnitInput, addX402PaymentRequirementDefaults } from "./common";
 import { Address } from "@faremeter/types/evm";
 
 const knownX402Networks = {
-  base: {
-    chainId: 8453,
-  },
-  "base-sepolia": {
-    chainId: 84532,
-  },
-  "skale-europa-testnet": {
+  "eip155:8453": { legacyName: "base", chainId: 8453 },
+  "eip155:84532": { legacyName: "base-sepolia", chainId: 84532 },
+  "eip155:1444673419": {
+    legacyName: "skale-europa-testnet",
     chainId: 1444673419,
   },
+  "eip155:137": { legacyName: "polygon", chainId: 137 },
+  "eip155:80002": { legacyName: "polygon-amoy", chainId: 80002 },
+  "eip155:143": { legacyName: "monad", chainId: 143 },
+  "eip155:10143": { legacyName: "monad-testnet", chainId: 10143 },
 } as const;
-type knownX402Networks = typeof knownX402Networks;
-export type KnownX402Network = keyof knownX402Networks;
 
-export function isKnownX402Network(n: string): n is KnownX402Network {
+type KnownX402Networks = typeof knownX402Networks;
+export type CAIP2Network = keyof KnownX402Networks;
+export type LegacyNetworkName = KnownX402Networks[CAIP2Network]["legacyName"];
+
+const legacyNameToCAIP2Map = new Map<string, CAIP2Network>(
+  Object.entries(knownX402Networks).map(([caip2, info]) => [
+    info.legacyName,
+    caip2 as CAIP2Network,
+  ]),
+);
+
+export function chainIdToCAIP2(chainId: number): string {
+  return `eip155:${chainId}`;
+}
+
+export function caip2ToChainId(caip2: string): number | null {
+  const match = /^eip155:(\d+)$/.exec(caip2);
+  if (!match?.[1]) {
+    return null;
+  }
+  return parseInt(match[1], 10);
+}
+
+export function legacyNameToCAIP2(legacy: string): string | null {
+  return legacyNameToCAIP2Map.get(legacy) ?? null;
+}
+
+export function caip2ToLegacyName(caip2: string): string | null {
+  const network = knownX402Networks[caip2 as CAIP2Network];
+  return network?.legacyName ?? null;
+}
+
+export function normalizeNetworkId(network: string | number): string {
+  if (typeof network === "number") {
+    return chainIdToCAIP2(network);
+  }
+
+  if (network.startsWith("eip155:")) {
+    return network;
+  }
+
+  const caip2 = legacyNameToCAIP2(network);
+  if (caip2) {
+    return caip2;
+  }
+
+  const chainId = parseInt(network, 10);
+  if (!isNaN(chainId)) {
+    return chainIdToCAIP2(chainId);
+  }
+
+  return network;
+}
+
+export function isKnownCAIP2Network(n: string): n is CAIP2Network {
   return n in knownX402Networks;
 }
 
-export function lookupKnownX402Network(n: KnownX402Network) {
+export function lookupKnownCAIP2Network(n: CAIP2Network) {
   return {
     ...knownX402Networks[n],
-    name: n,
+    caip2: n,
   };
 }
 
-export type x402Network = KnownX402Network | `eip155:${number}`;
-
-export function lookupX402Network(chainId: number) {
-  let k: KnownX402Network;
-  for (k in knownX402Networks) {
-    if (knownX402Networks[k].chainId == chainId) {
-      return k;
-    }
-  }
-
-  return ("eip155:" + chainId.toString()) as x402Network;
+export function lookupX402Network(chainId: number): string {
+  return chainIdToCAIP2(chainId);
 }
 
 export type ContractInfo = {
@@ -48,24 +92,24 @@ export type ContractInfo = {
 };
 
 type AssetInfo = {
-  network: Partial<Record<x402Network, ContractInfo>>;
+  network: Partial<Record<string, ContractInfo>>;
   toUnit: (v: UnitInput) => string;
 };
 
 const knownAssets = {
   USDC: {
     network: {
-      "base-sepolia": {
+      "eip155:84532": {
         address: "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
         contractName: "USDC",
       },
-      base: {
+      "eip155:8453": {
         address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
         contractName: "USD Coin",
       },
-      "skale-europa-testnet": {
+      "eip155:1444673419": {
         address: "0x9eAb55199f4481eCD7659540A17Af618766b07C4",
-        contractName: "USDC", // EIP-3009 Forwarder,
+        contractName: "USDC",
         forwarder: "0x7779B0d1766e6305E5f8081E3C0CDF58FcA24330",
         forwarderName: "USDC Forwarder",
         forwarderVersion: "1",
@@ -94,23 +138,18 @@ const knownAssets = {
     toUnit: (v: UnitInput) => v.toString(),
   },
 } as const satisfies Record<string, AssetInfo>;
+
 export type KnownAsset = keyof typeof knownAssets;
 
-export function lookupKnownAsset(
-  network: x402Network | number,
-  name: KnownAsset,
-) {
+export function lookupKnownAsset(network: string | number, name: KnownAsset) {
   const assetInfo: AssetInfo = knownAssets[name];
 
   if (!assetInfo) {
     return;
   }
 
-  if (typeof network === "number") {
-    network = lookupX402Network(network);
-  }
-
-  const contractInfo = assetInfo.network[network];
+  const caip2Network = normalizeNetworkId(network);
+  const contractInfo = assetInfo.network[caip2Network];
 
   if (!contractInfo) {
     return;
@@ -119,7 +158,7 @@ export function lookupKnownAsset(
   return {
     ...contractInfo,
     name,
-    network,
+    network: caip2Network,
     toUnit: assetInfo.toUnit,
   };
 }
@@ -131,21 +170,22 @@ export function isKnownAsset(asset: string): asset is KnownAsset {
 export type AssetNameOrContractInfo = string | ContractInfo;
 
 export function findAssetInfo(
-  network: x402Network,
+  network: string | number,
   assetNameOrInfo: AssetNameOrContractInfo,
 ) {
   let assetInfo: ContractInfo;
+  const caip2Network = normalizeNetworkId(network);
 
   if (typeof assetNameOrInfo == "string") {
     if (!isKnownAsset(assetNameOrInfo)) {
       throw new Error(`Unknown asset: ${assetNameOrInfo}`);
     }
 
-    const t = lookupKnownAsset(network, assetNameOrInfo);
+    const t = lookupKnownAsset(caip2Network, assetNameOrInfo);
 
     if (!t) {
       throw new Error(
-        `Couldn't look up asset ${assetNameOrInfo} on ${network}`,
+        `Couldn't look up asset ${assetNameOrInfo} on ${caip2Network}`,
       );
     }
 
@@ -158,7 +198,7 @@ export function findAssetInfo(
 }
 
 export type x402ExactArgs = {
-  network: x402Network | number;
+  network: string | number;
   asset: KnownAsset;
   amount: UnitInput;
   payTo: Address;
@@ -177,7 +217,7 @@ export function x402Exact(args: x402ExactArgs) {
     maxAmountRequired: tokenInfo.toUnit(args.amount),
     payTo: args.payTo,
     asset: tokenInfo.address,
-    maxTimeoutSeconds: 300, // from coinbase/x402's middleware defaults
+    maxTimeoutSeconds: 300,
   });
 
   return req;

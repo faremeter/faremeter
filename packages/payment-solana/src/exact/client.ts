@@ -1,8 +1,8 @@
-import type { x402PaymentRequirements } from "@faremeter/types/x402";
+import type { x402PaymentRequirementsV2 } from "@faremeter/types/x402v2";
 import { isValidationError, throwValidationError } from "@faremeter/types";
 import type {
-  PaymentExecer,
-  PaymentHandler,
+  PaymentExecerV2,
+  PaymentHandlerV2,
   RequestContext,
 } from "@faremeter/types/client";
 import {
@@ -71,7 +71,7 @@ type PaymentMode = (typeof PaymentMode)[keyof typeof PaymentMode];
 async function extractMetadata(args: {
   connection: Connection | undefined;
   mint: PublicKey;
-  requirements: x402PaymentRequirements;
+  requirements: x402PaymentRequirementsV2;
   options: CreatePaymentHandlerOptions | undefined;
   wallet: Wallet;
 }) {
@@ -105,7 +105,7 @@ async function extractMetadata(args: {
 
   const payerKey = new PublicKey(extra.feePayer);
   const payTo = new PublicKey(requirements.payTo);
-  const amount = Number(requirements.maxAmountRequired);
+  const amount = Number(requirements.amount);
   let paymentMode: PaymentMode = PaymentMode.ToSpec;
 
   if (
@@ -138,7 +138,7 @@ export function createPaymentHandler(
   mint: PublicKey,
   connection?: Connection,
   options?: CreatePaymentHandlerOptions,
-): PaymentHandler {
+): PaymentHandlerV2 {
   const getAssociatedTokenAddressSyncRest =
     generateGetAssociatedTokenAddressSyncRest(options?.token ?? {});
 
@@ -149,8 +149,8 @@ export function createPaymentHandler(
 
   return async (
     _context: RequestContext,
-    accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> => {
+    accepts: x402PaymentRequirementsV2[],
+  ): Promise<PaymentExecerV2[]> => {
     const compatibleRequirements = accepts.filter(isMatchingRequirement);
     const res = compatibleRequirements.map((requirements) => {
       const exec = async () => {

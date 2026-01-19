@@ -1,6 +1,7 @@
-import type { PaymentExecer } from "@faremeter/types/client";
+/* eslint-disable @typescript-eslint/no-deprecated -- v1 test harness uses v1 types */
+import type { PaymentExecerV1 } from "@faremeter/types/client";
 
-export function chooseFirst(execers: PaymentExecer[]): PaymentExecer {
+export function chooseFirst(execers: PaymentExecerV1[]): PaymentExecerV1 {
   if (execers.length === 0) {
     throw new Error("No payment options available");
   }
@@ -11,7 +12,7 @@ export function chooseFirst(execers: PaymentExecer[]): PaymentExecer {
   return first;
 }
 
-export function chooseCheapest(execers: PaymentExecer[]): PaymentExecer {
+export function chooseCheapest(execers: PaymentExecerV1[]): PaymentExecerV1 {
   if (execers.length === 0) {
     throw new Error("No payment options available");
   }
@@ -23,7 +24,9 @@ export function chooseCheapest(execers: PaymentExecer[]): PaymentExecer {
   );
 }
 
-export function chooseMostExpensive(execers: PaymentExecer[]): PaymentExecer {
+export function chooseMostExpensive(
+  execers: PaymentExecerV1[],
+): PaymentExecerV1 {
   if (execers.length === 0) {
     throw new Error("No payment options available");
   }
@@ -37,7 +40,7 @@ export function chooseMostExpensive(execers: PaymentExecer[]): PaymentExecer {
 
 export function chooseByAsset(
   asset: string,
-): (execers: PaymentExecer[]) => PaymentExecer {
+): (execers: PaymentExecerV1[]) => PaymentExecerV1 {
   return (execers) => {
     const match = execers.find(
       (e) => e.requirements.asset.toLowerCase() === asset.toLowerCase(),
@@ -51,7 +54,7 @@ export function chooseByAsset(
 
 export function chooseByNetwork(
   network: string,
-): (execers: PaymentExecer[]) => PaymentExecer {
+): (execers: PaymentExecerV1[]) => PaymentExecerV1 {
   return (execers) => {
     const match = execers.find(
       (e) => e.requirements.network.toLowerCase() === network.toLowerCase(),
@@ -65,7 +68,7 @@ export function chooseByNetwork(
 
 export function chooseByScheme(
   scheme: string,
-): (execers: PaymentExecer[]) => PaymentExecer {
+): (execers: PaymentExecerV1[]) => PaymentExecerV1 {
   return (execers) => {
     const match = execers.find(
       (e) => e.requirements.scheme.toLowerCase() === scheme.toLowerCase(),
@@ -79,7 +82,7 @@ export function chooseByScheme(
 
 export function chooseByIndex(
   index: number,
-): (execers: PaymentExecer[]) => PaymentExecer {
+): (execers: PaymentExecerV1[]) => PaymentExecerV1 {
   return (execers) => {
     const execer = execers[index];
     if (!execer) {
@@ -96,9 +99,9 @@ export function chooseNone(): never {
 }
 
 export function chooseWithInspection(
-  inspector: (execers: PaymentExecer[]) => void,
-  inner: (execers: PaymentExecer[]) => PaymentExecer,
-): (execers: PaymentExecer[]) => PaymentExecer {
+  inspector: (execers: PaymentExecerV1[]) => void,
+  inner: (execers: PaymentExecerV1[]) => PaymentExecerV1,
+): (execers: PaymentExecerV1[]) => PaymentExecerV1 {
   return (execers) => {
     inspector(execers);
     return inner(execers);
@@ -106,9 +109,9 @@ export function chooseWithInspection(
 }
 
 export function chooseWithFilter(
-  filter: (execer: PaymentExecer) => boolean,
-  inner: (execers: PaymentExecer[]) => PaymentExecer,
-): (execers: PaymentExecer[]) => PaymentExecer {
+  filter: (execer: PaymentExecerV1) => boolean,
+  inner: (execers: PaymentExecerV1[]) => PaymentExecerV1,
+): (execers: PaymentExecerV1[]) => PaymentExecerV1 {
   return (execers) => {
     const filtered = execers.filter(filter);
     return inner(filtered);

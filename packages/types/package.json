@@ -35,6 +35,16 @@
       "import": "./dist/src/x402.js",
       "types": "./dist/src/x402.d.ts"
     },
+    "./x402v2": {
+      "require": "./dist/src/x402v2.js",
+      "import": "./dist/src/x402v2.js",
+      "types": "./dist/src/x402v2.d.ts"
+    },
+    "./x402-adapters": {
+      "require": "./dist/src/x402-adapters.js",
+      "import": "./dist/src/x402-adapters.js",
+      "types": "./dist/src/x402-adapters.d.ts"
+    },
     "./solana": {
       "require": "./dist/src/solana.js",
       "import": "./dist/src/solana.js",

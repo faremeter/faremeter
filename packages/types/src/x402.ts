@@ -41,6 +41,20 @@ export const x402PaymentRequiredResponse = type({
 export type x402PaymentRequiredResponse =
   typeof x402PaymentRequiredResponse.infer;
 
+/**
+ * Lenient payment required response parser that accepts optional error field.
+ * Use this when parsing incoming data from older servers that may not include
+ * the error field.
+ */
+export const x402PaymentRequiredResponseLenient = type({
+  x402Version: "number.integer",
+  accepts: x402PaymentRequirements.array(),
+  "error?": "string",
+});
+
+export type x402PaymentRequiredResponseLenient =
+  typeof x402PaymentRequiredResponseLenient.infer;
+
 export const x402PaymentPayload = type({
   x402Version: "number.integer",
   scheme: "string",
@@ -72,6 +86,19 @@ export const x402VerifyResponse = type({
 });
 
 export type x402VerifyResponse = typeof x402VerifyResponse.infer;
+
+/**
+ * Lenient verify response parser that accepts optional payer field.
+ * Use this when parsing incoming data from older facilitators that may
+ * not include the payer field.
+ */
+export const x402VerifyResponseLenient = type({
+  isValid: "boolean",
+  "invalidReason?": "string | null",
+  "payer?": "string",
+});
+
+export type x402VerifyResponseLenient = typeof x402VerifyResponseLenient.infer;
 
 export const x402SettleRequest = x402VerifyRequest;
 export type x402SettleRequest = typeof x402SettleRequest.infer;

@@ -1,4 +1,5 @@
 #!/usr/bin/env pnpm tsx
+/* eslint-disable @typescript-eslint/no-deprecated -- v1 tests use v1 types */
 
 import t from "tap";
 import {
@@ -11,8 +12,8 @@ import {
   chooseFirst,
 } from "@faremeter/test-harness";
 import type {
-  PaymentHandler,
-  PaymentExecer,
+  PaymentHandlerV1,
+  PaymentExecerV1,
   RequestContext,
 } from "@faremeter/types/client";
 import type { x402PaymentRequirements } from "@faremeter/types/x402";
@@ -24,29 +25,29 @@ function isMatchingRequirement(req: x402PaymentRequirements): boolean {
   );
 }
 
-function createNonMatchingHandler(): PaymentHandler {
+function createNonMatchingHandler(): PaymentHandlerV1 {
   return async (
     _context: RequestContext,
     _accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> => {
+  ): Promise<PaymentExecerV1[]> => {
     return [];
   };
 }
 
-function createThrowingHandler(message: string): PaymentHandler {
+function createThrowingHandler(message: string): PaymentHandlerV1 {
   return async (
     _context: RequestContext,
     _accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> => {
+  ): Promise<PaymentExecerV1[]> => {
     throw new Error(message);
   };
 }
 
-function createThrowingExecHandler(message: string): PaymentHandler {
+function createThrowingExecHandler(message: string): PaymentHandlerV1 {
   return async (
     _context: RequestContext,
     accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> => {
+  ): Promise<PaymentExecerV1[]> => {
     return accepts.filter(isMatchingRequirement).map((requirements) => ({
       requirements,
       exec: async () => {
@@ -56,11 +57,11 @@ function createThrowingExecHandler(message: string): PaymentHandler {
   };
 }
 
-function createNullPayloadHandler(): PaymentHandler {
+function createNullPayloadHandler(): PaymentHandlerV1 {
   return async (
     _context: RequestContext,
     accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> => {
+  ): Promise<PaymentExecerV1[]> => {
     return accepts.filter(isMatchingRequirement).map((requirements) => ({
       requirements,
       exec: async () => {
@@ -70,11 +71,11 @@ function createNullPayloadHandler(): PaymentHandler {
   };
 }
 
-function createEmptyPayloadHandler(): PaymentHandler {
+function createEmptyPayloadHandler(): PaymentHandlerV1 {
   return async (
     _context: RequestContext,
     accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> => {
+  ): Promise<PaymentExecerV1[]> => {
     return accepts.filter(isMatchingRequirement).map((requirements) => ({
       requirements,
       exec: async () => {
@@ -84,11 +85,11 @@ function createEmptyPayloadHandler(): PaymentHandler {
   };
 }
 
-function createWorkingHandler(): PaymentHandler {
+function createWorkingHandler(): PaymentHandlerV1 {
   return async (
     _context: RequestContext,
     accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> => {
+  ): Promise<PaymentExecerV1[]> => {
     return accepts.filter(isMatchingRequirement).map((requirements) => ({
       requirements,
       exec: async () => ({

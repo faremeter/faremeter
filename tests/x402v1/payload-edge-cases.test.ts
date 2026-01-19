@@ -1,4 +1,5 @@
 #!/usr/bin/env pnpm tsx
+/* eslint-disable @typescript-eslint/no-deprecated -- v1 tests use v1 types */
 
 import t from "tap";
 import {
@@ -10,8 +11,8 @@ import {
   TEST_NETWORK,
 } from "@faremeter/test-harness";
 import type {
-  PaymentHandler,
-  PaymentExecer,
+  PaymentHandlerV1,
+  PaymentExecerV1,
   RequestContext,
 } from "@faremeter/types/client";
 import type { x402PaymentRequirements } from "@faremeter/types/x402";
@@ -25,11 +26,11 @@ function isMatchingRequirement(req: x402PaymentRequirements): boolean {
 
 function createInvalidPayloadHandler(
   payloadFactory: (requirements: x402PaymentRequirements) => object,
-): PaymentHandler {
+): PaymentHandlerV1 {
   return async (
     _context: RequestContext,
     accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> => {
+  ): Promise<PaymentExecerV1[]> => {
     return accepts.filter(isMatchingRequirement).map((requirements) => ({
       requirements,
       exec: async () => ({

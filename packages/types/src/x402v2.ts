@@ -2,6 +2,7 @@ import { type } from "arktype";
 
 export const V2_PAYMENT_HEADER = "PAYMENT-SIGNATURE";
 export const V2_PAYMENT_REQUIRED_HEADER = "PAYMENT-REQUIRED";
+export const V2_PAYMENT_RESPONSE_HEADER = "PAYMENT-RESPONSE";
 
 export const x402ResourceInfo = type({
   url: "string",

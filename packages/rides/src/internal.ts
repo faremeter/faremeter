@@ -1,12 +1,12 @@
-import { x402PaymentId } from "@faremeter/types/x402";
-import { type PaymentHandler } from "@faremeter/types/client";
+import {
+  type PaymentHandler,
+  type PaymentExecer,
+} from "@faremeter/types/client";
 import {
   wrap as wrapFetch,
   type WrapOpts,
   chooseFirstAvailable,
 } from "@faremeter/fetch";
-
-import { type PaymentExecer } from "@faremeter/types/client";
 
 import {
   KnownNetworks,
@@ -30,7 +30,9 @@ export interface CreatePayerArgs {
   };
 }
 
-function idKey({ network, scheme, asset }: x402PaymentId) {
+type PaymentIdKey = { network: string; scheme: string; asset: string };
+
+function idKey({ network, scheme, asset }: PaymentIdKey) {
   return `${network}\0${scheme}\0${asset}`;
 }
 
@@ -75,10 +77,10 @@ export function createPayer(args?: CreatePayerArgs) {
         const balance = await getBalance();
 
         // XXX - We need to do a better job of understanding decimals here.
-        if (balance.amount < BigInt(req.maxAmountRequired)) {
+        if (balance.amount < BigInt(req.amount)) {
           // eslint-disable-next-line no-console
           console.log(
-            `Not paying with ${balance.name} on ${req.network} using the ${req.scheme} scheme: balance is ${balance.amount} which is less than ${req.maxAmountRequired}`,
+            `Not paying with ${balance.name} on ${req.network} using the ${req.scheme} scheme: balance is ${balance.amount} which is less than ${req.amount}`,
           );
 
           continue;

@@ -45,6 +45,7 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
+    "@faremeter/info": "workspace:^",
     "@faremeter/types": "workspace:^",
     "arktype": "catalog:"
   },

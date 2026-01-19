@@ -5,6 +5,8 @@ import {
 } from "@faremeter/wallet-ledger";
 import { createPaymentHandler } from "@faremeter/x-solana-settlement";
 import { wrap as wrapFetch } from "@faremeter/fetch";
+import { client } from "@faremeter/types";
+import { normalizeNetworkId } from "@faremeter/info";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -30,7 +32,12 @@ ui.message(`\nUsing account: ${selected.address}`);
 const ledgerWallet = await createLedgerSolanaWallet("devnet", selected.path);
 
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [createPaymentHandler(ledgerWallet)],
+  handlers: [
+    client.adaptPaymentHandlerV1ToV2(
+      createPaymentHandler(ledgerWallet),
+      normalizeNetworkId,
+    ),
+  ],
 });
 
 ui.message(`\nMaking payment request to ${url}...`);

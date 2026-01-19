@@ -24,6 +24,21 @@ pnpm install @faremeter/info
 
 <!-- TSDOC_START -->
 
+## Functions
+
+- [normalizeNetworkId](#normalizenetworkid)
+
+### normalizeNetworkId
+
+Normalize a legacy network identifier to CAIP-2 format.
+Handles both EVM and Solana networks.
+Returns the input unchanged if no mapping exists (may already be CAIP-2
+or an unknown network).
+
+| Function             | Type                          |
+| -------------------- | ----------------------------- |
+| `normalizeNetworkId` | `(network: string) => string` |
+
 <!-- TSDOC_END -->
 
 ## Related Packages

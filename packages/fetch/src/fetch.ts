@@ -3,6 +3,8 @@ import { type RequestContext } from "@faremeter/types/client";
 import {
   type ProcessPaymentRequiredResponseOpts,
   processPaymentRequiredResponse,
+  X_PAYMENT_HEADER,
+  V2_PAYMENT_HEADER,
 } from "./internal";
 
 export class WrappedFetchError extends Error {
@@ -34,14 +36,13 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
         request: input,
       };
 
-      const { paymentHeader } = await processPaymentRequiredResponse(
-        ctx,
-        await response.json(),
-        options,
-      );
+      const { paymentHeader, detectedVersion } =
+        await processPaymentRequiredResponse(ctx, response, options);
 
       const headers = new Headers(init.headers);
-      headers.set("X-PAYMENT", paymentHeader);
+      const headerName =
+        detectedVersion === 2 ? V2_PAYMENT_HEADER : X_PAYMENT_HEADER;
+      headers.set(headerName, paymentHeader);
 
       const newInit: RequestInit = {
         ...init,

@@ -27,6 +27,7 @@ pnpm install @faremeter/info
 ## Functions
 
 - [normalizeNetworkId](#normalizenetworkid)
+- [translateNetworkToLegacy](#translatenetworktolegacy)
 
 ### normalizeNetworkId
 
@@ -38,6 +39,17 @@ or an unknown network).
 | Function             | Type                          |
 | -------------------- | ----------------------------- |
 | `normalizeNetworkId` | `(network: string) => string` |
+
+### translateNetworkToLegacy
+
+Translate a CAIP-2 network identifier to legacy format.
+Handles both EVM and Solana networks.
+Returns the input unchanged if no mapping exists (may not be a known
+CAIP-2 network, or may already be legacy).
+
+| Function                   | Type                          |
+| -------------------------- | ----------------------------- |
+| `translateNetworkToLegacy` | `(network: string) => string` |
 
 <!-- TSDOC_END -->
 

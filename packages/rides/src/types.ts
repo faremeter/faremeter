@@ -1,4 +1,3 @@
-import { x402PaymentId } from "@faremeter/types/x402";
 import { type PaymentHandler } from "@faremeter/types/client";
 
 export const KnownNetworks = [
@@ -24,8 +23,14 @@ export type Balance = {
 
 export type GetBalance = () => Promise<Balance>;
 
+export type PaymentIdV2 = {
+  scheme: string;
+  network: string;
+  asset: string;
+};
+
 export interface WalletAdapter {
-  x402Id: x402PaymentId[];
+  x402Id: PaymentIdV2[];
   paymentHandler: PaymentHandler;
   getBalance: GetBalance;
 }

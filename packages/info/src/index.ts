@@ -20,3 +20,20 @@ export function normalizeNetworkId(network: string): string {
 
   return network;
 }
+
+/**
+ * Translate a CAIP-2 network identifier to legacy format.
+ * Handles both EVM and Solana networks.
+ * Returns the input unchanged if no mapping exists (may not be a known
+ * CAIP-2 network, or may already be legacy).
+ */
+export function translateNetworkToLegacy(network: string): string {
+  const evmLegacy = evm.caip2ToLegacyName(network);
+  if (evmLegacy) return evmLegacy;
+
+  const solanaLegacy = solana.caip2ToLegacyNetworkIds(network);
+  const firstSolanaLegacy = solanaLegacy?.[0];
+  if (firstSolanaLegacy) return firstSolanaLegacy;
+
+  return network;
+}

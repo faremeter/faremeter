@@ -4,6 +4,8 @@ import { Keypair } from "@solana/web3.js";
 import { createLocalWallet } from "@faremeter/wallet-solana";
 import { createPaymentHandler } from "@faremeter/x-solana-settlement";
 import { wrap as wrapFetch } from "@faremeter/fetch";
+import { client } from "@faremeter/types";
+import { normalizeNetworkId } from "@faremeter/info";
 import fs from "fs";
 
 const { PAYER_KEYPAIR_PATH } = process.env;
@@ -19,7 +21,12 @@ const keypair = Keypair.fromSecretKey(
 const wallet = await createLocalWallet("devnet", keypair);
 
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [createPaymentHandler(wallet)],
+  handlers: [
+    client.adaptPaymentHandlerV1ToV2(
+      createPaymentHandler(wallet),
+      normalizeNetworkId,
+    ),
+  ],
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

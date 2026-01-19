@@ -2,6 +2,7 @@ import {
   handleMiddlewareRequest,
   type CommonMiddlewareArgs,
   createPaymentRequiredResponseCache,
+  resolveSupportedVersions,
 } from "./common";
 import type { MiddlewareHandler } from "hono";
 
@@ -12,17 +13,21 @@ type CreateMiddlewareArgs = {
 export async function createMiddleware(
   args: CreateMiddlewareArgs,
 ): Promise<MiddlewareHandler> {
-  const { getPaymentRequiredResponse } = createPaymentRequiredResponseCache(
-    args.cacheConfig,
-  );
+  // Validate configuration at creation time
+  const supportedVersions = resolveSupportedVersions(args.supportedVersions);
+
+  const { getPaymentRequiredResponse, getPaymentRequiredResponseV2 } =
+    createPaymentRequiredResponseCache(args.cacheConfig);
 
   return async (c, next) => {
     return await handleMiddlewareRequest({
       ...args,
+      supportedVersions,
       resource: c.req.url,
       getHeader: (key) => c.req.header(key),
       setResponseHeader: (key, value) => c.header(key, value),
       getPaymentRequiredResponse,
+      getPaymentRequiredResponseV2,
       sendJSONResponse: (status, body, headers) => {
         c.status(status);
         if (headers) {

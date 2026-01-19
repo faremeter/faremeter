@@ -4,16 +4,21 @@ import { wrap } from "@faremeter/fetch";
 import {
   handleMiddlewareRequest,
   getPaymentRequiredResponse,
+  getPaymentRequiredResponseV2,
+  resolveSupportedVersions,
 } from "@faremeter/middleware/common";
-import type { MiddlewareBodyContext } from "@faremeter/middleware/common";
-import type { PaymentExecer } from "@faremeter/types/client";
+import type {
+  MiddlewareBodyContext,
+  MiddlewareBodyContextV1,
+} from "@faremeter/middleware/common";
+import type { PaymentExecer, PaymentExecerV1 } from "@faremeter/types/client";
+import { adaptRequirementsV2ToV1 } from "@faremeter/types/x402-adapters";
 import type {
   x402PaymentRequirements,
   x402PaymentPayload,
   x402SettleResponse,
   x402VerifyResponse,
 } from "@faremeter/types/x402";
-
 import type { Interceptor } from "../interceptors/types";
 import { composeInterceptors } from "../interceptors/types";
 import { getURLFromRequestInfo } from "../interceptors/utils";
@@ -30,6 +35,15 @@ type RequestState = {
   settleResponse?: x402SettleResponse | undefined;
   verifyResponse?: x402VerifyResponse | undefined;
 };
+
+/**
+ * Type guard to check if a middleware context is v1.
+ */
+function isV1Context<T>(
+  context: MiddlewareBodyContext<T>,
+): context is MiddlewareBodyContextV1<T> {
+  return context.protocolVersion === 1;
+}
 
 /**
  * TestHarness provides an in-process test environment for the x402 protocol.
@@ -95,13 +109,17 @@ export class TestHarness {
       const result = await handleMiddlewareRequest<Response>({
         facilitatorURL: `${this.baseUrl}/facilitator`,
         accepts: this.config.accepts,
+        supportedVersions: resolveSupportedVersions(
+          this.config.supportedVersions,
+        ),
         resource: c.req.url,
         fetch: middlewareFetch,
         getHeader: (key: string) => c.req.header(key),
         setResponseHeader: (key: string, value: string) => c.header(key, value),
         getPaymentRequiredResponse,
+        getPaymentRequiredResponseV2,
         sendJSONResponse: (
-          status: 402,
+          status: 400 | 402,
           body?: object,
           headers?: Record<string, string>,
         ): Response => {
@@ -119,6 +137,14 @@ export class TestHarness {
         body: async (
           context: MiddlewareBodyContext<Response>,
         ): Promise<Response | undefined> => {
+          // Test harness currently only supports v1 protocol
+          if (!isV1Context(context)) {
+            c.status(501);
+            return c.json({
+              error: "Test harness does not yet support x402 v2 protocol",
+            });
+          }
+
           const { paymentRequirements, paymentPayload, settle, verify } =
             context;
 
@@ -228,11 +254,15 @@ export class TestHarness {
   /**
    * Create a fetch function that handles the full x402 payment flow.
    *
-   * @param opts.payerChooser - Function to choose which payment option to use
+   * @param opts.payerChooser - Function to choose which payment option to use.
+   *   Receives v1 PaymentExecerV1[] for compatibility with v1 protocol tests.
+   *   The chosen execer is converted back to v2 internally.
    */
   createFetch(opts?: {
     payerChooser?:
-      | ((execers: PaymentExecer[]) => PaymentExecer | Promise<PaymentExecer>)
+      | ((
+          execers: PaymentExecerV1[],
+        ) => PaymentExecerV1 | Promise<PaymentExecerV1>)
       | undefined;
   }): typeof fetch {
     const clientFetch = this.createClientFetch();
@@ -243,8 +273,50 @@ export class TestHarness {
       handlers: this.config.clientHandlers,
       ...(payerChooser
         ? {
-            payerChooser: async (execers: PaymentExecer[]) =>
-              payerChooser(execers),
+            payerChooser: async (
+              v2Execers: PaymentExecer[],
+            ): Promise<PaymentExecer> => {
+              // Convert v2 execers to v1 for the callback
+              const v1Execers: PaymentExecerV1[] = v2Execers.map((e) => ({
+                requirements: adaptRequirementsV2ToV1(e.requirements, {
+                  url: "",
+                }),
+                exec: e.exec,
+              }));
+
+              // Let the callback choose using v1 types
+              const chosenV1 = await payerChooser(v1Execers);
+
+              // Find the corresponding v2 execer by matching requirements
+              const chosenIndex = v1Execers.indexOf(chosenV1);
+              if (chosenIndex >= 0) {
+                const v2Execer = v2Execers[chosenIndex];
+                if (v2Execer) {
+                  return v2Execer;
+                }
+              }
+
+              // Fallback: wrap the v1 execer's exec with the first matching v2 requirements
+              const matchingV2 = v2Execers.find(
+                (e) =>
+                  e.requirements.scheme === chosenV1.requirements.scheme &&
+                  e.requirements.network === chosenV1.requirements.network &&
+                  e.requirements.asset === chosenV1.requirements.asset,
+              );
+              if (matchingV2) {
+                return {
+                  requirements: matchingV2.requirements,
+                  exec: chosenV1.exec,
+                };
+              }
+
+              // Last resort: return first v2 execer with the chosen exec
+              const first = v2Execers[0];
+              if (!first) {
+                throw new Error("No execers available");
+              }
+              return { requirements: first.requirements, exec: chosenV1.exec };
+            },
           }
         : {}),
     });

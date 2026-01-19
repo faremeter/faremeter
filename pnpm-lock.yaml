@@ -409,6 +409,9 @@ importers:
 
   packages/middleware:
     dependencies:
+      '@faremeter/info':
+        specifier: workspace:^
+        version: link:../info
       '@faremeter/logs':
         specifier: workspace:^
         version: link:../logs

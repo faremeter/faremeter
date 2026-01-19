@@ -1,17 +1,37 @@
 import { isValidationError } from "@faremeter/types";
 import {
+  type x402PaymentRequirements as x402PaymentRequirementsV1,
+  type x402PaymentPayload as x402PaymentPayloadV1,
+  x402PaymentRequiredResponse as x402PaymentRequiredResponseV1,
+  x402PaymentHeaderToPayload as x402PaymentHeaderToPayloadV1,
+  x402VerifyRequest as x402VerifyRequestV1,
+  x402VerifyResponse as x402VerifyResponseV1,
+  x402SettleRequest as x402SettleRequestV1,
+  x402SettleResponse as x402SettleResponseV1,
+  x402SettleResponseLenient,
+  normalizeSettleResponse,
+  X_PAYMENT_HEADER,
+  X_PAYMENT_RESPONSE_HEADER,
+} from "@faremeter/types/x402";
+import {
   type x402PaymentRequirements,
   type x402PaymentPayload,
+  type x402ResourceInfo,
   x402PaymentRequiredResponse,
   x402PaymentHeaderToPayload,
   x402VerifyRequest,
   x402VerifyResponse,
   x402SettleRequest,
   x402SettleResponse,
-  x402SettleResponseLenient,
-  normalizeSettleResponse,
-  X_PAYMENT_RESPONSE_HEADER,
-} from "@faremeter/types/x402";
+  V2_PAYMENT_HEADER,
+  V2_PAYMENT_REQUIRED_HEADER,
+  V2_PAYMENT_RESPONSE_HEADER,
+} from "@faremeter/types/x402v2";
+import {
+  adaptPaymentRequiredResponseV1ToV2,
+  adaptPaymentRequiredResponseV2ToV1,
+} from "@faremeter/types/x402-adapters";
+import { normalizeNetworkId } from "@faremeter/info";
 import { type AgedLRUCacheOpts, AgedLRUCache } from "./cache";
 
 import { logger } from "./logger";
@@ -51,30 +71,33 @@ function buildPaymentResponseHeader(
   return btoa(JSON.stringify(headerPayload));
 }
 
-export function findMatchingPaymentRequirements(
-  accepts: x402PaymentRequirements[],
-  payload: x402PaymentPayload,
-) {
-  let possible;
+type MatchCriteria = {
+  scheme: string;
+  network: string;
+  asset?: string;
+};
 
-  if (payload.asset !== undefined) {
-    // Narrow based on the asset if available.
-    possible = accepts.filter(
-      (x) =>
-        x.network === payload.network &&
-        x.scheme === payload.scheme &&
-        x.asset === payload.asset,
-    );
-  } else {
-    // Otherwise fall back to the behavior in coinbase/x402.
-    possible = accepts.filter(
-      (x) => x.network === payload.network && x.scheme === payload.scheme,
-    );
-  }
+function findMatching<R extends MatchCriteria>(
+  accepts: R[],
+  criteria: MatchCriteria,
+  label: string,
+  payload: Record<string, unknown>,
+): R | undefined {
+  const possible =
+    criteria.asset !== undefined
+      ? accepts.filter(
+          (x) =>
+            x.network === criteria.network &&
+            x.scheme === criteria.scheme &&
+            x.asset === criteria.asset,
+        )
+      : accepts.filter(
+          (x) => x.network === criteria.network && x.scheme === criteria.scheme,
+        );
 
   if (possible.length > 1) {
     logger.warning(
-      `found ${possible.length} ambiguous matching requirements for client payment`,
+      `found ${possible.length} ambiguous matching requirements for ${label} client payment`,
       payload,
     );
   }
@@ -82,6 +105,20 @@ export function findMatchingPaymentRequirements(
   // XXX - If there are more than one, this really should be an error.
   // For now, err on the side of potential compatibility.
   return possible[0];
+}
+
+export function findMatchingPaymentRequirements(
+  accepts: x402PaymentRequirementsV1[],
+  payload: x402PaymentPayloadV1,
+) {
+  return findMatching(accepts, payload, "v1", payload);
+}
+
+export function findMatchingPaymentRequirementsV2(
+  accepts: x402PaymentRequirements[],
+  payload: x402PaymentPayload,
+): x402PaymentRequirements | undefined {
+  return findMatching(accepts, payload.accepted, "v2", payload);
 }
 
 export function gateGetPaymentRequiredResponse(res: Response) {
@@ -95,7 +132,60 @@ export function gateGetPaymentRequiredResponse(res: Response) {
   throw new Error(msg);
 }
 
-export type RelaxedRequirements = Partial<x402PaymentRequirements>;
+export type RelaxedRequirements = Partial<x402PaymentRequirementsV1>;
+export type RelaxedRequirementsV2 = Partial<x402PaymentRequirements>;
+
+function relaxedRequirementsToV2(
+  req: RelaxedRequirements,
+): RelaxedRequirementsV2 {
+  const result: RelaxedRequirementsV2 = {};
+  if (req.scheme !== undefined) result.scheme = req.scheme;
+  if (req.network !== undefined) result.network = req.network;
+  if (req.maxAmountRequired !== undefined)
+    result.amount = req.maxAmountRequired;
+  if (req.asset !== undefined) result.asset = req.asset;
+  if (req.payTo !== undefined) result.payTo = req.payTo;
+  if (req.maxTimeoutSeconds !== undefined)
+    result.maxTimeoutSeconds = req.maxTimeoutSeconds;
+  if (req.extra !== undefined) result.extra = req.extra;
+  return result;
+}
+
+/**
+ * Parsed payment header result, discriminated by version.
+ */
+type ParsedPaymentHeader =
+  | { version: 1; payload: x402PaymentPayloadV1; rawHeader: string }
+  | { version: 2; payload: x402PaymentPayload; rawHeader: string };
+
+/**
+ * Parse a payment header from either v1 (X-PAYMENT) or v2 (PAYMENT-SIGNATURE).
+ * Returns the parsed payload with version discriminant, or undefined if no valid header found.
+ */
+function parsePaymentHeader(
+  getHeader: (key: string) => string | undefined,
+): ParsedPaymentHeader | undefined {
+  // Try v2 header first
+  const v2Header = getHeader(V2_PAYMENT_HEADER);
+  if (v2Header) {
+    const v2Payload = x402PaymentHeaderToPayload(v2Header);
+    if (!isValidationError(v2Payload)) {
+      return { version: 2, payload: v2Payload, rawHeader: v2Header };
+    }
+    logger.debug(`couldn't validate v2 client payload: ${v2Payload.summary}`);
+  }
+
+  const v1Header = getHeader(X_PAYMENT_HEADER);
+  if (v1Header) {
+    const v1Payload = x402PaymentHeaderToPayloadV1(v1Header);
+    if (!isValidationError(v1Payload)) {
+      return { version: 1, payload: v1Payload, rawHeader: v1Header };
+    }
+    logger.debug(`couldn't validate v1 client payload: ${v1Payload.summary}`);
+  }
+
+  return undefined;
+}
 
 type getPaymentRequiredResponseArgs = {
   facilitatorURL: string;
@@ -128,7 +218,7 @@ export async function getPaymentRequiredResponse(
 
   gateGetPaymentRequiredResponse(t);
 
-  const response = x402PaymentRequiredResponse(await t.json());
+  const response = x402PaymentRequiredResponseV1(await t.json());
 
   if (isValidationError(response)) {
     throw new Error(
@@ -139,76 +229,275 @@ export async function getPaymentRequiredResponse(
   return response;
 }
 
-type PossibleStatusCodes = 402;
+type getPaymentRequiredResponseV2Args = {
+  facilitatorURL: string;
+  accepts: RelaxedRequirementsV2[];
+  resource: x402ResourceInfo;
+  fetch?: typeof fetch;
+};
+
+export async function getPaymentRequiredResponseV2(
+  args: getPaymentRequiredResponseV2Args,
+) {
+  const fetchFn = args.fetch ?? fetch;
+
+  const t = await fetchFn(`${args.facilitatorURL}/accepts`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      x402Version: 2,
+      resource: args.resource,
+      accepts: args.accepts,
+    }),
+  });
+
+  gateGetPaymentRequiredResponse(t);
+
+  const response = x402PaymentRequiredResponse(await t.json());
+
+  if (isValidationError(response)) {
+    throw new Error(
+      `invalid v2 payment requirements from facilitator: ${response.summary}`,
+    );
+  }
+
+  return response;
+}
+
+type PossibleStatusCodes = 400 | 402;
 type PossibleJSONResponse = object;
+
+/**
+ * Configuration for which x402 protocol versions the middleware supports.
+ * At least one version must be enabled.
+ */
+export type SupportedVersionsConfig = {
+  /** Support x402 v1 protocol (JSON body responses, X-PAYMENT header). Default: true */
+  x402v1?: boolean;
+  /** Support x402 v2 protocol (PAYMENT-REQUIRED header, PAYMENT-SIGNATURE header). Default: false */
+  x402v2?: boolean;
+};
+
+/**
+ * Resolve and validate supported versions config.
+ * Returns resolved config with defaults applied.
+ * Throws if configuration is invalid.
+ */
+export function resolveSupportedVersions(
+  config?: SupportedVersionsConfig,
+): Required<SupportedVersionsConfig> {
+  const resolved = {
+    x402v1: config?.x402v1 ?? true,
+    x402v2: config?.x402v2 ?? false,
+  };
+
+  if (!resolved.x402v1 && !resolved.x402v2) {
+    throw new Error(
+      "Invalid supportedVersions configuration: at least one protocol version must be enabled",
+    );
+  }
+
+  return resolved;
+}
 
 export type CommonMiddlewareArgs = {
   facilitatorURL: string;
   accepts: (RelaxedRequirements | RelaxedRequirements[])[];
   cacheConfig?: createPaymentRequiredResponseCacheOpts;
+  supportedVersions?: SupportedVersionsConfig;
 };
 
-export type SettleResult<MiddlewareResponse> =
+export type SettleResultV1<MiddlewareResponse> =
+  | { success: true; facilitatorResponse: x402SettleResponseV1 }
+  | { success: false; errorResponse: MiddlewareResponse };
+
+export type SettleResultV2<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402SettleResponse }
   | { success: false; errorResponse: MiddlewareResponse };
 
-export type VerifyResult<MiddlewareResponse> =
+export type SettleResult<MiddlewareResponse> =
+  | SettleResultV1<MiddlewareResponse>
+  | SettleResultV2<MiddlewareResponse>;
+
+export type VerifyResultV1<MiddlewareResponse> =
+  | { success: true; facilitatorResponse: x402VerifyResponseV1 }
+  | { success: false; errorResponse: MiddlewareResponse };
+
+export type VerifyResultV2<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402VerifyResponse }
   | { success: false; errorResponse: MiddlewareResponse };
 
-export type MiddlewareBodyContext<MiddlewareResponse> = {
-  paymentRequirements: x402PaymentRequirements;
-  paymentPayload: x402PaymentPayload;
-  settle: () => Promise<SettleResult<MiddlewareResponse>>;
-  verify: () => Promise<VerifyResult<MiddlewareResponse>>;
+export type VerifyResult<MiddlewareResponse> =
+  | VerifyResultV1<MiddlewareResponse>
+  | VerifyResultV2<MiddlewareResponse>;
+
+export type MiddlewareBodyContextV1<MiddlewareResponse> = {
+  protocolVersion: 1;
+  paymentRequirements: x402PaymentRequirementsV1;
+  paymentPayload: x402PaymentPayloadV1;
+  settle: () => Promise<SettleResultV1<MiddlewareResponse>>;
+  verify: () => Promise<VerifyResultV1<MiddlewareResponse>>;
 };
 
-export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
-  CommonMiddlewareArgs & {
-    resource: string;
-    getHeader: (key: string) => string | undefined;
-    getPaymentRequiredResponse: typeof getPaymentRequiredResponse;
-    sendJSONResponse: (
-      status: PossibleStatusCodes,
-      body?: PossibleJSONResponse,
-      headers?: Record<string, string>,
-    ) => MiddlewareResponse;
-    body: (
-      context: MiddlewareBodyContext<MiddlewareResponse>,
-    ) => Promise<MiddlewareResponse | undefined>;
-    setResponseHeader?: (key: string, value: string) => void;
-    fetch?: typeof fetch;
-  };
+export type MiddlewareBodyContextV2<MiddlewareResponse> = {
+  protocolVersion: 2;
+  paymentRequirements: x402PaymentRequirements;
+  paymentPayload: x402PaymentPayload;
+  settle: () => Promise<SettleResultV2<MiddlewareResponse>>;
+  verify: () => Promise<VerifyResultV2<MiddlewareResponse>>;
+};
+
+export type MiddlewareBodyContext<MiddlewareResponse> =
+  | MiddlewareBodyContextV1<MiddlewareResponse>
+  | MiddlewareBodyContextV2<MiddlewareResponse>;
+
+export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = Omit<
+  CommonMiddlewareArgs,
+  "supportedVersions"
+> & {
+  resource: string;
+  getHeader: (key: string) => string | undefined;
+  getPaymentRequiredResponse: typeof getPaymentRequiredResponse;
+  getPaymentRequiredResponseV2?: typeof getPaymentRequiredResponseV2;
+  supportedVersions: Required<SupportedVersionsConfig>;
+  sendJSONResponse: (
+    status: PossibleStatusCodes,
+    body?: PossibleJSONResponse,
+    headers?: Record<string, string>,
+  ) => MiddlewareResponse;
+  body: (
+    context: MiddlewareBodyContext<MiddlewareResponse>,
+  ) => Promise<MiddlewareResponse | undefined>;
+  setResponseHeader?: (key: string, value: string) => void;
+  fetch?: typeof fetch;
+};
 
 export async function handleMiddlewareRequest<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
 ) {
   const accepts = args.accepts.flat();
   const fetchFn = args.fetch ?? fetch;
+  const { supportedVersions } = args;
 
-  const paymentRequiredResponse = await args.getPaymentRequiredResponse({
-    accepts,
-    facilitatorURL: args.facilitatorURL,
-    resource: args.resource,
-    fetch: fetchFn,
-  });
+  // Fetch requirements in the highest supported version, adapt downward as needed.
+  let v1Response: x402PaymentRequiredResponseV1 | undefined;
+  let v2Response: x402PaymentRequiredResponse | undefined;
 
-  const sendPaymentRequired = () =>
-    args.sendJSONResponse(402, paymentRequiredResponse);
+  if (supportedVersions.x402v2 && args.getPaymentRequiredResponseV2) {
+    const firstAccept = accepts.find((a) => a.resource !== undefined);
+    const resourceInfo: x402ResourceInfo = {
+      url: firstAccept?.resource ?? args.resource,
+    };
+    if (firstAccept?.description) {
+      resourceInfo.description = firstAccept.description;
+    }
+    if (firstAccept?.mimeType) {
+      resourceInfo.mimeType = firstAccept.mimeType;
+    }
 
-  const paymentHeader = args.getHeader("X-PAYMENT");
+    v2Response = await args.getPaymentRequiredResponseV2({
+      accepts: accepts.map(relaxedRequirementsToV2),
+      facilitatorURL: args.facilitatorURL,
+      resource: resourceInfo,
+      fetch: fetchFn,
+    });
+    if (supportedVersions.x402v1) {
+      v1Response = adaptPaymentRequiredResponseV2ToV1(v2Response);
+    }
+  } else {
+    v1Response = await args.getPaymentRequiredResponse({
+      accepts,
+      facilitatorURL: args.facilitatorURL,
+      resource: args.resource,
+      fetch: fetchFn,
+    });
+    if (supportedVersions.x402v2) {
+      v2Response = adaptPaymentRequiredResponseV1ToV2(
+        v1Response,
+        args.resource,
+        normalizeNetworkId,
+      );
+    }
+  }
 
-  if (!paymentHeader) {
+  const parsedHeader = parsePaymentHeader(args.getHeader);
+
+  const sendPaymentRequired = (): MiddlewareResponse => {
+    if (supportedVersions.x402v2 && v2Response) {
+      const v2Headers = {
+        [V2_PAYMENT_REQUIRED_HEADER]: btoa(JSON.stringify(v2Response)),
+      };
+      if (supportedVersions.x402v1 && v1Response) {
+        return args.sendJSONResponse(402, v1Response, v2Headers);
+      }
+      return args.sendJSONResponse(
+        402,
+        v2Response.error ? { error: v2Response.error } : undefined,
+        v2Headers,
+      );
+    }
+    if (v1Response) {
+      return args.sendJSONResponse(402, v1Response);
+    }
+    throw new Error("no payment required response available");
+  };
+
+  if (!parsedHeader) {
     return sendPaymentRequired();
   }
 
-  const paymentPayload = x402PaymentHeaderToPayload(paymentHeader);
-
-  if (isValidationError(paymentPayload)) {
-    logger.debug(`couldn't validate client payload: ${paymentPayload.summary}`);
-    return sendPaymentRequired();
+  if (parsedHeader.version === 2 && !supportedVersions.x402v2) {
+    return args.sendJSONResponse(400, {
+      error: "This server does not support x402 protocol version 2",
+    });
   }
 
+  if (parsedHeader.version === 1 && !supportedVersions.x402v1) {
+    return args.sendJSONResponse(400, {
+      error: "This server does not support x402 protocol version 1",
+    });
+  }
+
+  if (parsedHeader.version === 2) {
+    if (!v2Response) {
+      throw new Error("v2 response unavailable for v2 request");
+    }
+    return handleV2Request(
+      args,
+      parsedHeader.payload,
+      v2Response,
+      sendPaymentRequired,
+      fetchFn,
+    );
+  }
+
+  if (!v1Response) {
+    throw new Error("v1 response unavailable for v1 request");
+  }
+  return handleV1Request(
+    args,
+    parsedHeader.payload,
+    parsedHeader.rawHeader,
+    v1Response,
+    sendPaymentRequired,
+    fetchFn,
+  );
+}
+
+/**
+ * Handle v1 protocol request.
+ */
+async function handleV1Request<MiddlewareResponse>(
+  args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
+  paymentPayload: x402PaymentPayloadV1,
+  paymentHeader: string,
+  paymentRequiredResponse: x402PaymentRequiredResponseV1,
+  sendPaymentRequired: () => MiddlewareResponse,
+  fetchFn: typeof fetch,
+): Promise<MiddlewareResponse | undefined> {
   const paymentRequirements = findMatchingPaymentRequirements(
     paymentRequiredResponse.accepts,
     paymentPayload,
@@ -216,14 +505,14 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
 
   if (!paymentRequirements) {
     logger.warning(
-      `couldn't find matching payment requirements for payload`,
+      `couldn't find matching payment requirements for v1 payload`,
       paymentPayload,
     );
     return sendPaymentRequired();
   }
 
-  const settle = async (): Promise<SettleResult<MiddlewareResponse>> => {
-    const settleRequest: x402SettleRequest = {
+  const settle = async (): Promise<SettleResultV1<MiddlewareResponse>> => {
+    const settleRequest: x402SettleRequestV1 = {
       x402Version: 1,
       paymentHeader,
       paymentPayload,
@@ -269,8 +558,8 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     return { success: true, facilitatorResponse: settlementResponse };
   };
 
-  const verify = async (): Promise<VerifyResult<MiddlewareResponse>> => {
-    const verifyRequest: x402VerifyRequest = {
+  const verify = async (): Promise<VerifyResultV1<MiddlewareResponse>> => {
+    const verifyRequest: x402VerifyRequestV1 = {
       x402Version: 1,
       paymentHeader,
       paymentPayload,
@@ -285,7 +574,7 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
       },
       body: JSON.stringify(verifyRequest),
     });
-    const verifyResponse = x402VerifyResponse(await t.json());
+    const verifyResponse = x402VerifyResponseV1(await t.json());
 
     if (isValidationError(verifyResponse)) {
       const msg = `error getting response from facilitator for verification: ${verifyResponse.summary}`;
@@ -305,6 +594,112 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
   };
 
   return await args.body({
+    protocolVersion: 1,
+    paymentRequirements,
+    paymentPayload,
+    settle,
+    verify,
+  });
+}
+
+/**
+ * Handle v2 protocol request.
+ */
+async function handleV2Request<MiddlewareResponse>(
+  args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
+  paymentPayload: x402PaymentPayload,
+  paymentRequiredResponse: x402PaymentRequiredResponse,
+  sendPaymentRequired: () => MiddlewareResponse,
+  fetchFn: typeof fetch,
+): Promise<MiddlewareResponse | undefined> {
+  const paymentRequirements = findMatchingPaymentRequirementsV2(
+    paymentRequiredResponse.accepts,
+    paymentPayload,
+  );
+
+  if (!paymentRequirements) {
+    logger.warning(
+      `couldn't find matching payment requirements for v2 payload`,
+      paymentPayload,
+    );
+    return sendPaymentRequired();
+  }
+
+  const settle = async (): Promise<SettleResultV2<MiddlewareResponse>> => {
+    const settleRequest: x402SettleRequest = {
+      paymentPayload,
+      paymentRequirements,
+    };
+
+    const t = await fetchFn(`${args.facilitatorURL}/settle`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(settleRequest),
+    });
+    const settlementResponse = x402SettleResponse(await t.json());
+
+    if (isValidationError(settlementResponse)) {
+      const msg = `error getting response from facilitator for v2 settlement: ${settlementResponse.summary}`;
+      logger.error(msg);
+      throw new Error(msg);
+    }
+
+    if (args.setResponseHeader) {
+      args.setResponseHeader(
+        V2_PAYMENT_RESPONSE_HEADER,
+        btoa(JSON.stringify(settlementResponse)),
+      );
+    }
+
+    if (!settlementResponse.success) {
+      logger.warning(
+        "failed to settle v2 payment: {errorReason}",
+        settlementResponse,
+      );
+      return { success: false, errorResponse: sendPaymentRequired() };
+    }
+
+    return { success: true, facilitatorResponse: settlementResponse };
+  };
+
+  const verify = async (): Promise<VerifyResultV2<MiddlewareResponse>> => {
+    const verifyRequest: x402VerifyRequest = {
+      paymentPayload,
+      paymentRequirements,
+    };
+
+    const t = await fetchFn(`${args.facilitatorURL}/verify`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(verifyRequest),
+    });
+    const verifyResponse = x402VerifyResponse(await t.json());
+
+    if (isValidationError(verifyResponse)) {
+      const msg = `error getting response from facilitator for v2 verification: ${verifyResponse.summary}`;
+      logger.error(msg);
+      throw new Error(msg);
+    }
+
+    if (!verifyResponse.isValid) {
+      logger.warning(
+        "failed to verify v2 payment: {invalidReason}",
+        verifyResponse,
+      );
+      return { success: false, errorResponse: sendPaymentRequired() };
+    }
+
+    return { success: true, facilitatorResponse: verifyResponse };
+  };
+
+  return await args.body({
+    protocolVersion: 2,
     paymentRequirements,
     paymentPayload,
     settle,
@@ -323,11 +718,17 @@ export function createPaymentRequiredResponseCache(
 
     return {
       getPaymentRequiredResponse,
+      getPaymentRequiredResponseV2,
     };
   }
 
-  const cache = new AgedLRUCache<
+  const v1Cache = new AgedLRUCache<
     RelaxedRequirements[],
+    x402PaymentRequiredResponseV1
+  >(opts);
+
+  const v2Cache = new AgedLRUCache<
+    RelaxedRequirementsV2[],
     x402PaymentRequiredResponse
   >(opts);
 
@@ -335,12 +736,23 @@ export function createPaymentRequiredResponseCache(
     getPaymentRequiredResponse: async (
       args: getPaymentRequiredResponseArgs,
     ) => {
-      let response = cache.get(args.accepts);
+      let response = v1Cache.get(args.accepts);
 
       if (response === undefined) {
         response = await getPaymentRequiredResponse(args);
+        v1Cache.put(args.accepts, response);
+      }
 
-        cache.put(args.accepts, response);
+      return response;
+    },
+    getPaymentRequiredResponseV2: async (
+      args: getPaymentRequiredResponseV2Args,
+    ) => {
+      let response = v2Cache.get(args.accepts);
+
+      if (response === undefined) {
+        response = await getPaymentRequiredResponseV2(args);
+        v2Cache.put(args.accepts, response);
       }
 
       return response;

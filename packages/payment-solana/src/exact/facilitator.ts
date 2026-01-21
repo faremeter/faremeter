@@ -27,6 +27,7 @@ import {
 } from "@solana/kit";
 import {
   getBase64EncodedWireTransaction,
+  getSignatureFromTransaction,
   getTransactionDecoder,
   partiallySignTransaction,
 } from "@solana/transactions";
@@ -45,6 +46,9 @@ import {
 } from "@solana-program/token";
 
 import { getAddMemoInstruction } from "@solana-program/memo";
+import { TransactionStore } from "./cache";
+
+const seenTxs = new TransactionStore();
 
 export interface HookBaseArgs {
   network: string;
@@ -90,6 +94,7 @@ interface FacilitatorOptions {
   maxPriorityFee?: number;
   features?: {
     enableSettlementAccounts?: boolean;
+    enableDuplicateCheck?: boolean;
   };
   hooks?: readonly FacilitatorHooks[];
 }
@@ -309,7 +314,7 @@ export const createFacilitatorHandler = async (
   ) => {
     const errorResponse = (error: string) => ({ error });
 
-    let transactionMessage, transaction;
+    let transactionMessage, transaction, signature, blockHeight;
     try {
       transaction = paymentPayload.transaction;
       const compiledTransactionMessage =
@@ -317,6 +322,15 @@ export const createFacilitatorHandler = async (
       transactionMessage = decompileTransactionMessage(
         compiledTransactionMessage,
       );
+
+      signature = getSignatureFromTransaction(transaction);
+      const lifetimeConstraint = transactionMessage.lifetimeConstraint;
+
+      if ("blockhash" in lifetimeConstraint) {
+        blockHeight = Number(lifetimeConstraint.lastValidBlockHeight) - 150;
+      } else {
+        return errorResponse("Transaction cannot include a nonce account");
+      }
     } catch (cause) {
       throw new Error("Failed to get compiled transaction message", { cause });
     }
@@ -338,6 +352,8 @@ export const createFacilitatorHandler = async (
     }
 
     return {
+      signature,
+      blockHeight,
       settle: async () => {
         let signedTransaction;
         try {
@@ -352,9 +368,7 @@ export const createFacilitatorHandler = async (
           throw new Error("Failed to partially sign transaction", { cause });
         }
 
-        return {
-          signedTransaction,
-        };
+        return { signedTransaction };
       },
     };
   };
@@ -504,6 +518,15 @@ export const createFacilitatorHandler = async (
 
     if ("error" in verifyResult) {
       return errorResponse(verifyResult.error);
+    }
+
+    if (config?.features?.enableDuplicateCheck && "signature" in verifyResult) {
+      const { signature, blockHeight } = verifyResult;
+      if (seenTxs.has(signature)) {
+        logger.warning("Duplicate transaction rejected", { signature });
+        return errorResponse("Duplicate transaction");
+      }
+      seenTxs.add(signature, blockHeight);
     }
 
     const { signedTransaction } = await verifyResult.settle();

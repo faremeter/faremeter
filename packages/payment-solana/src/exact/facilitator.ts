@@ -32,6 +32,7 @@ import {
 } from "@solana/kit";
 import {
   getBase64EncodedWireTransaction,
+  getSignatureFromTransaction,
   getTransactionDecoder,
   partiallySignTransaction,
 } from "@solana/transactions";
@@ -50,6 +51,7 @@ import {
 } from "@solana-program/token";
 
 import { getAddMemoInstruction } from "@solana-program/memo";
+import { TransactionStore } from "./cache";
 
 export interface HookBaseArgs {
   network: string;
@@ -93,8 +95,10 @@ interface FacilitatorOptions {
   // Maximum priority fee in lamports
   // Calculated as: (CU limit * CU price in microlamports) / 1,000,000
   maxPriorityFee?: number;
+  maxTransactionAge?: number;
   features?: {
     enableSettlementAccounts?: boolean;
+    enableDuplicateCheck?: boolean;
   };
   hooks?: readonly FacilitatorHooks[];
 }
@@ -207,6 +211,7 @@ export const createFacilitatorHandler = async (
     maxRetries = 30,
     retryDelayMs = 1000,
     maxPriorityFee = 100_000,
+    maxTransactionAge = 150,
   } = config ?? {};
 
   const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
@@ -225,6 +230,8 @@ export const createFacilitatorHandler = async (
   if (config?.features?.enableSettlementAccounts) {
     features.xSettlementAccountSupported = true;
   }
+
+  const seenTxs = new TransactionStore(maxTransactionAge);
 
   const processSettlementAccount = async (
     requirements: x402PaymentRequirements,
@@ -326,7 +333,7 @@ export const createFacilitatorHandler = async (
   ) => {
     const errorResponse = (error: string) => ({ error });
 
-    let transactionMessage, transaction;
+    let transactionMessage, transaction, signature, blockHeight;
     try {
       transaction = paymentPayload.transaction;
       const compiledTransactionMessage =
@@ -334,6 +341,15 @@ export const createFacilitatorHandler = async (
       transactionMessage = decompileTransactionMessage(
         compiledTransactionMessage,
       );
+
+      signature = getSignatureFromTransaction(transaction);
+      const lifetimeConstraint = transactionMessage.lifetimeConstraint;
+
+      if ("blockhash" in lifetimeConstraint) {
+        blockHeight = Number(lifetimeConstraint.lastValidBlockHeight) - 150;
+      } else {
+        return errorResponse("Transaction cannot include a nonce account");
+      }
     } catch (cause) {
       throw new Error("Failed to get compiled transaction message", { cause });
     }
@@ -358,6 +374,8 @@ export const createFacilitatorHandler = async (
 
     return {
       payer,
+      signature,
+      blockHeight,
       settle: async () => {
         let signedTransaction;
         try {
@@ -372,9 +390,7 @@ export const createFacilitatorHandler = async (
           throw new Error("Failed to partially sign transaction", { cause });
         }
 
-        return {
-          signedTransaction,
-        };
+        return { signedTransaction };
       },
     };
   };
@@ -545,6 +561,16 @@ export const createFacilitatorHandler = async (
     }
 
     const { payer } = verifyResult;
+
+    if (config?.features?.enableDuplicateCheck && "signature" in verifyResult) {
+      const { signature, blockHeight } = verifyResult;
+      if (seenTxs.has(signature)) {
+        logger.warning("Duplicate transaction rejected", { signature });
+        return errorResponse("Duplicate transaction");
+      }
+      seenTxs.add(signature, blockHeight);
+    }
+
     const { signedTransaction } = await verifyResult.settle();
 
     let result;

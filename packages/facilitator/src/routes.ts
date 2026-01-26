@@ -162,6 +162,26 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
     return c.json(response);
   }
 
+  function sendAcceptsError(
+    c: Context,
+    status: StatusCode,
+    msg: string | undefined,
+  ) {
+    const response: { x402Version: number; error?: string } = {
+      x402Version: 1,
+    };
+
+    if (msg !== undefined) {
+      response.error = msg;
+      logger.error(msg);
+    } else {
+      logger.error("unknown error during accepts");
+    }
+
+    c.status(status);
+    return c.json(response);
+  }
+
   router.post("/settle", async (c) => {
     const x402Req = x.x402SettleRequest(await c.req.json());
 
@@ -229,7 +249,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
     const x402Req = x.x402PaymentRequiredResponse(await c.req.json());
 
     if (isValidationError(x402Req)) {
-      return sendSettleError(
+      return sendAcceptsError(
         c,
         400,
         `couldn't parse required response: ${x402Req.summary}`,

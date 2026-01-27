@@ -39,6 +39,7 @@
   "dependencies": {
     "@faremeter/facilitator": "workspace:^",
     "@faremeter/fetch": "workspace:^",
+    "@faremeter/info": "workspace:^",
     "@faremeter/middleware": "workspace:^",
     "@faremeter/types": "workspace:^",
     "arktype": "catalog:",

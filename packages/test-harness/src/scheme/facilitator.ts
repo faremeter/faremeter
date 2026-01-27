@@ -9,7 +9,12 @@ import type {
 } from "@faremeter/types/x402v2";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 
-import { TEST_SCHEME, TEST_NETWORK, TEST_ASSET } from "./constants";
+import {
+  TEST_SCHEME,
+  TEST_NETWORK,
+  TEST_ASSET,
+  isMatchingRequirement,
+} from "./constants";
 import type { TestPaymentPayload } from "./types";
 
 const testPaymentPayload = type({
@@ -32,13 +37,6 @@ export type CreateTestFacilitatorHandlerOpts = {
     testPayload: TestPaymentPayload,
   ) => void;
 };
-
-function isMatchingRequirement(req: x402PaymentRequirements): boolean {
-  return (
-    req.scheme.toLowerCase() === TEST_SCHEME.toLowerCase() &&
-    req.network.toLowerCase() === TEST_NETWORK.toLowerCase()
-  );
-}
 
 function validateTestPayload(
   payload: object,
@@ -66,7 +64,7 @@ export function createTestFacilitatorHandler(
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return [
       Promise.resolve({
-        x402Version: 2 as const,
+        x402Version: 2,
         scheme: TEST_SCHEME,
         network: TEST_NETWORK,
       }),
@@ -83,7 +81,7 @@ export function createTestFacilitatorHandler(
       ...r,
       asset: r.asset || TEST_ASSET,
       payTo: r.payTo || payTo,
-      maxTimeoutSeconds: r.maxTimeoutSeconds || 300,
+      maxTimeoutSeconds: r.maxTimeoutSeconds ?? 300,
     }));
   };
 
@@ -116,7 +114,7 @@ export function createTestFacilitatorHandler(
       onVerify(requirements, payment, testPayload);
     }
 
-    return { isValid: true };
+    return { isValid: true, payer: "test-payer" };
   };
 
   const handleSettle = async (
@@ -134,6 +132,7 @@ export function createTestFacilitatorHandler(
         errorReason: result.error,
         transaction: "",
         network: requirements.network,
+        payer: "",
       };
     }
 
@@ -146,6 +145,7 @@ export function createTestFacilitatorHandler(
         errorReason: "Amount mismatch",
         transaction: "",
         network: requirements.network,
+        payer: "",
       };
     }
 
@@ -156,6 +156,7 @@ export function createTestFacilitatorHandler(
         errorReason: "Payment to wrong address",
         transaction: "",
         network: requirements.network,
+        payer: "",
       };
     }
 
@@ -167,6 +168,7 @@ export function createTestFacilitatorHandler(
       success: true,
       transaction: `test-tx-${testPayload.testId}`,
       network: TEST_NETWORK,
+      payer: "test-payer",
     };
   };
 

@@ -1,4 +1,6 @@
-import { Hono } from "hono";
+/* eslint-disable @typescript-eslint/no-deprecated -- v1 test harness uses v1 types */
+/* eslint-disable @typescript-eslint/unbound-method -- exec is a function property, not a method */
+import { Hono, type Context } from "hono";
 import { createFacilitatorRoutes } from "@faremeter/facilitator";
 import { wrap } from "@faremeter/fetch";
 import {
@@ -12,29 +14,20 @@ import type {
   MiddlewareBodyContextV1,
 } from "@faremeter/middleware/common";
 import type { PaymentExecer, PaymentExecerV1 } from "@faremeter/types/client";
+import { adaptPaymentHandlerV1ToV2 } from "@faremeter/types/client";
 import { adaptRequirementsV2ToV1 } from "@faremeter/types/x402-adapters";
-import type {
-  x402PaymentRequirements,
-  x402PaymentPayload,
-  x402SettleResponse,
-  x402VerifyResponse,
-} from "@faremeter/types/x402";
+import { normalizeNetworkId } from "@faremeter/info";
 import type { Interceptor } from "../interceptors/types";
 import { composeInterceptors } from "../interceptors/types";
 import { getURLFromRequestInfo } from "../interceptors/utils";
 import type { TestHarnessConfig, SettleMode } from "./config";
-import type { ResourceHandler, ResourceContext } from "./resource";
+import type {
+  ResourceHandler,
+  ResourceContext,
+  ResourceContextV1,
+  ResourceContextV2,
+} from "./resource";
 import { defaultResourceHandler } from "./resource";
-
-/**
- * Internal state tracked during a request for resource handler context.
- */
-type RequestState = {
-  paymentRequirements?: x402PaymentRequirements | undefined;
-  paymentPayload?: x402PaymentPayload | undefined;
-  settleResponse?: x402SettleResponse | undefined;
-  verifyResponse?: x402VerifyResponse | undefined;
-};
 
 /**
  * Type guard to check if a middleware context is v1.
@@ -103,9 +96,6 @@ export class TestHarness {
       // 2. Routes to the Hono app
       const middlewareFetch = this.createMiddlewareFetch();
 
-      // Track state for resource handler
-      const state: RequestState = {};
-
       const result = await handleMiddlewareRequest<Response>({
         facilitatorURL: `${this.baseUrl}/facilitator`,
         accepts: this.config.accepts,
@@ -137,62 +127,7 @@ export class TestHarness {
         body: async (
           context: MiddlewareBodyContext<Response>,
         ): Promise<Response | undefined> => {
-          // Test harness currently only supports v1 protocol
-          if (!isV1Context(context)) {
-            c.status(501);
-            return c.json({
-              error: "Test harness does not yet support x402 v2 protocol",
-            });
-          }
-
-          const { paymentRequirements, paymentPayload, settle, verify } =
-            context;
-
-          // Store for resource handler
-          state.paymentRequirements = paymentRequirements;
-          state.paymentPayload = paymentPayload;
-
-          if (this.settleMode === "verify-then-settle") {
-            const verifyResult = await verify();
-            if (!verifyResult.success) {
-              return verifyResult.errorResponse;
-            }
-            state.verifyResponse = verifyResult.facilitatorResponse;
-
-            const settleResult = await settle();
-            if (!settleResult.success) {
-              return settleResult.errorResponse;
-            }
-            state.settleResponse = settleResult.facilitatorResponse;
-          } else {
-            const settleResult = await settle();
-            if (!settleResult.success) {
-              return settleResult.errorResponse;
-            }
-            state.settleResponse = settleResult.facilitatorResponse;
-          }
-
-          // Payment successful - call resource handler
-          const ctx: ResourceContext = {
-            resource: c.req.url,
-            request: c.req.raw,
-            paymentRequirements,
-            paymentPayload,
-            settleResponse: state.settleResponse,
-            verifyResponse: state.verifyResponse,
-          };
-
-          const resourceResult = await this.resourceHandler(ctx);
-
-          // Set response headers
-          if (resourceResult.headers) {
-            for (const [key, value] of Object.entries(resourceResult.headers)) {
-              c.header(key, value);
-            }
-          }
-
-          c.status(resourceResult.status as 200);
-          return c.json(resourceResult.body as object);
+          return this.handleBody(c, context);
         },
       });
 
@@ -269,8 +204,13 @@ export class TestHarness {
 
     const payerChooser = opts?.payerChooser;
 
+    // Adapt v1 handlers to v2 for use with the fetch client
+    const v2Handlers = this.config.clientHandlers.map((h) =>
+      adaptPaymentHandlerV1ToV2(h, normalizeNetworkId),
+    );
+
     return wrap(clientFetch, {
-      handlers: this.config.clientHandlers,
+      handlers: v2Handlers,
       ...(payerChooser
         ? {
             payerChooser: async (
@@ -352,5 +292,68 @@ export class TestHarness {
   reset(): void {
     this.clearInterceptors();
     this.resourceHandler = defaultResourceHandler;
+  }
+
+  /**
+   * Handle protocol body callback for both v1 and v2.
+   */
+  private async handleBody(
+    c: Context,
+    context: MiddlewareBodyContext<Response>,
+  ): Promise<Response | undefined> {
+    let ctx: ResourceContext;
+
+    if (isV1Context(context)) {
+      let verifyResponse: ResourceContextV1["verifyResponse"];
+      if (this.settleMode === "verify-then-settle") {
+        const verifyResult = await context.verify();
+        if (!verifyResult.success) return verifyResult.errorResponse;
+        verifyResponse = verifyResult.facilitatorResponse;
+      }
+      const settleResult = await context.settle();
+      if (!settleResult.success) return settleResult.errorResponse;
+
+      ctx = {
+        protocolVersion: 1,
+        resource: c.req.url,
+        request: c.req.raw,
+        paymentRequirements: context.paymentRequirements,
+        paymentPayload: context.paymentPayload,
+        settleResponse: settleResult.facilitatorResponse,
+        verifyResponse,
+      };
+    } else {
+      let verifyResponse: ResourceContextV2["verifyResponse"];
+      if (this.settleMode === "verify-then-settle") {
+        const verifyResult = await context.verify();
+        if (!verifyResult.success) return verifyResult.errorResponse;
+        verifyResponse = verifyResult.facilitatorResponse;
+      }
+      const settleResult = await context.settle();
+      if (!settleResult.success) return settleResult.errorResponse;
+
+      ctx = {
+        protocolVersion: 2,
+        resource: c.req.url,
+        request: c.req.raw,
+        paymentRequirements: context.paymentRequirements,
+        paymentPayload: context.paymentPayload,
+        settleResponse: settleResult.facilitatorResponse,
+        verifyResponse,
+      };
+    }
+
+    const resourceResult = await this.resourceHandler(ctx);
+
+    if (resourceResult.headers) {
+      for (const [key, value] of Object.entries(resourceResult.headers)) {
+        c.header(key, value);
+      }
+    }
+
+    // Hono's typed API requires literal status codes and typed json bodies.
+    // These assertions satisfy the framework's type constraints.
+    c.status(resourceResult.status as 200);
+    return c.json(resourceResult.body as object);
   }
 }

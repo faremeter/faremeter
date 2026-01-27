@@ -21,7 +21,8 @@ export type TestHarnessConfig = {
   facilitatorHandlers: FacilitatorHandler[];
 
   /**
-   * Client payment handlers.
+   * Client payment handlers (v1).
+   * Internally adapted to v2 for use with the fetch client.
    * Multiple handlers can be provided for different schemes.
    */
   clientHandlers: PaymentHandlerV1[];

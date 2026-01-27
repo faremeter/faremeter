@@ -3,9 +3,15 @@ export type { TestHarnessConfig, SettleMode } from "./harness/config";
 export type {
   ResourceHandler,
   ResourceContext,
+  ResourceContextV1,
+  ResourceContextV2,
   ResourceResult,
 } from "./harness/resource";
-export { defaultResourceHandler } from "./harness/resource";
+export {
+  defaultResourceHandler,
+  isResourceContextV1,
+  isResourceContextV2,
+} from "./harness/resource";
 export { accepts, acceptsV2 } from "./harness/defaults";
 
 export { TEST_SCHEME, TEST_NETWORK, TEST_ASSET } from "./scheme/constants";
@@ -46,7 +52,9 @@ export {
   verifyFailedResponse,
   verifySuccessResponse,
   settleFailedResponse,
+  settleFailedResponseV2,
   settleSuccessResponse,
+  settleSuccessResponseV2,
   paymentRequiredResponse,
   networkError,
   timeoutError,
@@ -66,6 +74,8 @@ export {
   createResponseDelayInterceptor,
   createVariableDelayInterceptor,
 } from "./interceptors/delay";
+
+export { createV2ResponseInterceptor } from "./interceptors/v2";
 
 export {
   createRequestHook,
@@ -95,3 +105,16 @@ export {
 } from "./choosers";
 
 export { suppressConsoleErrors } from "./testing/console";
+
+export {
+  isMatchingRequirement,
+  createNonMatchingHandler,
+  createThrowingHandler,
+  createThrowingExecHandler,
+  createNullPayloadHandler,
+  createEmptyPayloadHandler,
+  createWorkingHandler,
+  createInvalidPayloadHandler,
+  createSimpleFacilitatorHandler,
+  type CreateSimpleFacilitatorHandlerOpts,
+} from "./test-handlers";

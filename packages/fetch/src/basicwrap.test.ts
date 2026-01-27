@@ -26,6 +26,7 @@ function createFakeHandler(t: Test) {
         asset: "theasset",
       },
     ],
+    error: "",
   };
 
   // Expected v2 requirements after conversion from v1

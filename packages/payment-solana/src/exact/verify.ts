@@ -18,6 +18,14 @@ import { PaymentRequirementsExtra } from "./facilitator";
 import { logger } from "./logger";
 import type { PublicKey } from "@solana/web3.js";
 
+const LIGHTHOUSE_PROGRAM_ADDRESS = address(
+  "L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95",
+);
+
+function isLighthouseInstruction(instruction: Instruction) {
+  return instruction.programAddress === LIGHTHOUSE_PROGRAM_ADDRESS;
+}
+
 function verifyComputeUnitLimitInstruction(instruction: Instruction): {
   valid: boolean;
   units?: number;
@@ -133,46 +141,52 @@ export async function isValidTransaction(
   const instructions = transactionMessage.instructions;
   const facilitatorBase58 = facilitatorAddress.toBase58();
 
-  if (instructions.length === 3) {
-    // Make typescript happy...
-    const [ix0, ix1, ix2] = instructions;
-    if (!ix0 || !ix1 || !ix2) {
-      return false;
-    }
-
-    const limitResult = verifyComputeUnitLimitInstruction(ix0);
-    const priceResult = verifyComputeUnitPriceInstruction(ix1);
-
-    if (!limitResult.valid || !priceResult.valid) {
-      return false;
-    }
-
-    if (
-      maxPriorityFee !== undefined &&
-      limitResult.units !== undefined &&
-      priceResult.microLamports !== undefined
-    ) {
-      const priorityFee = calculatePriorityFee(
-        limitResult.units,
-        priceResult.microLamports,
-      );
-      if (priorityFee > maxPriorityFee) {
-        logger.error(
-          `Priority fee ${priorityFee} exceeds maximum ${maxPriorityFee}`,
-        );
-        return false;
-      }
-    }
-
-    const payer = await verifyTransferInstruction(
-      ix2,
-      paymentRequirements,
-      destination,
-      facilitatorBase58,
-    );
-    if (!payer) return false;
-    return { payer };
+  if (instructions.length < 3 || instructions.length > 5) {
+    return false;
   }
 
-  return false;
+  const [ix0, ix1, ix2, ...rest] = instructions;
+  if (!ix0 || !ix1 || !ix2) {
+    return false;
+  }
+
+  const limitResult = verifyComputeUnitLimitInstruction(ix0);
+  const priceResult = verifyComputeUnitPriceInstruction(ix1);
+
+  if (!limitResult.valid || !priceResult.valid) {
+    return false;
+  }
+
+  if (
+    maxPriorityFee !== undefined &&
+    limitResult.units !== undefined &&
+    priceResult.microLamports !== undefined
+  ) {
+    const priorityFee = calculatePriorityFee(
+      limitResult.units,
+      priceResult.microLamports,
+    );
+    if (priorityFee > maxPriorityFee) {
+      logger.error(
+        `Priority fee ${priorityFee} exceeds maximum ${maxPriorityFee}`,
+      );
+      return false;
+    }
+  }
+
+  if (!rest.every(isLighthouseInstruction)) {
+    logger.error(
+      "Dropping transaction with non-Lighthouse trailing instructions",
+    );
+    return false;
+  }
+
+  const payer = await verifyTransferInstruction(
+    ix2,
+    paymentRequirements,
+    destination,
+    facilitatorBase58,
+  );
+  if (!payer) return false;
+  return { payer };
 }

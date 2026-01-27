@@ -29,6 +29,13 @@ When making changes to packages (especially in `packages/`):
 
 **Never claim a task is complete without running a successful `make` build.**
 
+If `make` fails, you must report the failure to the user and identify the cause.
+Do not work around a failing `make` by running individual targets (e.g.
+`make build`, `make test`) and treating their success as equivalent. A full
+`make` is the only acceptable verification. If the failure is pre-existing and
+unrelated to your changes, say so explicitly and let the user decide how to
+proceed. Never silently skip a failing step or substitute a partial build.
+
 ## Code Reuse and Refactoring
 
 Do not reimplement functionality that already exists in the codebase. Before writing new code:

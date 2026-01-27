@@ -1074,6 +1074,8 @@ export { createFailureInterceptor } from "./interceptors/failures";
 
 Decorative comment blocks (ASCII art dividers, section headers) add visual noise without providing meaningful information. The structure of imports and exports is self-evident from the code organization.
 
+**Do not reference external tracking artifacts in code comments.** Comments like `// Issue 1: ...` or `// Fixes JIRA-1234` are meaningless to future readers who lack the context of the original tracking document. The code and its test names should be self-explanatory without cross-referencing external sources. An exception is URLs that point at long-lived resources (e.g., RFCs, specification documents, upstream bug reports) -- those provide genuinely useful context.
+
 **When comments ARE useful:**
 
 - Complex algorithms that aren't immediately obvious
@@ -1119,13 +1121,17 @@ const handleRequest = async (ctx, requirements) => { ... };  // ctx unused
 
 Configure git hooks before making commits: `git config core.hooksPath .githooks`
 
+### pnpm Artifacts
+
+When a commit modifies any `package.json` file, the corresponding pnpm artifacts (`pnpm-lock.yaml`, `pnpm-workspace.yaml`, etc.) must be included in the same commit. Never leave lockfile updates in a separate follow-up commit.
+
 ### Commit Messages
 
 - **Summary line**: Max 72 characters, non-empty
 - **Blank line**: Required between summary and body (if body exists)
 - **Body lines**: Max 72 characters each
 
-Summary lines MUST be english sentences with no abbreviations, no markup (e.g. feat, chore), and not end with any punctuation. Commits messages should not be overly verbose (e.g. a feature list is unnecessary).
+Summary lines MUST be english sentences with no abbreviations, no markup (e.g. feat, chore), and not end with any punctuation. Commits messages should not be overly verbose. DO NOT include feature/change lists in the commit body; the code already shows this.
 
 **Format:**
 

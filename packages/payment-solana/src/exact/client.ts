@@ -151,7 +151,8 @@ export function createPaymentHandler(
     _context: RequestContext,
     accepts: x402PaymentRequirements[],
   ): Promise<PaymentExecer[]> => {
-    const res = accepts.filter(isMatchingRequirement).map((requirements) => {
+    const compatibleRequirements = accepts.filter(isMatchingRequirement);
+    const res = compatibleRequirements.map((requirements) => {
       const exec = async () => {
         const {
           recentBlockhash,

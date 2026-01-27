@@ -6,17 +6,20 @@ import {
   createTestFacilitatorHandler,
   createTestPaymentHandler,
   accepts,
+  createV2ResponseInterceptor,
 } from "@faremeter/test-harness";
 
-await t.test("x402 v1 resource handler errors", async (t) => {
+await t.test("x402 v2 resource handler errors", async (t) => {
   await t.test("resource handler throws exception", async (t) => {
     const harness = new TestHarness({
+      supportedVersions: { x402v2: true },
       settleMode: "settle-only",
       accepts: [accepts()],
       facilitatorHandlers: [
         createTestFacilitatorHandler({ payTo: "test-receiver" }),
       ],
       clientHandlers: [createTestPaymentHandler()],
+      clientInterceptors: [createV2ResponseInterceptor()],
     });
 
     harness.setResourceHandler(() => {
@@ -38,12 +41,14 @@ await t.test("x402 v1 resource handler errors", async (t) => {
 
   await t.test("resource handler returns 500 error status", async (t) => {
     const harness = new TestHarness({
+      supportedVersions: { x402v2: true },
       settleMode: "settle-only",
       accepts: [accepts()],
       facilitatorHandlers: [
         createTestFacilitatorHandler({ payTo: "test-receiver" }),
       ],
       clientHandlers: [createTestPaymentHandler()],
+      clientInterceptors: [createV2ResponseInterceptor()],
     });
 
     harness.setResourceHandler(() => {
@@ -69,12 +74,14 @@ await t.test("x402 v1 resource handler errors", async (t) => {
 
   await t.test("resource handler returns 404 error status", async (t) => {
     const harness = new TestHarness({
+      supportedVersions: { x402v2: true },
       settleMode: "settle-only",
       accepts: [accepts()],
       facilitatorHandlers: [
         createTestFacilitatorHandler({ payTo: "test-receiver" }),
       ],
       clientHandlers: [createTestPaymentHandler()],
+      clientInterceptors: [createV2ResponseInterceptor()],
     });
 
     harness.setResourceHandler(() => {
@@ -96,12 +103,14 @@ await t.test("x402 v1 resource handler errors", async (t) => {
 
   await t.test("resource handler returns 403 forbidden", async (t) => {
     const harness = new TestHarness({
+      supportedVersions: { x402v2: true },
       settleMode: "settle-only",
       accepts: [accepts()],
       facilitatorHandlers: [
         createTestFacilitatorHandler({ payTo: "test-receiver" }),
       ],
       clientHandlers: [createTestPaymentHandler()],
+      clientInterceptors: [createV2ResponseInterceptor()],
     });
 
     harness.setResourceHandler(() => {
@@ -121,12 +130,14 @@ await t.test("x402 v1 resource handler errors", async (t) => {
 
   await t.test("resource handler throws async error", async (t) => {
     const harness = new TestHarness({
+      supportedVersions: { x402v2: true },
       settleMode: "settle-only",
       accepts: [accepts()],
       facilitatorHandlers: [
         createTestFacilitatorHandler({ payTo: "test-receiver" }),
       ],
       clientHandlers: [createTestPaymentHandler()],
+      clientInterceptors: [createV2ResponseInterceptor()],
     });
 
     harness.setResourceHandler(async () => {
@@ -152,17 +163,19 @@ await t.test("x402 v1 resource handler errors", async (t) => {
       hasPaymentRequirements: boolean;
       hasPaymentPayload: boolean;
       hasSettleResponse: boolean;
-      txHashPresent: boolean;
+      transactionPresent: boolean;
     }
     let capturedContext: CapturedContext | undefined;
 
     const harness = new TestHarness({
+      supportedVersions: { x402v2: true },
       settleMode: "settle-only",
       accepts: [accepts()],
       facilitatorHandlers: [
         createTestFacilitatorHandler({ payTo: "test-receiver" }),
       ],
       clientHandlers: [createTestPaymentHandler()],
+      clientInterceptors: [createV2ResponseInterceptor()],
     });
 
     harness.setResourceHandler((ctx) => {
@@ -170,7 +183,7 @@ await t.test("x402 v1 resource handler errors", async (t) => {
         hasPaymentRequirements: !!ctx.paymentRequirements,
         hasPaymentPayload: !!ctx.paymentPayload,
         hasSettleResponse: !!ctx.settleResponse,
-        txHashPresent: !!ctx.settleResponse?.transaction,
+        transactionPresent: !!ctx.settleResponse?.transaction,
       };
       return {
         status: 200,
@@ -191,8 +204,8 @@ await t.test("x402 v1 resource handler errors", async (t) => {
       t.ok(capturedContext.hasPaymentPayload, "should have payment payload");
       t.ok(capturedContext.hasSettleResponse, "should have settle response");
       t.ok(
-        capturedContext.txHashPresent,
-        "should have txHash in settle response",
+        capturedContext.transactionPresent,
+        "should have transaction in settle response",
       );
     }
 
@@ -205,12 +218,14 @@ await t.test("x402 v1 resource handler errors", async (t) => {
       let hasVerifyResponse = false;
 
       const harness = new TestHarness({
+        supportedVersions: { x402v2: true },
         settleMode: "verify-then-settle",
         accepts: [accepts()],
         facilitatorHandlers: [
           createTestFacilitatorHandler({ payTo: "test-receiver" }),
         ],
         clientHandlers: [createTestPaymentHandler()],
+        clientInterceptors: [createV2ResponseInterceptor()],
       });
 
       harness.setResourceHandler((ctx) => {
@@ -233,12 +248,14 @@ await t.test("x402 v1 resource handler errors", async (t) => {
 
   await t.test("resource handler with custom headers", async (t) => {
     const harness = new TestHarness({
+      supportedVersions: { x402v2: true },
       settleMode: "settle-only",
       accepts: [accepts()],
       facilitatorHandlers: [
         createTestFacilitatorHandler({ payTo: "test-receiver" }),
       ],
       clientHandlers: [createTestPaymentHandler()],
+      clientInterceptors: [createV2ResponseInterceptor()],
     });
 
     harness.setResourceHandler(() => {
@@ -272,12 +289,14 @@ await t.test("x402 v1 resource handler errors", async (t) => {
 
   await t.test("reset() restores default resource handler", async (t) => {
     const harness = new TestHarness({
+      supportedVersions: { x402v2: true },
       settleMode: "settle-only",
       accepts: [accepts()],
       facilitatorHandlers: [
         createTestFacilitatorHandler({ payTo: "test-receiver" }),
       ],
       clientHandlers: [createTestPaymentHandler()],
+      clientInterceptors: [createV2ResponseInterceptor()],
     });
 
     // Set custom handler that returns 418

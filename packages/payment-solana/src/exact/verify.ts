@@ -6,7 +6,6 @@ import {
 } from "@solana-program/compute-budget";
 import {
   findAssociatedTokenPda,
-  parseCreateAssociatedTokenInstruction,
   parseTransferCheckedInstruction,
   TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
@@ -107,33 +106,6 @@ async function verifyTransferInstruction(
   );
 }
 
-function verifyCreateATAInstruction(
-  instruction: Instruction,
-  facilitatorAddress: string,
-): boolean {
-  if (!instruction.data || !instruction.accounts) {
-    return false;
-  }
-
-  try {
-    const createInstruction = parseCreateAssociatedTokenInstruction({
-      accounts: instruction.accounts,
-      programAddress: instruction.programAddress,
-      data: new Uint8Array(instruction.data),
-    });
-
-    if (createInstruction.accounts.payer.address === facilitatorAddress) {
-      logger.error(
-        "Dropping transaction where the facilitator pays for a token account creation",
-      );
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function isValidTransaction(
   transactionMessage: CompilableTransactionMessage,
   paymentRequirements: x402PaymentRequirements,
@@ -194,45 +166,6 @@ export async function isValidTransaction(
       paymentRequirements,
       destination,
       facilitatorBase58,
-    );
-  } else if (instructions.length === 4) {
-    const [ix0, ix1, ix2, ix3] = instructions;
-    if (!ix0 || !ix1 || !ix2 || !ix3) {
-      return false;
-    }
-
-    const limitResult = verifyComputeUnitLimitInstruction(ix0);
-    const priceResult = verifyComputeUnitPriceInstruction(ix1);
-
-    if (!limitResult.valid || !priceResult.valid) {
-      return false;
-    }
-
-    if (
-      maxPriorityFee !== undefined &&
-      limitResult.units !== undefined &&
-      priceResult.microLamports !== undefined
-    ) {
-      const priorityFee = calculatePriorityFee(
-        limitResult.units,
-        priceResult.microLamports,
-      );
-      if (priorityFee > maxPriorityFee) {
-        logger.error(
-          `Priority fee ${priorityFee} exceeds maximum ${maxPriorityFee}`,
-        );
-        return false;
-      }
-    }
-
-    return (
-      verifyCreateATAInstruction(ix2, facilitatorBase58) &&
-      (await verifyTransferInstruction(
-        ix3,
-        paymentRequirements,
-        destination,
-        facilitatorBase58,
-      ))
     );
   }
 

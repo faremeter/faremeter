@@ -11,12 +11,14 @@ export function verifyFailedResponse(reason: string): Response {
   return jsonResponse(200, {
     isValid: false,
     invalidReason: reason,
+    payer: "",
   });
 }
 
 export function verifySuccessResponse(): Response {
   return jsonResponse(200, {
     isValid: true,
+    payer: "test-payer",
   });
 }
 
@@ -24,12 +26,37 @@ export function settleFailedResponse(errorReason: string): Response {
   return jsonResponse(200, {
     success: false,
     errorReason,
-    transaction: null,
-    network: null,
+    transaction: "",
+    network: "",
+    payer: "",
+  });
+}
+
+export function settleFailedResponseV2(
+  errorReason: string,
+  network: string,
+): Response {
+  return jsonResponse(200, {
+    success: false,
+    errorReason,
+    transaction: "",
+    network,
   });
 }
 
 export function settleSuccessResponse(
+  transaction: string,
+  network: string,
+): Response {
+  return jsonResponse(200, {
+    success: true,
+    transaction,
+    network,
+    payer: "test-payer",
+  });
+}
+
+export function settleSuccessResponseV2(
   transaction: string,
   network: string,
 ): Response {
@@ -42,10 +69,12 @@ export function settleSuccessResponse(
 
 export function paymentRequiredResponse(
   accepts: x402PaymentRequirements[],
+  error = "",
 ): Response {
   return jsonResponse(402, {
     x402Version: 1,
     accepts,
+    error,
   });
 }
 

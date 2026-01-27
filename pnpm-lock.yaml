@@ -680,6 +680,9 @@ importers:
       '@faremeter/fetch':
         specifier: workspace:^
         version: link:../fetch
+      '@faremeter/info':
+        specifier: workspace:^
+        version: link:../info
       '@faremeter/middleware':
         specifier: workspace:^
         version: link:../middleware

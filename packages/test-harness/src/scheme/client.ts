@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- v1 test harness uses v1 types */
 import type {
-  PaymentHandler,
-  PaymentExecer,
+  PaymentHandlerV1,
+  PaymentExecerV1,
   RequestContext,
 } from "@faremeter/types/client";
 import type { x402PaymentRequirements } from "@faremeter/types/x402";
 
-import { TEST_SCHEME, TEST_NETWORK } from "./constants";
+import { isMatchingRequirement } from "./constants";
 import { generateTestId, type TestPaymentPayload } from "./types";
 
 export type CreateTestPaymentHandlerOpts = {
@@ -17,13 +18,6 @@ export type CreateTestPaymentHandlerOpts = {
   metadata?: Record<string, unknown>;
 };
 
-function isMatchingRequirement(req: x402PaymentRequirements): boolean {
-  return (
-    req.scheme.toLowerCase() === TEST_SCHEME.toLowerCase() &&
-    req.network.toLowerCase() === TEST_NETWORK.toLowerCase()
-  );
-}
-
 /**
  * Create a test payment handler.
  *
@@ -32,13 +26,13 @@ function isMatchingRequirement(req: x402PaymentRequirements): boolean {
  */
 export function createTestPaymentHandler(
   opts: CreateTestPaymentHandlerOpts = {},
-): PaymentHandler {
+): PaymentHandlerV1 {
   const { onMatch, onExec, metadata } = opts;
 
   return async function handlePayment(
     _context: RequestContext,
     accepts: x402PaymentRequirements[],
-  ): Promise<PaymentExecer[]> {
+  ): Promise<PaymentExecerV1[]> {
     const compatibleRequirements = accepts.filter(isMatchingRequirement);
 
     return compatibleRequirements.map((requirements) => {

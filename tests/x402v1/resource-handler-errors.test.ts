@@ -6,6 +6,7 @@ import {
   createTestFacilitatorHandler,
   createTestPaymentHandler,
   accepts,
+  isResourceContextV1,
 } from "@faremeter/test-harness";
 
 await t.test("x402 v1 resource handler errors", async (t) => {
@@ -152,7 +153,7 @@ await t.test("x402 v1 resource handler errors", async (t) => {
       hasPaymentRequirements: boolean;
       hasPaymentPayload: boolean;
       hasSettleResponse: boolean;
-      transactionPresent: boolean;
+      txHashPresent: boolean;
     }
     let capturedContext: CapturedContext | undefined;
 
@@ -170,7 +171,9 @@ await t.test("x402 v1 resource handler errors", async (t) => {
         hasPaymentRequirements: !!ctx.paymentRequirements,
         hasPaymentPayload: !!ctx.paymentPayload,
         hasSettleResponse: !!ctx.settleResponse,
-        transactionPresent: !!ctx.settleResponse?.transaction,
+        txHashPresent: isResourceContextV1(ctx)
+          ? !!ctx.settleResponse?.txHash
+          : !!ctx.settleResponse?.transaction,
       };
       return {
         status: 200,
@@ -191,8 +194,8 @@ await t.test("x402 v1 resource handler errors", async (t) => {
       t.ok(capturedContext.hasPaymentPayload, "should have payment payload");
       t.ok(capturedContext.hasSettleResponse, "should have settle response");
       t.ok(
-        capturedContext.transactionPresent,
-        "should have transaction in settle response",
+        capturedContext.txHashPresent,
+        "should have txHash in settle response",
       );
     }
 

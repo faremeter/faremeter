@@ -180,6 +180,7 @@ await t.test("interceptor composition", async (t) => {
                 success: true,
                 transaction: "0xshortcircuit",
                 network: TEST_NETWORK,
+                payer: "test-payer",
               }),
               {
                 status: 200,

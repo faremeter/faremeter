@@ -18,6 +18,7 @@ export async function createMiddleware(args: createMiddlewareArgs) {
       resource: `${req.protocol}://${req.headers.host}${req.path}`,
       getPaymentRequiredResponse,
       getHeader: (key) => req.header(key),
+      setResponseHeader: (key, value) => res.setHeader(key, value),
       sendJSONResponse: (status, body, headers) => {
         res.status(status);
         if (headers) {

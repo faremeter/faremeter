@@ -98,6 +98,7 @@ export class TestHarness {
         resource: c.req.url,
         fetch: middlewareFetch,
         getHeader: (key: string) => c.req.header(key),
+        setResponseHeader: (key: string, value: string) => c.header(key, value),
         getPaymentRequiredResponse,
         sendJSONResponse: (
           status: 402,

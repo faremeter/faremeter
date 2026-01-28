@@ -24,7 +24,6 @@ import {
   type KeyPairSigner,
 } from "@solana/kit";
 import type { Blockhash } from "@solana/rpc-types";
-import { PublicKey } from "@solana/web3.js";
 import { accepts } from "@faremeter/test-harness";
 
 const LIGHTHOUSE_PROGRAM_ADDRESS = address(
@@ -101,11 +100,8 @@ async function createFixtures() {
     decimals,
   });
 
-  const facilitatorPubkey = new PublicKey(facilitator.address);
-
   return {
     facilitator,
-    facilitatorPubkey,
     sender,
     receiver,
     mint,
@@ -136,7 +132,7 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
       true,
     );
     t.end();
@@ -151,7 +147,7 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
         true,
       );
       t.end();
@@ -173,7 +169,7 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
         true,
       );
       t.end();
@@ -189,7 +185,7 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
         false,
       );
       t.end();
@@ -206,7 +202,7 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
         false,
       );
       t.end();
@@ -221,7 +217,7 @@ await t.test("isValidTransaction", async (t) => {
       wrongPayer,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
       false,
     );
     t.end();
@@ -238,7 +234,7 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     await t.rejects(
-      isValidTransaction(txMsg, badRequirements, f.facilitatorPubkey),
+      isValidTransaction(txMsg, badRequirements, f.facilitator.address),
     );
     t.end();
   });
@@ -252,7 +248,7 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
         false,
       );
       t.end();
@@ -269,7 +265,7 @@ await t.test("isValidTransaction", async (t) => {
       await isValidTransaction(
         txMsg,
         f.requirements,
-        f.facilitatorPubkey,
+        f.facilitator.address,
         100_000,
       ),
       true,
@@ -295,7 +291,7 @@ await t.test("isValidTransaction", async (t) => {
         await isValidTransaction(
           txMsg,
           f.requirements,
-          f.facilitatorPubkey,
+          f.facilitator.address,
           100,
         ),
         false,
@@ -322,7 +318,7 @@ await t.test("isValidTransaction", async (t) => {
         await isValidTransaction(
           txMsg,
           f.requirements,
-          f.facilitatorPubkey,
+          f.facilitator.address,
           100,
         ),
         false,
@@ -343,7 +339,7 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
       false,
     );
     t.end();
@@ -369,7 +365,7 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
         false,
       );
       t.end();
@@ -391,7 +387,7 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
       false,
     );
     t.end();
@@ -423,7 +419,7 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
       false,
     );
     t.end();
@@ -450,7 +446,7 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
       false,
     );
     t.end();
@@ -473,7 +469,7 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
         false,
       );
       t.end();
@@ -497,7 +493,7 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitatorPubkey),
+        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
         false,
       );
       t.end();

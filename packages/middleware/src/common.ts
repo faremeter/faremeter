@@ -137,6 +137,7 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
     body: (
       context: MiddlewareBodyContext<MiddlewareResponse>,
     ) => Promise<MiddlewareResponse | undefined>;
+    setResponseHeader?: (key: string, value: string) => void;
     fetch?: typeof fetch;
   };
 

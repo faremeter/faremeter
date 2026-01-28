@@ -99,9 +99,21 @@ export class TestHarness {
         fetch: middlewareFetch,
         getHeader: (key: string) => c.req.header(key),
         getPaymentRequiredResponse,
-        sendJSONResponse: (status: 402, body: object): Response => {
+        sendJSONResponse: (
+          status: 402,
+          body?: object,
+          headers?: Record<string, string>,
+        ): Response => {
           c.status(status);
-          return c.json(body);
+          if (headers) {
+            for (const [key, value] of Object.entries(headers)) {
+              c.header(key, value);
+            }
+          }
+          if (body) {
+            return c.json(body);
+          }
+          return c.body(null);
         },
         body: async (
           context: MiddlewareBodyContext<Response>,

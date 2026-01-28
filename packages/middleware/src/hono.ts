@@ -22,9 +22,17 @@ export async function createMiddleware(
       resource: c.req.url,
       getHeader: (key) => c.req.header(key),
       getPaymentRequiredResponse,
-      sendJSONResponse: (status, body) => {
+      sendJSONResponse: (status, body, headers) => {
         c.status(status);
-        return c.json(body);
+        if (headers) {
+          for (const [key, value] of Object.entries(headers)) {
+            c.header(key, value);
+          }
+        }
+        if (body) {
+          return c.json(body);
+        }
+        return c.body(null);
       },
       body: async ({ verify, settle }) => {
         if (args.verifyBeforeSettle) {

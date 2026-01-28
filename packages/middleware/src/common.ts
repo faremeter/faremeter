@@ -131,7 +131,8 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> =
     getPaymentRequiredResponse: typeof getPaymentRequiredResponse;
     sendJSONResponse: (
       status: PossibleStatusCodes,
-      obj: PossibleJSONResponse,
+      body?: PossibleJSONResponse,
+      headers?: Record<string, string>,
     ) => MiddlewareResponse;
     body: (
       context: MiddlewareBodyContext<MiddlewareResponse>,

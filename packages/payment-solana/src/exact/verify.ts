@@ -16,7 +16,6 @@ import {
 } from "@solana/kit";
 import { PaymentRequirementsExtra } from "./facilitator";
 import { logger } from "./logger";
-import type { PublicKey } from "@solana/web3.js";
 
 const LIGHTHOUSE_PROGRAM_ADDRESS = address(
   "L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95",
@@ -120,7 +119,7 @@ async function verifyTransferInstruction(
 export async function isValidTransaction(
   transactionMessage: CompilableTransactionMessage,
   paymentRequirements: x402PaymentRequirements,
-  facilitatorAddress: PublicKey,
+  facilitatorAddress: string,
   maxPriorityFee?: number,
 ): Promise<{ payer: string } | false> {
   const extra = PaymentRequirementsExtra(paymentRequirements.extra);
@@ -139,7 +138,6 @@ export async function isValidTransaction(
   });
 
   const instructions = transactionMessage.instructions;
-  const facilitatorBase58 = facilitatorAddress.toBase58();
 
   if (instructions.length < 3 || instructions.length > 5) {
     return false;
@@ -185,7 +183,7 @@ export async function isValidTransaction(
     ix2,
     paymentRequirements,
     destination,
-    facilitatorBase58,
+    facilitatorAddress,
   );
   if (!payer) return false;
   return { payer };

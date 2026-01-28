@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/fetch",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "HTTP fetch wrapper that automatically handles 402 Payment Required responses with x402 protocol",
   "keywords": [
     "faremeter",

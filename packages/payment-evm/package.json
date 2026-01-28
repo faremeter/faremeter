@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/payment-evm",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "EVM payment scheme implementations for x402 protocol (EIP-3009 gasless USDC transfers)",
   "keywords": [
     "faremeter",

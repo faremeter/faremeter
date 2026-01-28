@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/rides",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Low-boilerplate no friction API for getting on x402 quick",
   "keywords": [
     "faremeter",

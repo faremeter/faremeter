@@ -311,10 +311,10 @@ export async function createFacilitatorHandler(
 
     const errorResponse = (msg: string): x402SettleResponse => {
       return {
-        success: false,
-        error: msg,
-        txHash: null,
-        networkId: null,
+        success: false as const,
+        errorReason: msg,
+        transaction: null,
+        network: null,
       };
     };
 
@@ -385,10 +385,10 @@ export async function createFacilitatorHandler(
       }
 
       return {
-        success: true,
-        error: null,
-        txHash,
-        networkId: chainId.toString(),
+        success: true as const,
+        errorReason: null,
+        transaction: txHash,
+        network: chainId.toString(),
         payer: authorization.from,
       };
     } catch (cause) {

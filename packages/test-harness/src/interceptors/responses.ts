@@ -20,23 +20,23 @@ export function verifySuccessResponse(): Response {
   });
 }
 
-export function settleFailedResponse(error: string): Response {
+export function settleFailedResponse(errorReason: string): Response {
   return jsonResponse(200, {
     success: false,
-    error,
-    txHash: null,
-    networkId: null,
+    errorReason,
+    transaction: null,
+    network: null,
   });
 }
 
 export function settleSuccessResponse(
-  txHash: string,
-  networkId: string,
+  transaction: string,
+  network: string,
 ): Response {
   return jsonResponse(200, {
     success: true,
-    txHash,
-    networkId,
+    transaction,
+    network,
   });
 }
 

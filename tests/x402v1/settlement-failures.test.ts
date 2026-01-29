@@ -273,39 +273,8 @@ await t.test("x402 v1 settlement failures", async (t) => {
     },
   );
 
-  await t.test("settlement returns success but missing txHash", async (t) => {
-    const harness = new TestHarness({
-      settleMode: "verify-then-settle",
-      accepts: [accepts()],
-      facilitatorHandlers: [
-        createTestFacilitatorHandler({ payTo: "test-receiver" }),
-      ],
-      clientHandlers: [createTestPaymentHandler()],
-      middlewareInterceptors: [
-        createFailureInterceptor(matchFacilitatorSettle, () =>
-          jsonResponse(200, {
-            success: true,
-            txHash: null,
-            networkId: TEST_NETWORK,
-          }),
-        ),
-      ],
-    });
-
-    const fetch = harness.createFetch();
-
-    const response = await fetch("/test-resource");
-    t.equal(
-      response.status,
-      200,
-      "should complete even with null txHash if success is true",
-    );
-
-    t.end();
-  });
-
   await t.test(
-    "settlement returns success but missing networkId",
+    "settlement returns success but missing transaction",
     async (t) => {
       const harness = new TestHarness({
         settleMode: "verify-then-settle",
@@ -318,8 +287,8 @@ await t.test("x402 v1 settlement failures", async (t) => {
           createFailureInterceptor(matchFacilitatorSettle, () =>
             jsonResponse(200, {
               success: true,
-              txHash: "0x123abc",
-              networkId: null,
+              transaction: null,
+              network: TEST_NETWORK,
             }),
           ),
         ],
@@ -331,10 +300,41 @@ await t.test("x402 v1 settlement failures", async (t) => {
       t.equal(
         response.status,
         200,
-        "should complete even with null networkId if success is true",
+        "should complete even with null transaction if success is true",
       );
 
       t.end();
     },
   );
+
+  await t.test("settlement returns success but missing network", async (t) => {
+    const harness = new TestHarness({
+      settleMode: "verify-then-settle",
+      accepts: [accepts()],
+      facilitatorHandlers: [
+        createTestFacilitatorHandler({ payTo: "test-receiver" }),
+      ],
+      clientHandlers: [createTestPaymentHandler()],
+      middlewareInterceptors: [
+        createFailureInterceptor(matchFacilitatorSettle, () =>
+          jsonResponse(200, {
+            success: true,
+            transaction: "0x123abc",
+            network: null,
+          }),
+        ),
+      ],
+    });
+
+    const fetch = harness.createFetch();
+
+    const response = await fetch("/test-resource");
+    t.equal(
+      response.status,
+      200,
+      "should complete even with null network if success is true",
+    );
+
+    t.end();
+  });
 });

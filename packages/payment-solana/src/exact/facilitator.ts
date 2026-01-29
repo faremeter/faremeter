@@ -494,9 +494,9 @@ export const createFacilitatorHandler = async (
       logger.error(msg);
       return {
         success: false,
-        error: msg,
-        txHash: null,
-        networkId: null,
+        errorReason: msg,
+        transaction: null,
+        network: null,
       };
     };
 
@@ -533,9 +533,9 @@ export const createFacilitatorHandler = async (
 
     let response: x402SettleResponse = {
       success: true,
-      error: null,
-      txHash: result.signature,
-      networkId: payment.network,
+      errorReason: null,
+      transaction: result.signature,
+      network: payment.network,
       payer,
     };
 

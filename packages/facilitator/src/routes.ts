@@ -147,12 +147,12 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
   ) {
     const response: x.x402SettleResponse = {
       success: false,
-      txHash: null,
-      networkId: null,
+      transaction: null,
+      network: null,
     };
 
     if (msg !== undefined) {
-      response.error = msg;
+      response.errorReason = msg;
       logger.error(msg);
     } else {
       logger.error("unknown error during settlement");
@@ -231,11 +231,15 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
 
       logger.debug("facilitator handler accepted settlement and returned", t);
 
+      // Normalize for logging - handlers may use either legacy or spec-compliant field names
+      const txId = t.transaction ?? t.txHash;
+
       logger.info(`${t.success ? "succeeded" : "failed"} settlement request`, {
         requirements: summarizeRequirements(x402Req.paymentRequirements),
-        txHash: t.txHash,
+        transaction: txId,
       });
 
+      // Return as-is; callers should use normalizeSettleResponse() if needed
       return c.json(t);
     }
     sendSettleError(c, 400, "no matching payment handler found");

@@ -2,6 +2,12 @@ import { type } from "arktype";
 import { caseInsensitiveLiteral } from "./literal";
 import { isValidationError } from "./validation";
 
+// HTTP header name for client payment payload
+export const X_PAYMENT_HEADER = "X-PAYMENT";
+
+// HTTP header name for server payment response
+export const X_PAYMENT_RESPONSE_HEADER = "X-PAYMENT-RESPONSE";
+
 export const x402PaymentId = type({
   scheme: "string",
   network: "string",
@@ -16,7 +22,7 @@ export const x402PaymentRequirements = type({
   maxAmountRequired: "string.numeric",
   resource: "string.url",
   description: "string",
-  mimeType: "string",
+  "mimeType?": "string",
   outputSchema: "object?",
   payTo: "string",
   maxTimeoutSeconds: "number.integer",
@@ -29,7 +35,7 @@ export type x402PaymentRequirements = typeof x402PaymentRequirements.infer;
 export const x402PaymentRequiredResponse = type({
   x402Version: "number.integer",
   accepts: x402PaymentRequirements.array(),
-  error: "string?",
+  error: "string",
 });
 
 export type x402PaymentRequiredResponse =
@@ -61,8 +67,8 @@ export type x402VerifyRequest = typeof x402VerifyRequest.infer;
 
 export const x402VerifyResponse = type({
   isValid: "boolean",
-  "invalidReason?": "string | null",
-  "payer?": "string",
+  "invalidReason?": "string",
+  payer: "string",
 });
 
 export type x402VerifyResponse = typeof x402VerifyResponse.infer;
@@ -70,7 +76,14 @@ export type x402VerifyResponse = typeof x402VerifyResponse.infer;
 export const x402SettleRequest = x402VerifyRequest;
 export type x402SettleRequest = typeof x402SettleRequest.infer;
 
-export const x402SettleResponse = type({
+/**
+ * Legacy settle response type with pre-spec field names (txHash, networkId, error).
+ * Use x402SettleResponse for spec-compliant field names (transaction, network, errorReason).
+ *
+ * This type exists for backward compatibility when interfacing with older clients
+ * that use legacy field names.
+ */
+export const x402SettleResponseLegacy = type({
   success: "boolean",
   "error?": "string | null",
   txHash: "string | null",
@@ -78,7 +91,60 @@ export const x402SettleResponse = type({
   "payer?": "string",
 });
 
+export type x402SettleResponseLegacy = typeof x402SettleResponseLegacy.infer;
+
+/**
+ * Spec-compliant settle response per x402-specification-v1.md Section 5.3.
+ * Field names: transaction, network, errorReason (not txHash, networkId, error)
+ */
+export const x402SettleResponse = type({
+  success: "boolean",
+  "errorReason?": "string",
+  transaction: "string",
+  network: "string",
+  payer: "string",
+});
+
 export type x402SettleResponse = typeof x402SettleResponse.infer;
+
+/**
+ * Lenient settle response parser that accepts either legacy or spec-compliant
+ * field names. Use this when parsing incoming data that may come from older
+ * clients using legacy field names.
+ */
+export const x402SettleResponseLenient = type({
+  success: "boolean",
+  "errorReason?": "string | null",
+  "error?": "string | null",
+  "transaction?": "string | null",
+  "txHash?": "string | null",
+  "network?": "string | null",
+  "networkId?": "string | null",
+  "payer?": "string",
+});
+
+export type x402SettleResponseLenient = typeof x402SettleResponseLenient.infer;
+
+/**
+ * Normalize a lenient settle response to spec-compliant field names.
+ * Converts legacy field names (txHash, networkId, error) to spec-compliant
+ * names (transaction, network, errorReason).
+ */
+export function normalizeSettleResponse(
+  res: x402SettleResponseLenient,
+): x402SettleResponse {
+  const result: x402SettleResponse = {
+    success: res.success,
+    transaction: res.transaction ?? res.txHash ?? "",
+    network: res.network ?? res.networkId ?? "",
+    payer: res.payer ?? "",
+  };
+  const errorReason = res.errorReason ?? res.error;
+  if (errorReason !== undefined && errorReason !== null) {
+    result.errorReason = errorReason;
+  }
+  return result;
+}
 
 export const x402SupportedKind = type({
   x402Version: "number.integer",

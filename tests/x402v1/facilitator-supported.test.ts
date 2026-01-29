@@ -18,7 +18,7 @@ import type {
 } from "@faremeter/types/x402";
 
 function createSimpleFacilitatorHandler(opts: {
-  networkId: string;
+  network: string;
   getSupported?: () => Promise<x402SupportedKind>[];
 }): FacilitatorHandler {
   const base = {
@@ -28,8 +28,8 @@ function createSimpleFacilitatorHandler(opts: {
     handleSettle: () =>
       Promise.resolve({
         success: true,
-        txHash: "test-tx",
-        networkId: opts.networkId,
+        transaction: "test-tx",
+        network: opts.network,
       }),
   };
 
@@ -67,7 +67,7 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
   await t.test("returns empty kinds when no getSupported", async (t) => {
     // Create handler without getSupported
     const handlerWithoutSupported = createSimpleFacilitatorHandler({
-      networkId: TEST_NETWORK,
+      network: TEST_NETWORK,
     });
 
     const harness = new TestHarness({
@@ -89,7 +89,7 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
 
   await t.test("returns kinds from multiple handlers", async (t) => {
     const handler1 = createSimpleFacilitatorHandler({
-      networkId: "network-a",
+      network: "network-a",
       getSupported: () => [
         Promise.resolve({
           x402Version: 1,
@@ -100,7 +100,7 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
     });
 
     const handler2 = createSimpleFacilitatorHandler({
-      networkId: "network-b",
+      network: "network-b",
       getSupported: () => [
         Promise.resolve({
           x402Version: 1,
@@ -133,7 +133,7 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
 
   await t.test("handles handler that throws in getSupported", async (t) => {
     const throwingHandler = createSimpleFacilitatorHandler({
-      networkId: TEST_NETWORK,
+      network: TEST_NETWORK,
       getSupported: () => [Promise.reject(new Error("getSupported failed"))],
     });
 
@@ -178,7 +178,7 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
 
   await t.test("supported endpoint returns extra fields", async (t) => {
     const handlerWithExtra = createSimpleFacilitatorHandler({
-      networkId: TEST_NETWORK,
+      network: TEST_NETWORK,
       getSupported: () => [
         Promise.resolve({
           x402Version: 1,

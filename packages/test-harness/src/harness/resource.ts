@@ -29,6 +29,6 @@ export const defaultResourceHandler: ResourceHandler = (ctx) => ({
   body: {
     success: true,
     resource: ctx.resource,
-    txHash: ctx.settleResponse.txHash,
+    transaction: ctx.settleResponse.transaction,
   },
 });

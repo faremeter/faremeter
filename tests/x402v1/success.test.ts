@@ -100,8 +100,8 @@ await t.test("x402 v1 protocol flow components", async (t) => {
     const settleResult = await handler.handleSettle(requirements, payment);
     t.ok(settleResult, "should return settle response");
     t.equal(settleResult?.success, true, "settlement should succeed");
-    t.ok(settleResult?.txHash, "should return transaction hash");
-    t.equal(settleResult?.networkId, TEST_NETWORK, "network should match");
+    t.ok(settleResult?.transaction, "should return transaction hash");
+    t.equal(settleResult?.network, TEST_NETWORK, "network should match");
 
     t.end();
   });

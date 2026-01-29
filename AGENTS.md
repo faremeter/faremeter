@@ -59,3 +59,9 @@ Do not use emojis in code or documentation, or attempt to be cute with your aest
 ## Configuration
 
 Do not modify configuration files (e.g. eslint, prettier) unless explicitly asked to. Your job is to write working software not change the conventions that are being used.
+
+## Code Reviews and Pull Requests
+
+When performing code reviews or pull request reviews, load the `code-review`
+skill for detailed guidelines on scope determination, convention compliance,
+and delegation to sub-agents.

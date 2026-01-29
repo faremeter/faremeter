@@ -2,6 +2,15 @@
 
 Instructions for AI agents working in this repository.
 
+## Session Initialization
+
+At the start of every session, before doing any other work:
+
+1. Read `CONVENTIONS.md` and follow all conventions defined there
+2. Glob for all `SKILL.md` files under `.claude/skills/` and load each one
+
+Do not proceed with any user requests until both steps are complete.
+
 ## x402 Payment Protocol
 
 For all x402-related operations, use local `@faremeter` packages unless explicitly instructed otherwise.

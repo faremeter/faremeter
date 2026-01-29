@@ -4,6 +4,8 @@
   "packageManager": "pnpm@10.12.1",
   "type": "module",
   "dependencies": {
+    "@faremeter/facilitator": "workspace:^",
+    "@faremeter/middleware": "workspace:^",
     "@faremeter/test-harness": "workspace:^",
     "@faremeter/types": "workspace:^"
   },

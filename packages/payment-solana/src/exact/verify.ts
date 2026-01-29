@@ -66,7 +66,7 @@ async function verifyTransferInstruction(
   paymentRequirements: x402PaymentRequirements,
   destination: string,
   facilitatorAddress: string,
-): Promise<boolean> {
+): Promise<string | false> {
   if (!instruction.data || !instruction.accounts) {
     return false;
   }
@@ -100,11 +100,14 @@ async function verifyTransferInstruction(
     return false;
   }
 
-  return (
+  if (
     transfer.data.amount === BigInt(paymentRequirements.maxAmountRequired) &&
     transfer.accounts.mint.address === paymentRequirements.asset &&
     transfer.accounts.destination.address === destination
-  );
+  ) {
+    return transfer.accounts.authority.address;
+  }
+  return false;
 }
 
 function verifyCreateATAInstruction(
@@ -139,7 +142,7 @@ export async function isValidTransaction(
   paymentRequirements: x402PaymentRequirements,
   facilitatorAddress: PublicKey,
   maxPriorityFee?: number,
-): Promise<boolean> {
+): Promise<{ payer: string } | false> {
   const extra = PaymentRequirementsExtra(paymentRequirements.extra);
   if (isValidationError(extra)) {
     throw new Error("feePayer is required");
@@ -189,12 +192,14 @@ export async function isValidTransaction(
       }
     }
 
-    return await verifyTransferInstruction(
+    const payer = await verifyTransferInstruction(
       ix2,
       paymentRequirements,
       destination,
       facilitatorBase58,
     );
+    if (!payer) return false;
+    return { payer };
   } else if (instructions.length === 4) {
     const [ix0, ix1, ix2, ix3] = instructions;
     if (!ix0 || !ix1 || !ix2 || !ix3) {
@@ -225,15 +230,15 @@ export async function isValidTransaction(
       }
     }
 
-    return (
-      verifyCreateATAInstruction(ix2, facilitatorBase58) &&
-      (await verifyTransferInstruction(
-        ix3,
-        paymentRequirements,
-        destination,
-        facilitatorBase58,
-      ))
+    if (!verifyCreateATAInstruction(ix2, facilitatorBase58)) return false;
+    const payer = await verifyTransferInstruction(
+      ix3,
+      paymentRequirements,
+      destination,
+      facilitatorBase58,
     );
+    if (!payer) return false;
+    return { payer };
   }
 
   return false;

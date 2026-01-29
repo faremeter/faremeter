@@ -299,6 +299,7 @@ export const createFacilitatorHandler = async (
     };
 
     return {
+      payer: settleOwner,
       settle,
     };
   };
@@ -321,15 +322,15 @@ export const createFacilitatorHandler = async (
       throw new Error("Failed to get compiled transaction message", { cause });
     }
 
+    let validResult;
     try {
-      if (
-        !(await isValidTransaction(
-          transactionMessage,
-          requirements,
-          feePayerKeypair.publicKey,
-          maxPriorityFee,
-        ))
-      ) {
+      validResult = await isValidTransaction(
+        transactionMessage,
+        requirements,
+        feePayerKeypair.publicKey,
+        maxPriorityFee,
+      );
+      if (!validResult) {
         logger.error("Invalid transaction");
         return errorResponse("Invalid transaction");
       }
@@ -337,7 +338,10 @@ export const createFacilitatorHandler = async (
       throw new Error("Failed to validate transaction", { cause });
     }
 
+    const { payer } = validResult;
+
     return {
+      payer,
       settle: async () => {
         let signedTransaction;
         try {
@@ -445,6 +449,8 @@ export const createFacilitatorHandler = async (
       return errorResponse(verifyResult.error);
     }
 
+    const { payer } = verifyResult;
+
     let response: x402VerifyResponse = { isValid: true };
 
     const hooks = config?.hooks;
@@ -473,7 +479,7 @@ export const createFacilitatorHandler = async (
       }
     }
 
-    return response;
+    return { ...response, payer };
   };
 
   const handleSettle = async (
@@ -506,6 +512,7 @@ export const createFacilitatorHandler = async (
       return errorResponse(verifyResult.error);
     }
 
+    const { payer } = verifyResult;
     const { signedTransaction } = await verifyResult.settle();
 
     let result;
@@ -529,6 +536,7 @@ export const createFacilitatorHandler = async (
       error: null,
       txHash: result.signature,
       networkId: payment.network,
+      payer,
     };
 
     const hooks = config?.hooks;
@@ -556,7 +564,7 @@ export const createFacilitatorHandler = async (
       }
     }
 
-    return response;
+    return { ...response, payer };
   };
 
   return {

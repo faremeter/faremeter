@@ -8,10 +8,48 @@ import {
   x402VerifyResponse,
   x402SettleRequest,
   x402SettleResponse,
+  x402SettleResponseLenient,
+  normalizeSettleResponse,
+  X_PAYMENT_RESPONSE_HEADER,
 } from "@faremeter/types/x402";
 import { type AgedLRUCacheOpts, AgedLRUCache } from "./cache";
 
 import { logger } from "./logger";
+
+/**
+ * Build the X-PAYMENT-RESPONSE header value from a settle response.
+ *
+ * The header uses spec-compliant field names: `transaction`, `network`,
+ * and `errorReason`.
+ */
+function buildPaymentResponseHeader(
+  settlementResponse: x402SettleResponse,
+): string {
+  const headerPayload: {
+    success: boolean;
+    transaction: string;
+    network: string;
+    payer?: string;
+    errorReason?: string | null;
+  } = {
+    success: settlementResponse.success,
+    transaction: settlementResponse.transaction ?? "",
+    network: settlementResponse.network ?? "",
+  };
+
+  if (settlementResponse.payer !== undefined) {
+    headerPayload.payer = settlementResponse.payer;
+  }
+
+  if (
+    !settlementResponse.success &&
+    settlementResponse.errorReason !== undefined
+  ) {
+    headerPayload.errorReason = settlementResponse.errorReason;
+  }
+
+  return btoa(JSON.stringify(headerPayload));
+}
 
 export function findMatchingPaymentRequirements(
   accepts: x402PaymentRequirements[],
@@ -84,6 +122,7 @@ export async function getPaymentRequiredResponse(
     body: JSON.stringify({
       x402Version: 1,
       accepts,
+      error: "",
     }),
   });
 
@@ -199,16 +238,31 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
       },
       body: JSON.stringify(settleRequest),
     });
-    const settlementResponse = x402SettleResponse(await t.json());
+    // Parse with lenient type to accept both legacy and spec-compliant field names
+    const rawSettlementResponse = x402SettleResponseLenient(await t.json());
 
-    if (isValidationError(settlementResponse)) {
-      const msg = `error getting response from facilitator for settlement: ${settlementResponse.summary}`;
+    if (isValidationError(rawSettlementResponse)) {
+      const msg = `error getting response from facilitator for settlement: ${rawSettlementResponse.summary}`;
       logger.error(msg);
       throw new Error(msg);
     }
 
+    // Normalize to spec-compliant field names
+    const settlementResponse = normalizeSettleResponse(rawSettlementResponse);
+
+    // Set the X-PAYMENT-RESPONSE header for both success and failure
+    if (args.setResponseHeader) {
+      args.setResponseHeader(
+        X_PAYMENT_RESPONSE_HEADER,
+        buildPaymentResponseHeader(settlementResponse),
+      );
+    }
+
     if (!settlementResponse.success) {
-      logger.warning("failed to settle payment: {error}", settlementResponse);
+      logger.warning(
+        "failed to settle payment: {errorReason}",
+        settlementResponse,
+      );
       return { success: false, errorResponse: sendPaymentRequired() };
     }
 

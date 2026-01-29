@@ -178,8 +178,8 @@ await t.test("interceptor composition", async (t) => {
             return new Response(
               JSON.stringify({
                 success: true,
-                txHash: "0xshortcircuit",
-                networkId: TEST_NETWORK,
+                transaction: "0xshortcircuit",
+                network: TEST_NETWORK,
               }),
               {
                 status: 200,

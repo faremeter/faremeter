@@ -137,9 +137,9 @@ export function createTestFacilitatorHandler(
     if (!result.valid) {
       return {
         success: false,
-        error: result.error,
-        txHash: null,
-        networkId: null,
+        errorReason: result.error,
+        transaction: null,
+        network: null,
       };
     }
 
@@ -149,9 +149,9 @@ export function createTestFacilitatorHandler(
     if (testPayload.amount !== requirements.maxAmountRequired) {
       return {
         success: false,
-        error: "Amount mismatch",
-        txHash: null,
-        networkId: null,
+        errorReason: "Amount mismatch",
+        transaction: null,
+        network: null,
       };
     }
 
@@ -159,9 +159,9 @@ export function createTestFacilitatorHandler(
     if (requirements.payTo.toLowerCase() !== payTo.toLowerCase()) {
       return {
         success: false,
-        error: "Payment to wrong address",
-        txHash: null,
-        networkId: null,
+        errorReason: "Payment to wrong address",
+        transaction: null,
+        network: null,
       };
     }
 
@@ -171,8 +171,8 @@ export function createTestFacilitatorHandler(
 
     return {
       success: true,
-      txHash: `test-tx-${testPayload.testId}`,
-      networkId: TEST_NETWORK,
+      transaction: `test-tx-${testPayload.testId}`,
+      network: TEST_NETWORK,
     };
   };
 

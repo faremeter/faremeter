@@ -152,7 +152,7 @@ await t.test("x402 v1 resource handler errors", async (t) => {
       hasPaymentRequirements: boolean;
       hasPaymentPayload: boolean;
       hasSettleResponse: boolean;
-      txHashPresent: boolean;
+      transactionPresent: boolean;
     }
     let capturedContext: CapturedContext | undefined;
 
@@ -170,7 +170,7 @@ await t.test("x402 v1 resource handler errors", async (t) => {
         hasPaymentRequirements: !!ctx.paymentRequirements,
         hasPaymentPayload: !!ctx.paymentPayload,
         hasSettleResponse: !!ctx.settleResponse,
-        txHashPresent: !!ctx.settleResponse?.txHash,
+        transactionPresent: !!ctx.settleResponse?.transaction,
       };
       return {
         status: 200,
@@ -191,8 +191,8 @@ await t.test("x402 v1 resource handler errors", async (t) => {
       t.ok(capturedContext.hasPaymentPayload, "should have payment payload");
       t.ok(capturedContext.hasSettleResponse, "should have settle response");
       t.ok(
-        capturedContext.txHashPresent,
-        "should have txHash in settle response",
+        capturedContext.transactionPresent,
+        "should have transaction in settle response",
       );
     }
 

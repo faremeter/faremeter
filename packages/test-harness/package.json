@@ -41,6 +41,7 @@
     "@faremeter/fetch": "workspace:^",
     "@faremeter/middleware": "workspace:^",
     "@faremeter/types": "workspace:^",
+    "arktype": "catalog:",
     "hono": "catalog:"
   },
   "tap": {

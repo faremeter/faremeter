@@ -14,22 +14,24 @@ import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import type {
   x402PaymentRequirements,
   x402SupportedKind,
-  x402SupportedResponse,
-} from "@faremeter/types/x402";
+} from "@faremeter/types/x402v2";
+import type { x402SupportedResponse } from "@faremeter/types/x402";
 
 function createSimpleFacilitatorHandler(opts: {
-  network: string;
+  networkId: string;
   getSupported?: () => Promise<x402SupportedKind>[];
 }): FacilitatorHandler {
   const base = {
-    getRequirements: (
-      req: x402PaymentRequirements[],
-    ): Promise<x402PaymentRequirements[]> => Promise.resolve(req),
+    getRequirements: ({
+      accepts: req,
+    }: {
+      accepts: x402PaymentRequirements[];
+    }): Promise<x402PaymentRequirements[]> => Promise.resolve(req),
     handleSettle: () =>
       Promise.resolve({
         success: true,
         transaction: "test-tx",
-        network: opts.network,
+        network: opts.networkId,
       }),
   };
 
@@ -67,7 +69,7 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
   await t.test("returns empty kinds when no getSupported", async (t) => {
     // Create handler without getSupported
     const handlerWithoutSupported = createSimpleFacilitatorHandler({
-      network: TEST_NETWORK,
+      networkId: TEST_NETWORK,
     });
 
     const harness = new TestHarness({
@@ -89,10 +91,10 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
 
   await t.test("returns kinds from multiple handlers", async (t) => {
     const handler1 = createSimpleFacilitatorHandler({
-      network: "network-a",
+      networkId: "network-a",
       getSupported: () => [
         Promise.resolve({
-          x402Version: 1,
+          x402Version: 2 as const,
           scheme: "scheme-a",
           network: "network-a",
         }),
@@ -100,10 +102,10 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
     });
 
     const handler2 = createSimpleFacilitatorHandler({
-      network: "network-b",
+      networkId: "network-b",
       getSupported: () => [
         Promise.resolve({
-          x402Version: 1,
+          x402Version: 2 as const,
           scheme: "scheme-b",
           network: "network-b",
         }),
@@ -122,7 +124,11 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
     t.equal(response.status, 200, "should return 200");
     const body = (await response.json()) as x402SupportedResponse;
     t.ok(body.kinds, "should have kinds array");
-    t.equal(body.kinds.length, 2, "should have 2 kinds");
+    t.equal(
+      body.kinds.length,
+      4,
+      "should have 4 kinds (2 v1 adapted + 2 v2 original)",
+    );
 
     const schemes = body.kinds.map((k) => k.scheme);
     t.ok(schemes.includes("scheme-a"), "should include scheme-a");
@@ -133,7 +139,7 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
 
   await t.test("handles handler that throws in getSupported", async (t) => {
     const throwingHandler = createSimpleFacilitatorHandler({
-      network: TEST_NETWORK,
+      networkId: TEST_NETWORK,
       getSupported: () => [Promise.reject(new Error("getSupported failed"))],
     });
 
@@ -178,10 +184,10 @@ await t.test("x402 v1 facilitator /supported endpoint", async (t) => {
 
   await t.test("supported endpoint returns extra fields", async (t) => {
     const handlerWithExtra = createSimpleFacilitatorHandler({
-      network: TEST_NETWORK,
+      networkId: TEST_NETWORK,
       getSupported: () => [
         Promise.resolve({
-          x402Version: 1,
+          x402Version: 2 as const,
           scheme: TEST_SCHEME,
           network: TEST_NETWORK,
           extra: {

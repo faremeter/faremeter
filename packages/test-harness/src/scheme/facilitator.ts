@@ -1,14 +1,23 @@
+import { type } from "arktype";
+import { isValidationError } from "@faremeter/types";
 import type {
   x402PaymentRequirements,
   x402PaymentPayload,
   x402SettleResponse,
   x402VerifyResponse,
   x402SupportedKind,
-} from "@faremeter/types/x402";
+} from "@faremeter/types/x402v2";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 
 import { TEST_SCHEME, TEST_NETWORK, TEST_ASSET } from "./constants";
 import type { TestPaymentPayload } from "./types";
+
+const testPaymentPayload = type({
+  testId: "string > 0",
+  amount: "string > 0",
+  timestamp: "number > 0",
+  "metadata?": "Record<string, unknown>",
+});
 
 export type CreateTestFacilitatorHandlerOpts = {
   payTo: string;
@@ -36,29 +45,11 @@ function validateTestPayload(
 ):
   | { valid: true; payload: TestPaymentPayload }
   | { valid: false; error: string } {
-  const p = payload as Partial<TestPaymentPayload>;
-
-  if (typeof p.testId !== "string" || p.testId.length === 0) {
-    return { valid: false, error: "Missing or invalid testId" };
+  const result = testPaymentPayload(payload);
+  if (isValidationError(result)) {
+    return { valid: false, error: result.summary };
   }
-
-  if (typeof p.amount !== "string" || p.amount.length === 0) {
-    return { valid: false, error: "Missing or invalid amount" };
-  }
-
-  if (typeof p.timestamp !== "number" || p.timestamp <= 0) {
-    return { valid: false, error: "Missing or invalid timestamp" };
-  }
-
-  return {
-    valid: true,
-    payload: {
-      testId: p.testId,
-      amount: p.amount,
-      timestamp: p.timestamp,
-      metadata: p.metadata,
-    },
-  };
+  return { valid: true, payload: result };
 }
 
 /**
@@ -75,16 +66,19 @@ export function createTestFacilitatorHandler(
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return [
       Promise.resolve({
-        x402Version: 1,
+        x402Version: 2 as const,
         scheme: TEST_SCHEME,
         network: TEST_NETWORK,
       }),
     ];
   };
 
-  const getRequirements = async (
-    req: x402PaymentRequirements[],
-  ): Promise<x402PaymentRequirements[]> => {
+  const getRequirements = async ({
+    accepts: req,
+  }: {
+    accepts: x402PaymentRequirements[];
+  }): Promise<x402PaymentRequirements[]> => {
+    // || is intentional: tests pass empty strings to signal "not provided".
     return req.filter(isMatchingRequirement).map((r) => ({
       ...r,
       asset: r.asset || TEST_ASSET,
@@ -109,7 +103,7 @@ export function createTestFacilitatorHandler(
     const testPayload = result.payload;
 
     // Verify amount matches
-    if (testPayload.amount !== requirements.maxAmountRequired) {
+    if (testPayload.amount !== requirements.amount) {
       return { isValid: false, invalidReason: "Amount mismatch" };
     }
 
@@ -138,20 +132,20 @@ export function createTestFacilitatorHandler(
       return {
         success: false,
         errorReason: result.error,
-        transaction: null,
-        network: null,
+        transaction: "",
+        network: requirements.network,
       };
     }
 
     const testPayload = result.payload;
 
     // Verify amount matches
-    if (testPayload.amount !== requirements.maxAmountRequired) {
+    if (testPayload.amount !== requirements.amount) {
       return {
         success: false,
         errorReason: "Amount mismatch",
-        transaction: null,
-        network: null,
+        transaction: "",
+        network: requirements.network,
       };
     }
 
@@ -160,8 +154,8 @@ export function createTestFacilitatorHandler(
       return {
         success: false,
         errorReason: "Payment to wrong address",
-        transaction: null,
-        network: null,
+        transaction: "",
+        network: requirements.network,
       };
     }
 

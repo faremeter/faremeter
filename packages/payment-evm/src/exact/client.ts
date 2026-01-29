@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 import type {
-  PaymentHandlerV2,
-  PaymentExecerV2,
+  PaymentHandler,
+  PaymentExecer,
   RequestContext,
 } from "@faremeter/types/client";
 import {
@@ -9,7 +9,7 @@ import {
   findAssetInfo,
   type AssetNameOrContractInfo,
 } from "@faremeter/info/evm";
-import type { x402PaymentRequirementsV2 } from "@faremeter/types/x402v2";
+import type { x402PaymentRequirements } from "@faremeter/types/x402v2";
 import type { Hex } from "viem";
 import { isAddress } from "viem";
 import { type } from "arktype";
@@ -45,7 +45,7 @@ export type CreatePaymentHandlerOpts = {
 export function createPaymentHandler(
   wallet: WalletForPayment,
   opts: CreatePaymentHandlerOpts = {},
-): PaymentHandlerV2 {
+): PaymentHandler {
   const x402Network = lookupX402Network(wallet.chain.id);
 
   const assetInfo = findAssetInfo(x402Network, opts.asset ?? "USDC");
@@ -62,8 +62,8 @@ export function createPaymentHandler(
 
   return async function handlePayment(
     _context: RequestContext,
-    accepts: x402PaymentRequirementsV2[],
-  ): Promise<PaymentExecerV2[]> {
+    accepts: x402PaymentRequirements[],
+  ): Promise<PaymentExecer[]> {
     const compatibleRequirements = accepts.filter(isMatchingRequirement);
 
     return compatibleRequirements.map((requirements) => ({

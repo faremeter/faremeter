@@ -1,23 +1,21 @@
-import {
+import type {
   x402PaymentRequirements,
-  x402SettleResponseLenient,
+  x402SettleResponse,
   x402PaymentPayload,
   x402SupportedKind,
   x402VerifyResponse,
-} from "./x402";
+  x402ResourceInfo,
+} from "./x402v2";
 
-/**
- * FacilitatorHandler interface for payment processing.
- *
- * handleSettle returns x402SettleResponseLenient to support both
- * legacy field names (txHash, networkId, error) and spec-compliant
- * field names (transaction, network, errorReason). Callers should
- * use normalizeSettleResponse() to normalize the response.
- */
-export type FacilitatorHandler = {
+export interface GetRequirementsArgs {
+  accepts: x402PaymentRequirements[];
+  resource?: x402ResourceInfo;
+}
+
+export interface FacilitatorHandler {
   getSupported?: () => Promise<x402SupportedKind>[];
   getRequirements: (
-    req: x402PaymentRequirements[],
+    args: GetRequirementsArgs,
   ) => Promise<x402PaymentRequirements[]>;
   handleVerify?: (
     requirements: x402PaymentRequirements,
@@ -26,5 +24,6 @@ export type FacilitatorHandler = {
   handleSettle: (
     requirements: x402PaymentRequirements,
     payment: x402PaymentPayload,
-  ) => Promise<x402SettleResponseLenient | null>;
-};
+  ) => Promise<x402SettleResponse | null>;
+  getSigners?: () => Promise<Record<string, string[]>>;
+}

@@ -1,4 +1,4 @@
-import type { x402PaymentRequirements } from "@faremeter/types/x402";
+import type { x402PaymentRequirements } from "@faremeter/types/x402v2";
 import { isValidationError } from "@faremeter/types";
 import {
   parseSetComputeUnitLimitInstruction,
@@ -101,7 +101,7 @@ async function verifyTransferInstruction(
   }
 
   if (
-    transfer.data.amount === BigInt(paymentRequirements.maxAmountRequired) &&
+    transfer.data.amount === BigInt(paymentRequirements.amount) &&
     transfer.accounts.mint.address === paymentRequirements.asset &&
     transfer.accounts.destination.address === destination
   ) {

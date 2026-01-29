@@ -341,7 +341,6 @@ await t.test("adaptPaymentRequiredResponseV1ToV2", async (t) => {
     const v1Response = {
       x402Version: 1,
       accepts: [makeV1Requirements()],
-      error: "",
     };
     const v2 = adaptPaymentRequiredResponseV1ToV2(
       v1Response,
@@ -357,7 +356,6 @@ await t.test("adaptPaymentRequiredResponseV1ToV2", async (t) => {
     const v1Response = {
       x402Version: 1,
       accepts: [makeV1Requirements({ maxAmountRequired: "3000" })],
-      error: "",
     };
     const v2 = adaptPaymentRequiredResponseV1ToV2(
       v1Response,
@@ -377,7 +375,6 @@ await t.test("adaptPaymentRequiredResponseV1ToV2", async (t) => {
         makeV1Requirements({ scheme: "exact", maxAmountRequired: "1000" }),
         makeV1Requirements({ scheme: "upto", maxAmountRequired: "2000" }),
       ],
-      error: "",
     };
     const v2 = adaptPaymentRequiredResponseV1ToV2(
       v1Response,
@@ -406,7 +403,6 @@ await t.test("adaptPaymentRequiredResponseV1ToV2", async (t) => {
           mimeType: "application/json",
         }),
       ],
-      error: "",
     };
     const v2 = adaptPaymentRequiredResponseV1ToV2(
       v1Response,
@@ -436,11 +432,10 @@ await t.test("adaptPaymentRequiredResponseV1ToV2", async (t) => {
     t.end();
   });
 
-  await t.test("omits error when empty string", (t) => {
+  await t.test("omits error when not present", (t) => {
     const v1Response = {
       x402Version: 1,
       accepts: [makeV1Requirements()],
-      error: "",
     };
     const v2 = adaptPaymentRequiredResponseV1ToV2(
       v1Response,
@@ -456,7 +451,6 @@ await t.test("adaptPaymentRequiredResponseV1ToV2", async (t) => {
     const v1Response = {
       x402Version: 1,
       accepts: [],
-      error: "",
     };
     const v2 = adaptPaymentRequiredResponseV1ToV2(
       v1Response,
@@ -478,7 +472,6 @@ await t.test("adaptPaymentRequiredResponseV1ToV2", async (t) => {
         makeV1Requirements({ network: "solana-devnet" }),
         makeV1Requirements({ network: "base-sepolia" }),
       ],
-      error: "",
     };
     const v2 = adaptPaymentRequiredResponseV1ToV2(
       v1Response,
@@ -611,7 +604,7 @@ await t.test("adaptVerifyResponseV2ToV1", async (t) => {
 
 await t.test("adaptVerifyResponseV1ToV2", async (t) => {
   await t.test("converts valid response", (t) => {
-    const v1 = { isValid: true, payer: "0xPayer" };
+    const v1 = { isValid: true };
     const v2 = adaptVerifyResponseV1ToV2(v1);
 
     t.equal(v2.isValid, true);
@@ -620,11 +613,7 @@ await t.test("adaptVerifyResponseV1ToV2", async (t) => {
   });
 
   await t.test("converts invalid response with reason", (t) => {
-    const v1 = {
-      isValid: false,
-      invalidReason: "Expired transaction",
-      payer: "0xPayer",
-    };
+    const v1 = { isValid: false, invalidReason: "Expired transaction" };
     const v2 = adaptVerifyResponseV1ToV2(v1);
 
     t.equal(v2.isValid, false);
@@ -650,13 +639,11 @@ await t.test("adaptVerifyResponseV1ToV2", async (t) => {
     t.end();
   });
 
-  await t.test("omits payer field from v2 when empty string in v1", (t) => {
-    const v1 = { isValid: true, payer: "" };
+  await t.test("omits payer field when not present", (t) => {
+    const v1 = { isValid: true };
     const v2 = adaptVerifyResponseV1ToV2(v1);
 
-    // The v1→v2 adapter passes payer through as-is, so empty string becomes empty string in v2
-    // (v2 payer is optional, so empty string is valid but could also be omitted)
-    t.equal(v2.payer, "");
+    t.notOk("payer" in v2);
     t.end();
   });
 });
@@ -728,7 +715,7 @@ await t.test("adaptSettleResponseV2ToV1", async (t) => {
     };
     const v1 = adaptSettleResponseV2ToV1(v2);
 
-    t.equal(v1.payer, "");
+    t.equal(v1.payer, "", "payer should be empty string when not in v2");
     t.end();
   });
 
@@ -800,7 +787,6 @@ await t.test("adaptSettleResponseV1ToV2", async (t) => {
         success: true,
         transaction: "0xSuccessHash",
         network: "base-sepolia",
-        payer: "0xPayer",
       };
       const v2 = adaptSettleResponseV1ToV2(v1);
 
@@ -811,13 +797,34 @@ await t.test("adaptSettleResponseV1ToV2", async (t) => {
     },
   );
 
-  await t.test("converts failure response with empty transaction", (t) => {
+  await t.test("throws on missing network", (t) => {
+    const v1 = {
+      success: true,
+      transaction: "0xHash",
+      network: null,
+    };
+
+    t.throws(() => adaptSettleResponseV1ToV2(v1), /missing network/);
+    t.end();
+  });
+
+  await t.test("throws on success with missing transaction", (t) => {
+    const v1 = {
+      success: true,
+      transaction: null,
+      network: "base-sepolia",
+    };
+
+    t.throws(() => adaptSettleResponseV1ToV2(v1), /missing transaction/);
+    t.end();
+  });
+
+  await t.test("uses empty string for null transaction on failure", (t) => {
     const v1 = {
       success: false,
-      transaction: "",
+      transaction: null,
       network: "base-sepolia",
       errorReason: "Failed",
-      payer: "0xPayer",
     };
     const v2 = adaptSettleResponseV1ToV2(v1);
 
@@ -829,14 +836,26 @@ await t.test("adaptSettleResponseV1ToV2", async (t) => {
   await t.test("passes through errorReason", (t) => {
     const v1 = {
       success: false,
-      transaction: "",
+      transaction: null,
       network: "base-sepolia",
       errorReason: "Settlement failed",
-      payer: "0xPayer",
     };
     const v2 = adaptSettleResponseV1ToV2(v1);
 
     t.equal(v2.errorReason, "Settlement failed");
+    t.end();
+  });
+
+  await t.test("omits errorReason when null", (t) => {
+    const v1 = {
+      success: false,
+      transaction: "",
+      network: "base-sepolia",
+      errorReason: null,
+    };
+    const v2 = adaptSettleResponseV1ToV2(v1);
+
+    t.notOk("errorReason" in v2);
     t.end();
   });
 
@@ -845,7 +864,6 @@ await t.test("adaptSettleResponseV1ToV2", async (t) => {
       success: false,
       transaction: "",
       network: "base-sepolia",
-      payer: "0xPayer",
     };
     const v2 = adaptSettleResponseV1ToV2(v1);
 
@@ -853,7 +871,7 @@ await t.test("adaptSettleResponseV1ToV2", async (t) => {
     t.end();
   });
 
-  await t.test("preserves payer field", (t) => {
+  await t.test("preserves payer field when present", (t) => {
     const v1 = {
       success: true,
       transaction: "0xHash",

@@ -2,6 +2,7 @@ import { logger } from "./logger";
 
 import { createFacilitatorHandler as createSolanaHandler } from "@faremeter/x-solana-settlement/facilitator";
 import { createFacilitatorHandler as createFacilitatorHandlerExact } from "@faremeter/payment-solana/exact";
+import { adaptHandlerV1ToV2 } from "@faremeter/facilitator";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { createSolanaRpc } from "@solana/kit";
 import { isKnownCluster, lookupKnownSPLToken } from "@faremeter/info/solana";
@@ -30,12 +31,15 @@ export async function createHandlers(network: string, keypairPath: string) {
   const mint = new PublicKey(usdcInfo.address);
 
   // Add Solana handlers
+  // Note: x-solana-settlement handlers use legacy v1 types and need to be adapted
   handlers.push(
-    // SOL
-    createSolanaHandler(network, connection, adminKeypair),
-    // SPL Token
-    createSolanaHandler(network, connection, adminKeypair, mint),
-    // SPL Token with exact scheme
+    // SOL (v1 handler - adapted to v2)
+    adaptHandlerV1ToV2(createSolanaHandler(network, connection, adminKeypair)),
+    // SPL Token (v1 handler - adapted to v2)
+    adaptHandlerV1ToV2(
+      createSolanaHandler(network, connection, adminKeypair, mint),
+    ),
+    // SPL Token with exact scheme (native v2 handler)
     await createFacilitatorHandlerExact(network, rpc, adminKeypair, mint),
   );
 

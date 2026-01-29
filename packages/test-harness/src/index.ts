@@ -6,7 +6,7 @@ export type {
   ResourceResult,
 } from "./harness/resource";
 export { defaultResourceHandler } from "./harness/resource";
-export { accepts } from "./harness/defaults";
+export { accepts, acceptsV2 } from "./harness/defaults";
 
 export { TEST_SCHEME, TEST_NETWORK, TEST_ASSET } from "./scheme/constants";
 export type { TestPaymentPayload } from "./scheme/types";

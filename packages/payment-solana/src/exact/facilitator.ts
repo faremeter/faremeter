@@ -1,10 +1,10 @@
 import {
-  x402PaymentRequirements,
+  type x402PaymentRequirements,
   type x402PaymentPayload,
   type x402SettleResponse,
   type x402VerifyResponse,
   type x402SupportedKind,
-} from "@faremeter/types/x402";
+} from "@faremeter/types/x402v2";
 import { isValidationError } from "@faremeter/types";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import {
@@ -249,9 +249,7 @@ export const createFacilitatorHandler = async (
       accountBalance,
     });
 
-    if (
-      BigInt(accountBalance.amount) !== BigInt(requirements.maxAmountRequired)
-    ) {
+    if (BigInt(accountBalance.amount) !== BigInt(requirements.amount)) {
       return errorResponse(
         "settlement account balance didn't match payment requirements",
       );
@@ -275,7 +273,7 @@ export const createFacilitatorHandler = async (
           mint: address(mint.toBase58()),
           destination: payToATA,
           authority: settleSigner,
-          amount: BigInt(requirements.maxAmountRequired),
+          amount: BigInt(requirements.amount),
           decimals: mintInfo.data.decimals,
         }),
         getCloseAccountInstruction({
@@ -412,7 +410,7 @@ export const createFacilitatorHandler = async (
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return [
       Promise.resolve({
-        x402Version: 1,
+        x402Version: 2,
         scheme: x402Scheme,
         network: clusterToCAIP2(resolveCluster()),
         extra: {
@@ -423,7 +421,11 @@ export const createFacilitatorHandler = async (
     ];
   };
 
-  const getRequirements = async (req: x402PaymentRequirements[]) => {
+  const getRequirements = async ({
+    accepts: req,
+  }: {
+    accepts: x402PaymentRequirements[];
+  }) => {
     const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
       .blockhash;
     return req.filter(isMatchingRequirement).map((x) => {
@@ -465,9 +467,10 @@ export const createFacilitatorHandler = async (
       return errorResponse(verifyResult.error);
     }
 
-    const { payer } = verifyResult;
-
-    let response: x402VerifyResponse = { isValid: true };
+    let response: x402VerifyResponse = {
+      isValid: true,
+      payer: verifyResult.payer,
+    };
 
     const hooks = config?.hooks;
 
@@ -495,7 +498,7 @@ export const createFacilitatorHandler = async (
       }
     }
 
-    return { ...response, payer };
+    return response;
   };
 
   const handleSettle = async (
@@ -511,8 +514,8 @@ export const createFacilitatorHandler = async (
       return {
         success: false,
         errorReason: msg,
-        transaction: null,
-        network: null,
+        transaction: "",
+        network: requirements.network,
       };
     };
 
@@ -549,9 +552,8 @@ export const createFacilitatorHandler = async (
 
     let response: x402SettleResponse = {
       success: true,
-      errorReason: null,
       transaction: result.signature,
-      network: payment.network,
+      network: payment.accepted.network,
       payer,
     };
 
@@ -580,7 +582,7 @@ export const createFacilitatorHandler = async (
       }
     }
 
-    return { ...response, payer };
+    return response;
   };
 
   return {

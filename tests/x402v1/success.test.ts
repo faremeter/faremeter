@@ -6,6 +6,7 @@ import {
   createTestFacilitatorHandler,
   createTestPaymentHandler,
   accepts,
+  acceptsV2,
   TEST_SCHEME,
   TEST_NETWORK,
   TEST_ASSET,
@@ -15,9 +16,9 @@ await t.test("x402 v1 protocol flow components", async (t) => {
   await t.test("facilitator handler fills requirements", async (t) => {
     const handler = createTestFacilitatorHandler({ payTo: "test-receiver" });
 
-    const input = [accepts({ payTo: "" })];
+    const input = [acceptsV2({ payTo: "" })];
 
-    const result = await handler.getRequirements(input);
+    const result = await handler.getRequirements({ accepts: input });
 
     t.equal(result.length, 1, "should return one requirement");
     t.equal(result[0]?.scheme, TEST_SCHEME, "scheme should match");
@@ -59,13 +60,11 @@ await t.test("x402 v1 protocol flow components", async (t) => {
   await t.test("facilitator handler verifies payment", async (t) => {
     const handler = createTestFacilitatorHandler({ payTo: "test-receiver" });
 
-    const requirements = accepts();
+    const requirements = acceptsV2();
 
     const payment = {
-      x402Version: 1,
-      scheme: TEST_SCHEME,
-      network: TEST_NETWORK,
-      asset: TEST_ASSET,
+      x402Version: 2 as const,
+      accepted: requirements,
       payload: {
         testId: "test-123",
         amount: "100",
@@ -83,13 +82,11 @@ await t.test("x402 v1 protocol flow components", async (t) => {
   await t.test("facilitator handler settles payment", async (t) => {
     const handler = createTestFacilitatorHandler({ payTo: "test-receiver" });
 
-    const requirements = accepts();
+    const requirements = acceptsV2();
 
     const payment = {
-      x402Version: 1,
-      scheme: TEST_SCHEME,
-      network: TEST_NETWORK,
-      asset: TEST_ASSET,
+      x402Version: 2 as const,
+      accepted: requirements,
       payload: {
         testId: "test-123",
         amount: "100",

@@ -298,7 +298,7 @@ export async function createFacilitatorHandler(
       return { isValid: false, invalidReason: verifyResult.error };
     }
 
-    return { isValid: true };
+    return { isValid: true, payer: verifyResult.authorization.from };
   };
 
   const handleSettle = async (
@@ -389,6 +389,7 @@ export async function createFacilitatorHandler(
         error: null,
         txHash,
         networkId: chainId.toString(),
+        payer: authorization.from,
       };
     } catch (cause) {
       throw new Error("Transaction execution failed", { cause });

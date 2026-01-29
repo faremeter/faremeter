@@ -4,7 +4,7 @@ import type {
   x402SettleResponse,
   x402VerifyResponse,
   x402SupportedKind,
-} from "@faremeter/types/x402";
+} from "@faremeter/types/x402v2";
 
 import { isPrivateKey, type ChainInfoWithRPC } from "@faremeter/types/evm";
 import { type FacilitatorHandler } from "@faremeter/types/facilitator";
@@ -138,16 +138,18 @@ export async function createFacilitatorHandler(
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return [
       Promise.resolve({
-        x402Version: 1,
+        x402Version: 2,
         network,
         scheme: X402_EXACT_SCHEME,
       }),
     ];
   };
 
-  const getRequirements = async (
-    req: x402PaymentRequirements[],
-  ): Promise<x402PaymentRequirements[]> => {
+  const getRequirements = async ({
+    accepts: req,
+  }: {
+    accepts: x402PaymentRequirements[];
+  }): Promise<x402PaymentRequirements[]> => {
     return req.filter(isMatchingRequirement).map((x) => ({
       ...x,
       asset,
@@ -182,7 +184,7 @@ export async function createFacilitatorHandler(
     }
 
     // Check if the amount matches
-    if (authorization.value !== requirements.maxAmountRequired) {
+    if (authorization.value !== requirements.amount) {
       return errorResponse("Incorrect payment amount");
     }
 
@@ -297,7 +299,7 @@ export async function createFacilitatorHandler(
       return { isValid: false, invalidReason: verifyResult.error };
     }
 
-    return { isValid: true, payer: verifyResult.authorization.from };
+    return { isValid: true };
   };
 
   const handleSettle = async (
@@ -310,10 +312,10 @@ export async function createFacilitatorHandler(
 
     const errorResponse = (msg: string): x402SettleResponse => {
       return {
-        success: false as const,
+        success: false,
         errorReason: msg,
-        transaction: null,
-        network: null,
+        transaction: "",
+        network: requirements.network,
       };
     };
 
@@ -384,11 +386,9 @@ export async function createFacilitatorHandler(
       }
 
       return {
-        success: true as const,
-        errorReason: null,
+        success: true,
         transaction: txHash,
-        network: chainId.toString(),
-        payer: authorization.from,
+        network: payment.accepted.network,
       };
     } catch (cause) {
       throw new Error("Transaction execution failed", { cause });

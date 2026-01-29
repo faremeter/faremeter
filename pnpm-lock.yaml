@@ -226,6 +226,9 @@ importers:
 
   packages/facilitator:
     dependencies:
+      '@faremeter/info':
+        specifier: workspace:^
+        version: link:../info
       '@faremeter/logs':
         specifier: workspace:^
         version: link:../logs
@@ -680,6 +683,9 @@ importers:
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
+      arktype:
+        specifier: 'catalog:'
+        version: 2.1.21
       hono:
         specifier: 'catalog:'
         version: 4.9.0

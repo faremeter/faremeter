@@ -74,7 +74,7 @@ await t.test("x402 v1 multiple payment options", async (t) => {
         createTestFacilitatorHandler({
           payTo: "test-receiver",
           onSettle: (req) => {
-            selectedAmount = req.maxAmountRequired;
+            selectedAmount = req.amount;
           },
         }),
       ],
@@ -114,7 +114,7 @@ await t.test("x402 v1 multiple payment options", async (t) => {
           createTestFacilitatorHandler({
             payTo: "test-receiver",
             onSettle: (req) => {
-              selectedAmount = req.maxAmountRequired;
+              selectedAmount = req.amount;
             },
           }),
         ],
@@ -132,16 +132,16 @@ await t.test("x402 v1 multiple payment options", async (t) => {
   );
 
   await t.test("chooseByNetwork selects matching network", async (t) => {
-    let selectedDescription: string | undefined;
+    let selectedNetwork: string | undefined;
 
     const harness = new TestHarness({
       settleMode: "settle-only",
-      accepts: [accepts({ description: "Test network option" })],
+      accepts: [accepts()],
       facilitatorHandlers: [
         createTestFacilitatorHandler({
           payTo: "test-receiver",
           onSettle: (req) => {
-            selectedDescription = req.description;
+            selectedNetwork = req.network;
           },
         }),
       ],
@@ -154,11 +154,7 @@ await t.test("x402 v1 multiple payment options", async (t) => {
     const response = await fetch("/test-resource");
 
     t.equal(response.status, 200, "should complete successfully");
-    t.equal(
-      selectedDescription,
-      "Test network option",
-      "should select matching network",
-    );
+    t.equal(selectedNetwork, TEST_NETWORK, "should select matching network");
 
     t.end();
   });
@@ -221,7 +217,7 @@ await t.test("x402 v1 multiple payment options", async (t) => {
         createTestFacilitatorHandler({
           payTo: "test-receiver",
           onSettle: (req) => {
-            selectedAmount = req.maxAmountRequired;
+            selectedAmount = req.amount;
           },
         }),
       ],
@@ -355,7 +351,7 @@ await t.test("x402 v1 multiple payment options", async (t) => {
           createTestFacilitatorHandler({
             payTo: "test-receiver",
             onSettle: (req) => {
-              selectedAmount = req.maxAmountRequired;
+              selectedAmount = req.amount;
             },
           }),
         ],

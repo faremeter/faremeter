@@ -1,12 +1,56 @@
 import { getLogger } from "@faremeter/logs";
 import { Hono, type Context } from "hono";
 import * as x from "@faremeter/types/x402";
+import * as x2 from "@faremeter/types/x402v2";
 import { isValidationError } from "@faremeter/types";
-import { type x402PaymentRequirements } from "@faremeter/types/x402";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
+import { caip2ToLegacyName, legacyNameToCAIP2 } from "@faremeter/info/evm";
+import {
+  caip2ToLegacyNetworkIds,
+  legacyNetworkIdToCAIP2,
+} from "@faremeter/info/solana";
 import { allSettledWithTimeout } from "./promise";
+import {
+  adaptRequirementsV1ToV2,
+  adaptPayloadV1ToV2,
+  adaptVerifyResponseV2ToV1,
+  adaptSettleResponseV2ToV1,
+  adaptRequirementsV2ToV1,
+  extractResourceInfoV1,
+  adaptSupportedKindV2ToV1,
+} from "./adapters";
 
 const logger = await getLogger(["faremeter", "facilitator"]);
+
+/**
+ * Translate a CAIP-2 network identifier to a v1 legacy network name.
+ * Falls through to the original identifier if no mapping exists.
+ */
+function translateNetwork(network: string): string {
+  const evmLegacy = caip2ToLegacyName(network);
+  if (evmLegacy) return evmLegacy;
+
+  const solanaLegacy = caip2ToLegacyNetworkIds(network);
+  const firstSolanaId = solanaLegacy?.[0];
+  if (firstSolanaId) return firstSolanaId;
+
+  return network;
+}
+
+/**
+ * Normalize a v1 legacy network name to a CAIP-2 identifier.
+ * Falls through to the original identifier if no mapping exists (it may
+ * already be CAIP-2 or an unknown network).
+ */
+function normalizeNetwork(network: string): string {
+  const evmCaip2 = legacyNameToCAIP2(network);
+  if (evmCaip2) return evmCaip2;
+
+  const solanaCaip2 = legacyNetworkIdToCAIP2(network);
+  if (solanaCaip2) return solanaCaip2;
+
+  return network;
+}
 
 type CreateFacilitatorRoutesArgs = {
   handlers: FacilitatorHandler[];
@@ -23,7 +67,7 @@ function summarizeRequirements({
   network,
   asset,
   payTo,
-}: x402PaymentRequirements) {
+}: x2.x402PaymentRequirements) {
   return {
     scheme,
     network,
@@ -33,15 +77,9 @@ function summarizeRequirements({
 }
 
 function processException<T>(step: string, e: unknown, cb: (msg: string) => T) {
-  let msg = undefined;
-
   // XXX - We can do a better job of determining if it's a chain
   // error, or some other issue.
-  if (e instanceof Error) {
-    msg = e.message;
-  } else {
-    msg = `unknown error handling ${step}`;
-  }
+  const msg = e instanceof Error ? e.message : `unknown error handling ${step}`;
 
   logger.error(`Caught exception during ${step}`, {
     exception: e,
@@ -53,153 +91,185 @@ function processException<T>(step: string, e: unknown, cb: (msg: string) => T) {
 export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
   const router = new Hono();
 
-  function sendVerifyError(
+  function logRejected(
+    results: PromiseSettledResult<unknown>[],
+    label: string,
+  ) {
+    for (const r of results) {
+      if (r.status === "rejected") {
+        const message =
+          r.reason instanceof Error ? r.reason.message : "unknown reason";
+        logger.error(
+          `failed to retrieve ${label} from facilitator handler: ${message}`,
+          r.reason,
+        );
+      }
+    }
+  }
+
+  function logError(msg: string | undefined, stepLabel: string) {
+    if (msg !== undefined) {
+      logger.error(msg);
+    } else {
+      logger.error(`unknown error during ${stepLabel}`);
+    }
+  }
+
+  function sendVerifyErrorV1(
     c: Context,
     status: StatusCode,
     msg: string | undefined,
   ) {
-    const response: x.x402VerifyResponse = {
-      isValid: false,
-    };
-
+    logError(msg, "verification");
+    c.status(status);
+    const response: x.x402VerifyResponse = { isValid: false, payer: "" };
     if (msg !== undefined) {
       response.invalidReason = msg;
-      logger.error(msg);
-    } else {
-      logger.error("unknown error during verification");
     }
-
-    c.status(status);
     return c.json(response);
   }
 
-  router.post("/verify", async (c) => {
-    const x402Req = x.x402VerifyRequest(await c.req.json());
-
-    if (isValidationError(x402Req)) {
-      return sendVerifyError(
-        c,
-        400,
-        `couldn't validate request: ${x402Req.summary}`,
-      );
-    }
-
-    let paymentPayload = x402Req.paymentPayload;
-
-    if (paymentPayload === undefined) {
-      const decodedHeader = x.x402PaymentHeaderToPayload(x402Req.paymentHeader);
-
-      if (isValidationError(decodedHeader)) {
-        return sendVerifyError(
-          c,
-          400,
-          `couldn't validate x402 payload: ${decodedHeader.summary}`,
-        );
-      }
-
-      paymentPayload = decodedHeader;
-    }
-
-    logger.debug("starting verifyment attempt for request", x402Req);
-
-    for (const handler of args.handlers) {
-      let t;
-
-      if (handler.handleVerify === undefined) {
-        continue;
-      }
-
-      try {
-        t = await handler.handleVerify(
-          x402Req.paymentRequirements,
-          paymentPayload,
-        );
-      } catch (e) {
-        return processException("verify", e, (msg) =>
-          sendVerifyError(c, 500, msg),
-        );
-      }
-
-      if (t === null) {
-        continue;
-      }
-
-      logger.debug("facilitator handler agreed to verify and returned", t);
-
-      logger.info(`${t.isValid ? "succeeded" : "failed"} verifying request`, {
-        ...t,
-        requirements: summarizeRequirements(x402Req.paymentRequirements),
-      });
-
-      return c.json(t);
-    }
-    logger.warning(
-      "attempt to verify was made with no handler found, requirements summary was",
-      summarizeRequirements(x402Req.paymentRequirements),
-    );
-    return sendVerifyError(c, 400, "no matching payment handler found");
-  });
-
-  function sendSettleError(
+  function sendSettleErrorV1(
     c: Context,
     status: StatusCode,
     msg: string | undefined,
   ) {
+    logError(msg, "settlement");
+    c.status(status);
     const response: x.x402SettleResponse = {
       success: false,
-      transaction: null,
-      network: null,
+      payer: "",
+      transaction: "",
+      network: "",
     };
-
     if (msg !== undefined) {
       response.errorReason = msg;
-      logger.error(msg);
-    } else {
-      logger.error("unknown error during settlement");
     }
-
-    c.status(status);
     return c.json(response);
   }
 
+  // Accepts errors are always v1 format. A v2 request that fails to parse
+  // falls through to v1 parsing, so this path is only reached for v1 errors.
   function sendAcceptsError(
     c: Context,
     status: StatusCode,
     msg: string | undefined,
   ) {
-    const response: { x402Version: number; error?: string } = {
-      x402Version: 1,
-    };
-
-    if (msg !== undefined) {
-      response.error = msg;
-      logger.error(msg);
-    } else {
-      logger.error("unknown error during accepts");
-    }
-
+    logError(msg, "accepts");
     c.status(status);
+    return c.json({ x402Version: 1, accepts: [], error: msg ?? "" });
+  }
+
+  function sendVerifyErrorV2(
+    c: Context,
+    status: StatusCode,
+    msg: string | undefined,
+  ) {
+    logError(msg, "verification");
+    c.status(status);
+    const response: x2.x402VerifyResponse = { isValid: false };
+    if (msg !== undefined) {
+      response.invalidReason = msg;
+    }
     return c.json(response);
   }
 
-  router.post("/settle", async (c) => {
-    const x402Req = x.x402SettleRequest(await c.req.json());
+  function sendSettleErrorV2(
+    c: Context,
+    status: StatusCode,
+    msg: string | undefined,
+  ) {
+    logError(msg, "settlement");
+    c.status(status);
+    const response: x2.x402SettleResponse = {
+      success: false,
+      transaction: "",
+      network: "",
+    };
+    if (msg !== undefined) {
+      response.errorReason = msg;
+    }
+    return c.json(response);
+  }
 
-    if (isValidationError(x402Req)) {
-      return sendSettleError(
+  /**
+   * Iterate handlers, invoking each until one returns a non-null result.
+   * Returns the handler result, or null if no handler matched.
+   * Throws on handler exceptions (caller decides how to surface the error).
+   */
+  async function tryHandlers<TResult>(
+    invoke: (handler: FacilitatorHandler) => Promise<TResult | null>,
+  ): Promise<TResult | null> {
+    for (const handler of args.handlers) {
+      const result = await invoke(handler);
+      if (result !== null) {
+        return result;
+      }
+    }
+    return null;
+  }
+
+  router.post("/verify", async (c) => {
+    const body: unknown = await c.req.json();
+
+    // Try v2 format first
+    const v2Req = x2.x402VerifyRequest(body);
+
+    if (!isValidationError(v2Req)) {
+      logger.debug("starting verification attempt for v2 request", v2Req);
+
+      let result: x2.x402VerifyResponse | null;
+      try {
+        result = await tryHandlers((handler) =>
+          handler.handleVerify
+            ? handler.handleVerify(
+                v2Req.paymentRequirements,
+                v2Req.paymentPayload,
+              )
+            : Promise.resolve(null),
+        );
+      } catch (e) {
+        return processException("verify", e, (msg) =>
+          sendVerifyErrorV2(c, 500, msg),
+        );
+      }
+
+      if (result === null) {
+        logger.warning(
+          "attempt to verify was made with no handler found, requirements summary was",
+          summarizeRequirements(v2Req.paymentRequirements),
+        );
+        return sendVerifyErrorV2(c, 400, "no matching payment handler found");
+      }
+
+      logger.info(
+        `${result.isValid ? "succeeded" : "failed"} verifying v2 request`,
+        {
+          ...result,
+          requirements: summarizeRequirements(v2Req.paymentRequirements),
+        },
+      );
+      return c.json(result);
+    }
+
+    // Try v1 format
+    const v1Req = x.x402VerifyRequest(body);
+
+    if (isValidationError(v1Req)) {
+      return sendVerifyErrorV1(
         c,
         400,
-        `couldn't validate request: ${x402Req.summary}`,
+        `couldn't validate request: ${v1Req.summary}`,
       );
     }
 
-    let paymentPayload = x402Req.paymentPayload;
+    let paymentPayload = v1Req.paymentPayload;
 
     if (paymentPayload === undefined) {
-      const decodedHeader = x.x402PaymentHeaderToPayload(x402Req.paymentHeader);
+      const decodedHeader = x.x402PaymentHeaderToPayload(v1Req.paymentHeader);
 
       if (isValidationError(decodedHeader)) {
-        return sendSettleError(
+        return sendVerifyErrorV1(
           c,
           400,
           `couldn't validate x402 payload: ${decodedHeader.summary}`,
@@ -209,131 +279,309 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       paymentPayload = decodedHeader;
     }
 
-    logger.debug("starting settlement attempt for request", x402Req);
+    logger.debug("starting verification attempt for v1 request", v1Req);
 
-    for (const handler of args.handlers) {
-      let t;
-
-      try {
-        t = await handler.handleSettle(
-          x402Req.paymentRequirements,
-          paymentPayload,
-        );
-      } catch (e) {
-        return processException("settle", e, (msg) =>
-          sendSettleError(c, 500, msg),
-        );
-      }
-
-      if (t === null) {
-        continue;
-      }
-
-      logger.debug("facilitator handler accepted settlement and returned", t);
-
-      // Normalize for logging - handlers may use either legacy or spec-compliant field names
-      const txId = t.transaction ?? t.txHash;
-
-      logger.info(`${t.success ? "succeeded" : "failed"} settlement request`, {
-        requirements: summarizeRequirements(x402Req.paymentRequirements),
-        transaction: txId,
-      });
-
-      // Return as-is; callers should use normalizeSettleResponse() if needed
-      return c.json(t);
-    }
-    sendSettleError(c, 400, "no matching payment handler found");
-    logger.warning(
-      "attempt to settle was made with no handler found, requirements summary was",
-      summarizeRequirements(x402Req.paymentRequirements),
+    const v2Requirements = adaptRequirementsV1ToV2(
+      v1Req.paymentRequirements,
+      normalizeNetwork,
     );
-  });
+    const v2Payload = adaptPayloadV1ToV2(
+      paymentPayload,
+      v1Req.paymentRequirements,
+      normalizeNetwork,
+    );
 
-  router.post("/accepts", async (c) => {
-    const x402Req = x.x402PaymentRequiredResponse(await c.req.json());
-
-    if (isValidationError(x402Req)) {
-      return sendAcceptsError(
-        c,
-        400,
-        `couldn't parse required response: ${x402Req.summary}`,
+    let result: x2.x402VerifyResponse | null;
+    try {
+      result = await tryHandlers((handler) =>
+        handler.handleVerify
+          ? handler.handleVerify(v2Requirements, v2Payload)
+          : Promise.resolve(null),
+      );
+    } catch (e) {
+      return processException("verify", e, (msg) =>
+        sendVerifyErrorV1(c, 500, msg),
       );
     }
 
+    if (result === null) {
+      logger.warning(
+        "attempt to verify was made with no handler found, requirements summary was",
+        summarizeRequirements(v2Requirements),
+      );
+      return sendVerifyErrorV1(c, 400, "no matching payment handler found");
+    }
+
+    logger.info(
+      `${result.isValid ? "succeeded" : "failed"} verifying v1 request`,
+      {
+        ...result,
+        requirements: summarizeRequirements(v2Requirements),
+      },
+    );
+    return c.json(adaptVerifyResponseV2ToV1(result));
+  });
+
+  router.post("/settle", async (c) => {
+    const body: unknown = await c.req.json();
+
+    // Try v2 format first
+    const v2Req = x2.x402SettleRequest(body);
+
+    if (!isValidationError(v2Req)) {
+      logger.debug("starting settlement attempt for v2 request", v2Req);
+
+      let result: x2.x402SettleResponse | null;
+      try {
+        result = await tryHandlers((handler) =>
+          handler.handleSettle(v2Req.paymentRequirements, v2Req.paymentPayload),
+        );
+      } catch (e) {
+        return processException("settle", e, (msg) =>
+          sendSettleErrorV2(c, 500, msg),
+        );
+      }
+
+      if (result === null) {
+        logger.warning(
+          "attempt to settle was made with no handler found, requirements summary was",
+          summarizeRequirements(v2Req.paymentRequirements),
+        );
+        return sendSettleErrorV2(c, 400, "no matching payment handler found");
+      }
+
+      logger.info(
+        `${result.success ? "succeeded" : "failed"} settlement v2 request`,
+        {
+          requirements: summarizeRequirements(v2Req.paymentRequirements),
+          transaction: result.transaction,
+        },
+      );
+      return c.json(result);
+    }
+
+    // Try v1 format
+    const v1Req = x.x402SettleRequest(body);
+
+    if (isValidationError(v1Req)) {
+      return sendSettleErrorV1(
+        c,
+        400,
+        `couldn't validate request: ${v1Req.summary}`,
+      );
+    }
+
+    let paymentPayload = v1Req.paymentPayload;
+
+    if (paymentPayload === undefined) {
+      const decodedHeader = x.x402PaymentHeaderToPayload(v1Req.paymentHeader);
+
+      if (isValidationError(decodedHeader)) {
+        return sendSettleErrorV1(
+          c,
+          400,
+          `couldn't validate x402 payload: ${decodedHeader.summary}`,
+        );
+      }
+
+      paymentPayload = decodedHeader;
+    }
+
+    logger.debug("starting settlement attempt for v1 request", v1Req);
+
+    const v2Requirements = adaptRequirementsV1ToV2(
+      v1Req.paymentRequirements,
+      normalizeNetwork,
+    );
+    const v2Payload = adaptPayloadV1ToV2(
+      paymentPayload,
+      v1Req.paymentRequirements,
+      normalizeNetwork,
+    );
+
+    let result: x2.x402SettleResponse | null;
+    try {
+      result = await tryHandlers((handler) =>
+        handler.handleSettle(v2Requirements, v2Payload),
+      );
+    } catch (e) {
+      return processException("settle", e, (msg) =>
+        sendSettleErrorV1(c, 500, msg),
+      );
+    }
+
+    if (result === null) {
+      logger.warning(
+        "attempt to settle was made with no handler found, requirements summary was",
+        summarizeRequirements(v2Requirements),
+      );
+      return sendSettleErrorV1(c, 400, "no matching payment handler found");
+    }
+
+    logger.info(
+      `${result.success ? "succeeded" : "failed"} settlement v1 request`,
+      {
+        requirements: summarizeRequirements(v2Requirements),
+        transaction: result.transaction,
+      },
+    );
+    return c.json(adaptSettleResponseV2ToV1(result, translateNetwork));
+  });
+
+  router.post("/accepts", async (c) => {
+    const body: unknown = await c.req.json();
+
+    // The /accepts request body shares the same shape as the payment required
+    // response (resource + accepts array), so we reuse the response validator.
+    const v2Req = x2.x402PaymentRequiredResponse(body);
+
+    if (!isValidationError(v2Req)) {
+      // Native v2 request - call handlers directly with v2 requirements
+      const results = await allSettledWithTimeout(
+        args.handlers.flatMap((handler) =>
+          handler.getRequirements({
+            accepts: v2Req.accepts,
+            resource: v2Req.resource,
+          }),
+        ),
+        args.timeout?.getRequirements ?? 500,
+      );
+
+      const accepts = results
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => r.value)
+        .flat();
+
+      logRejected(results, "requirements");
+
+      logger.debug(`returning ${accepts.length} accepts for v2 request`, {
+        accepts: accepts.map(summarizeRequirements),
+      });
+
+      c.status(200);
+      return c.json({
+        x402Version: 2,
+        resource: v2Req.resource,
+        accepts,
+      } satisfies x2.x402PaymentRequiredResponse);
+    }
+
+    // Try v1 format
+    const v1Req = x.x402PaymentRequiredResponse(body);
+
+    if (isValidationError(v1Req)) {
+      return sendAcceptsError(
+        c,
+        400,
+        `couldn't parse required response: ${v1Req.summary}`,
+      );
+    }
+
+    // Adapt v1 accepts to v2, normalizing legacy network names to CAIP-2
+    const v2Accepts = v1Req.accepts.map((req) =>
+      adaptRequirementsV1ToV2(req, normalizeNetwork),
+    );
+    const resourceInfo = v1Req.accepts[0]
+      ? extractResourceInfoV1(v1Req.accepts[0])
+      : { url: "" };
+
     const results = await allSettledWithTimeout(
-      args.handlers.flatMap((x) => x.getRequirements(x402Req.accepts)),
+      args.handlers.flatMap((handler) =>
+        handler.getRequirements({
+          accepts: v2Accepts,
+          resource: resourceInfo,
+        }),
+      ),
       args.timeout?.getRequirements ?? 500,
     );
 
-    const accepts = results
-      .filter((x) => x.status === "fulfilled")
-      .map((x) => x.value)
+    const v2Results = results
+      .filter((r) => r.status === "fulfilled")
+      .map((r) => r.value)
       .flat();
 
-    results.forEach((x) => {
-      if (x.status === "rejected") {
-        let message: string;
+    logRejected(results, "requirements");
 
-        if (x.reason instanceof Error) {
-          message = x.reason.message;
-        } else {
-          message = "unknown reason";
-        }
+    // Adapt v2 results back to v1 format
+    const accepts = v2Results.map((r) =>
+      adaptRequirementsV2ToV1(r, resourceInfo, translateNetwork),
+    );
 
-        logger.error(
-          `failed to retrieve requirements from facilitator handler: ${message}`,
-          x.reason,
-        );
-      }
-    });
-
-    logger.debug(`returning ${accepts.length} accepts`, {
-      accepts: accepts.map(summarizeRequirements),
+    logger.debug(`returning ${accepts.length} accepts for v1 request`, {
+      accepts: accepts.map((a) => ({
+        scheme: a.scheme,
+        network: a.network,
+        asset: a.asset,
+        payTo: a.payTo,
+      })),
     });
 
     c.status(200);
     return c.json({
       x402Version: 1,
       accepts,
+      error: "",
     });
   });
 
   router.get("/supported", async (c) => {
     const results = await allSettledWithTimeout(
-      args.handlers.flatMap((x) => (x.getSupported ? x.getSupported() : [])),
+      args.handlers.flatMap((handler) =>
+        handler.getSupported ? handler.getSupported() : [],
+      ),
       args.timeout?.getSupported ?? 500,
     );
 
-    const kinds = results
-      .filter((x) => x.status === "fulfilled")
-      .map((x) => x.value)
+    const v2Kinds = results
+      .filter((r) => r.status === "fulfilled")
+      .map((r) => r.value)
       .flat();
 
-    results.forEach((x) => {
-      if (x.status === "rejected") {
-        let message: string;
+    logRejected(results, "supported");
 
-        if (x.reason instanceof Error) {
-          message = x.reason.message;
-        } else {
-          message = "unknown reason";
+    // Aggregate signers from handlers
+    const signers: Record<string, string[]> = {};
+    for (const handler of args.handlers) {
+      if (handler.getSigners) {
+        try {
+          const handlerSigners = await handler.getSigners();
+          for (const [network, addresses] of Object.entries(handlerSigners)) {
+            if (signers[network]) {
+              // Merge addresses, avoiding duplicates
+              const existing = new Set(signers[network]);
+              for (const addr of addresses) {
+                if (!existing.has(addr)) {
+                  signers[network].push(addr);
+                }
+              }
+            } else {
+              signers[network] = [...addresses];
+            }
+          }
+        } catch (e) {
+          logger.error("failed to retrieve signers from facilitator handler", {
+            error: e,
+          });
         }
-
-        logger.error(
-          `failed to retrieve supported from facilitator handler: ${message}`,
-          x.reason,
-        );
       }
-    });
+    }
 
-    logger.debug(`returning ${kinds.length} kinds supported`, {
-      kinds,
+    // Advertise both v1 and v2 support for all kinds
+    const v1Kinds = v2Kinds.map((k) =>
+      adaptSupportedKindV2ToV1(k, translateNetwork),
+    );
+    const allKinds = [...v1Kinds, ...v2Kinds];
+
+    logger.debug(`returning ${allKinds.length} kinds supported`, {
+      kinds: allKinds,
     });
 
     c.status(200);
     return c.json({
-      kinds,
-    });
+      kinds: allKinds,
+      extensions: [],
+      signers,
+    } satisfies x2.x402SupportedResponse);
   });
 
   return router;

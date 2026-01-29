@@ -1084,6 +1084,12 @@ importers:
 
   tests:
     dependencies:
+      '@faremeter/facilitator':
+        specifier: workspace:^
+        version: link:../packages/facilitator
+      '@faremeter/middleware':
+        specifier: workspace:^
+        version: link:../packages/middleware
       '@faremeter/test-harness':
         specifier: workspace:^
         version: link:../packages/test-harness

@@ -62,6 +62,7 @@ export type x402VerifyRequest = typeof x402VerifyRequest.infer;
 export const x402VerifyResponse = type({
   isValid: "boolean",
   "invalidReason?": "string | null",
+  "payer?": "string",
 });
 
 export type x402VerifyResponse = typeof x402VerifyResponse.infer;
@@ -74,6 +75,7 @@ export const x402SettleResponse = type({
   "error?": "string | null",
   txHash: "string | null",
   networkId: "string | null",
+  "payer?": "string",
 });
 
 export type x402SettleResponse = typeof x402SettleResponse.infer;

@@ -20,6 +20,9 @@ export default defineConfig(
     : tseslint.configs.stylistic,
   globalIgnores(["**/idl_type.ts", "**/dist/**"]),
   {
+    linterOptions: {
+      reportUnusedDisableDirectives: checkTypes ? "warn" : "off",
+    },
     rules: {
       "no-console": "error",
       "@typescript-eslint/consistent-type-definitions": 0,

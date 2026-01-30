@@ -886,6 +886,23 @@ export function responseFeeder(
 }
 ```
 
+### Test Coverage Philosophy
+
+Focus test coverage on logic that is specific to this codebase:
+
+- Business logic and domain-specific validation
+- Integration points between components
+- Error handling paths and edge cases
+- Custom algorithms and data transformations
+
+Do not write tests that merely verify functionality provided by external libraries. For example:
+
+- Type validation handled by arktype does not need tests verifying that invalid types are rejected
+- HTTP parsing handled by Hono does not need tests for malformed requests
+- Cryptographic operations from viem or @solana/kit do not need correctness tests
+
+Trust well-maintained libraries to do their job. If you don't trust a library enough to skip testing its internals, reconsider using it.
+
 ---
 
 ## Logging

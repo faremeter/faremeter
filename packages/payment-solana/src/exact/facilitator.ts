@@ -326,7 +326,7 @@ export const createFacilitatorHandler = async (
         !(await isValidTransaction(
           transactionMessage,
           requirements,
-          feePayerKeypair.publicKey,
+          feePayerKeypair.publicKey.toBase58(),
           maxPriorityFee,
         ))
       ) {

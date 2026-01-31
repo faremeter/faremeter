@@ -1,0 +1,21 @@
+{
+  "plugin": ["typedoc-plugin-markdown"],
+  "name": "Faremeter API",
+  "entryPointStrategy": "resolve",
+  "entryPoints": ["packages/*/src/index.ts"],
+  "out": "docs",
+  "readme": "none",
+  "entryFileName": "README",
+  "router": "module",
+  "cleanOutputDir": true,
+  "excludeScopesInPaths": true,
+  "sourceLinkTemplate": "https://github.com/faremeter/faremeter/blob/main/{path}#L{line}",
+  "exclude": [
+    "**/node_modules/**",
+    "scripts/**",
+    "apps/**",
+    "tests/**",
+    "**/*.test.ts"
+  ],
+  "tsconfig": "tsconfig.typedoc.json"
+}

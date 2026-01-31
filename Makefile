@@ -23,6 +23,8 @@ format:
 doc: FORCE
 	for pkg in packages/*; do cd $$pkg && pnpm tsdoc --src=src/index.ts --dest=README.md --types --noemoji && cd ../..; done
 	pnpm prettier -w packages/*/README.md
+	pnpm typedoc
+	pnpm prettier -w docs/
 
 packages/%: FORCE
 	cd $@ && rm -rf dist && pnpm tsc && pnpm tsc-esm-fix
@@ -39,7 +41,7 @@ tests: FORCE
 
 clean:
 	rm -f .env-checked .eslintcache .build-finished
-	rm -rf .tap
+	rm -rf .tap docs
 	find . -type d -name "dist" -a ! -path '*/node_modules/*' | xargs rm -rf
 
 .env-checked: bin/check-env

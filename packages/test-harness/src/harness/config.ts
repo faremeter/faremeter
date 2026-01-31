@@ -5,8 +5,17 @@ import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import type { SupportedVersionsConfig } from "@faremeter/middleware/common";
 import type { Interceptor } from "../interceptors/types";
 
+/**
+ * How the middleware handles payment verification and settlement.
+ *
+ * - `"settle-only"` - Skip verification, settle directly (faster tests).
+ * - `"verify-then-settle"` - Verify payment before settling (more realistic).
+ */
 export type SettleMode = "settle-only" | "verify-then-settle";
 
+/**
+ * Configuration for {@link TestHarness}.
+ */
 export type TestHarnessConfig = {
   /**
    * Payment requirements the middleware accepts.

@@ -12,6 +12,19 @@ import * as multisig from "@sqds/multisig";
 import bs58 from "bs58";
 import { logger } from "./logger";
 
+/**
+ * Creates a Squads multisig wallet for Solana.
+ *
+ * Wraps the Squads SDK to create proposals, gather approvals, and execute
+ * vault transactions through a multisig workflow.
+ *
+ * @param network - Solana network identifier.
+ * @param connection - Solana RPC connection.
+ * @param keypair - Admin keypair for creating and signing proposals.
+ * @param multisigPda - Program-derived address of the Squads multisig account.
+ * @param squadMember - Additional squad member keypair for approval quorum.
+ * @returns A wallet object that builds and executes multisig transactions.
+ */
 export async function createSquadsWallet(
   network: string,
   connection: Connection,

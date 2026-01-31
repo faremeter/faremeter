@@ -52,10 +52,17 @@ function normalizeNetwork(network: string): string {
   return network;
 }
 
+/**
+ * Configuration arguments for creating facilitator routes.
+ */
 type CreateFacilitatorRoutesArgs = {
+  /** Array of handlers that process payment operations. */
   handlers: FacilitatorHandler[];
+  /** Optional timeout settings in milliseconds for handler operations. */
   timeout?: {
+    /** Timeout for getRequirements calls. Defaults to 500ms. */
     getRequirements?: number;
+    /** Timeout for getSupported calls. Defaults to 500ms. */
     getSupported?: number;
   };
 };
@@ -97,6 +104,20 @@ function processException<T>(step: string, e: unknown, cb: (msg: string) => T) {
   return cb(msg);
 }
 
+/**
+ * Creates a Hono router with x402 facilitator endpoints.
+ *
+ * The router provides the following endpoints:
+ * - POST /verify - Verify a payment without settling
+ * - POST /settle - Verify and settle a payment
+ * - POST /accepts - Get payment requirements for a resource
+ * - GET /supported - List supported payment schemes and networks
+ *
+ * Both v1 and v2 protocol formats are supported on all endpoints.
+ *
+ * @param args - Configuration including payment handlers and timeouts
+ * @returns A Hono router instance with facilitator endpoints
+ */
 export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
   const router = new Hono();
 

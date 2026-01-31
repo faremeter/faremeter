@@ -5,6 +5,17 @@ import {
   SolanaWallet,
 } from "@crossmint/wallets-sdk";
 
+/**
+ * Creates a Crossmint custodial wallet for Solana.
+ *
+ * Uses the Crossmint Wallets SDK to sign and send transactions via
+ * API key authentication.
+ *
+ * @param network - Solana network identifier.
+ * @param crossmintApiKey - Crossmint API key for authentication.
+ * @param crossmintWalletAddress - Address of the Crossmint-managed wallet.
+ * @returns A wallet object that can send Solana transactions.
+ */
 export async function createCrossmintWallet(
   network: string,
   crossmintApiKey: string,

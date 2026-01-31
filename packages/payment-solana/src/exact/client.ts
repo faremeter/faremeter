@@ -133,6 +133,18 @@ interface CreatePaymentHandlerOptions {
   };
 }
 
+/**
+ * Creates a payment handler for the Solana exact payment scheme.
+ *
+ * The handler builds SPL token transfer transactions that can be signed
+ * and submitted by the client to fulfill x402 payment requirements.
+ *
+ * @param wallet - Wallet providing signing capabilities
+ * @param mint - SPL token mint public key
+ * @param connection - Optional Solana connection for fetching blockhash and mint info
+ * @param options - Optional configuration for token address and features
+ * @returns A PaymentHandler function for use with the x402 client
+ */
 export function createPaymentHandler(
   wallet: Wallet,
   mint: PublicKey,

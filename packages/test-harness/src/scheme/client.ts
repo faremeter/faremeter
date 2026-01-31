@@ -9,12 +9,18 @@ import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import { isMatchingRequirement } from "./constants";
 import { generateTestId, type TestPaymentPayload } from "./types";
 
+/**
+ * Options for creating a test payment handler.
+ */
 export type CreateTestPaymentHandlerOpts = {
+  /** Optional callback when requirements are matched. */
   onMatch?: (requirements: x402PaymentRequirements) => void;
+  /** Optional callback when payment is executed. */
   onExec?: (
     requirements: x402PaymentRequirements,
     payload: TestPaymentPayload,
   ) => void;
+  /** Custom metadata to include in test payloads. */
   metadata?: Record<string, unknown>;
 };
 

@@ -12,6 +12,17 @@ import { type } from "arktype";
 import { createTransport } from "./transport";
 import type { LedgerEvmWallet, UserInterface } from "./types";
 
+/**
+ * Creates a Ledger hardware wallet interface for EVM chains.
+ *
+ * Connects to a Ledger device and returns a wallet that can sign
+ * transactions and EIP-712 typed data.
+ *
+ * @param ui - User interface for displaying prompts and messages.
+ * @param chain - EVM chain configuration.
+ * @param derivationPath - BIP-44 derivation path (e.g., "m/44'/60'/0'/0/0").
+ * @returns A Ledger EVM wallet interface.
+ */
 export async function createLedgerEvmWallet(
   ui: UserInterface,
   chain: ChainInfo,

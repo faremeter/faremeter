@@ -12,6 +12,17 @@ function solanaDerivationPath(index: number) {
   return `44'/501'/${index}'`;
 }
 
+/**
+ * Interactively selects a Ledger account from the device.
+ *
+ * Enumerates accounts on the connected Ledger device and prompts the
+ * user to select one via the provided user interface.
+ *
+ * @param ui - User interface for displaying accounts and receiving selection.
+ * @param type - Account type to enumerate ("evm" or "solana").
+ * @param numAccounts - Number of accounts to scan (default: 5).
+ * @returns The selected account's derivation path and address, or null if selection cancelled.
+ */
 export async function selectLedgerAccount(
   ui: UserInterface,
   type: "evm" | "solana",

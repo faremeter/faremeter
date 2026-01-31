@@ -1,6 +1,9 @@
 import type { Interceptor } from "./types";
 import { getURLFromRequestInfo } from "./utils";
 
+/**
+ * Event emitted by logging interceptors for requests, responses, and errors.
+ */
 export type LogEvent = {
   type: "request" | "response" | "error";
   url: string;
@@ -10,6 +13,12 @@ export type LogEvent = {
   timestamp: number;
 };
 
+/**
+ * Creates an interceptor that logs all requests, responses, and errors.
+ *
+ * @param log - Callback to receive log events.
+ * @returns An interceptor that logs activity.
+ */
 export function createLoggingInterceptor(
   log: (event: LogEvent) => void,
 ): Interceptor {
@@ -50,6 +59,13 @@ export function createLoggingInterceptor(
   };
 }
 
+/**
+ * Creates an interceptor that logs to the console with a prefix.
+ *
+ * @param prefix - Prefix for log messages.
+ * @param log - Logger with log and error methods (defaults to console).
+ * @returns An interceptor that logs to console.
+ */
 export function createConsoleLoggingInterceptor(
   prefix = "[test-harness]",
   log: {
@@ -68,6 +84,11 @@ export function createConsoleLoggingInterceptor(
   });
 }
 
+/**
+ * Creates an interceptor that collects events into an array for assertions.
+ *
+ * @returns Object with the interceptor, events array, and clear function.
+ */
 export function createEventCollector(): {
   interceptor: Interceptor;
   events: LogEvent[];

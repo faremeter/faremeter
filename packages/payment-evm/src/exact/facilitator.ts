@@ -54,6 +54,19 @@ type CreateFacilitatorHandlerOpts = {
   network?: string;
   transport?: Transport;
 };
+
+/**
+ * Creates a facilitator handler for the EVM exact payment scheme.
+ *
+ * The handler verifies EIP-3009 authorization signatures and executes
+ * the transferWithAuthorization call on the token contract.
+ *
+ * @param chain - Chain configuration including RPC URLs
+ * @param privateKey - Private key for signing settlement transactions
+ * @param assetNameOrInfo - Asset name or contract info for the token
+ * @param opts - Optional configuration for network and transport
+ * @returns A FacilitatorHandler for processing EVM exact payments
+ */
 export async function createFacilitatorHandler(
   chain: ChainInfoWithRPC,
   privateKey: string,

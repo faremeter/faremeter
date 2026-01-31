@@ -25,9 +25,24 @@ pnpm install @faremeter/wallet-crossmint
 
 ### createCrossmintWallet
 
+Creates a Crossmint custodial wallet for Solana.
+
+Uses the Crossmint Wallets SDK to sign and send transactions via
+API key authentication.
+
 | Function                | Type                                                                                                                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `createCrossmintWallet` | `(network: string, crossmintApiKey: string, crossmintWalletAddress: string) => Promise<{ network: string; publicKey: PublicKey; sendTransaction: (tx: VersionedTransaction) => Promise<...>; }>` |
+
+Parameters:
+
+- `network`: - Solana network identifier.
+- `crossmintApiKey`: - Crossmint API key for authentication.
+- `crossmintWalletAddress`: - Address of the Crossmint-managed wallet.
+
+Returns:
+
+A wallet object that can send Solana transactions.
 
 <!-- TSDOC_END -->
 

@@ -20,12 +20,21 @@ import {
 import * as solana from "./solana";
 import * as evm from "./evm";
 
+/**
+ * Configuration options for creating a payer instance.
+ */
 export interface CreatePayerArgs {
+  /** Networks to enable for payments. Defaults to all known networks. */
   networks?: KnownNetwork[];
+  /** Assets to enable for payments. Defaults to all known assets. */
   assets?: KnownAsset[];
+  /** Custom fetch function to wrap. Defaults to globalThis.fetch. */
   fetch?: typeof globalThis.fetch;
+  /** Additional options for fetch wrapping and balance checks. */
   options?: {
+    /** Options passed to the fetch wrapper. */
     fetch?: WrapOpts;
+    /** If true, skips balance validation before payment attempts. */
     disableBalanceChecks?: boolean;
   };
 }
@@ -36,6 +45,16 @@ function idKey({ network, scheme, asset }: PaymentIdKey) {
   return `${network}\0${scheme}\0${asset}`;
 }
 
+/**
+ * Creates a payer instance that manages wallets and payment-enabled fetch.
+ *
+ * The payer automatically handles x402 payment flows by wrapping fetch with
+ * payment capabilities. Wallets must be added via addLocalWallet before
+ * making paid requests.
+ *
+ * @param args - Optional configuration for networks, assets, and fetch behavior
+ * @returns A payer object with addLocalWallet and fetch methods
+ */
 export function createPayer(args?: CreatePayerArgs) {
   const {
     networks = KnownNetworks,
@@ -149,4 +168,10 @@ export function createPayer(args?: CreatePayerArgs) {
   };
 }
 
+/**
+ * Default payer instance with all networks and assets enabled.
+ *
+ * Use addLocalWallet to attach wallet credentials before making requests
+ * with the fetch method.
+ */
 export const payer = createPayer();

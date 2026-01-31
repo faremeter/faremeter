@@ -6,10 +6,24 @@ import {
 } from "./common";
 import type { MiddlewareHandler } from "hono";
 
+/**
+ * Configuration arguments for creating Hono x402 middleware.
+ */
 type CreateMiddlewareArgs = {
+  /** If true, verifies payment before running the handler, then settles after. */
   verifyBeforeSettle?: boolean;
 } & CommonMiddlewareArgs;
 
+/**
+ * Creates Hono middleware that gates routes behind x402 payment.
+ *
+ * The middleware intercepts requests, checks for payment headers, communicates
+ * with the facilitator to validate and settle payments, and only allows the
+ * request to proceed if payment is successful.
+ *
+ * @param args - Configuration including facilitator URL and accepted payment types
+ * @returns A Hono middleware handler
+ */
 export async function createMiddleware(
   args: CreateMiddlewareArgs,
 ): Promise<MiddlewareHandler> {

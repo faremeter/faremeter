@@ -1,7 +1,18 @@
 import { type } from "arktype";
 
+/**
+ * HTTP header name for v2 client payment signatures.
+ */
 export const V2_PAYMENT_HEADER = "PAYMENT-SIGNATURE";
+
+/**
+ * HTTP header name for v2 402 payment required responses.
+ */
 export const V2_PAYMENT_REQUIRED_HEADER = "PAYMENT-REQUIRED";
+
+/**
+ * HTTP header name for v2 server payment responses.
+ */
 export const V2_PAYMENT_RESPONSE_HEADER = "PAYMENT-RESPONSE";
 
 export const x402ResourceInfo = type({

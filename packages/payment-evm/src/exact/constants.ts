@@ -8,8 +8,14 @@ const prefixedHexString = type("string").pipe.try((x) => {
   return toHex(x);
 });
 
+/**
+ * The x402 scheme identifier for exact EVM payments.
+ */
 export const X402_EXACT_SCHEME = "exact";
 
+/**
+ * ABI fragment for EIP-3009 transferWithAuthorization and related functions.
+ */
 export const TRANSFER_WITH_AUTHORIZATION_ABI = [
   {
     name: "transferWithAuthorization",
@@ -61,6 +67,9 @@ export const TRANSFER_WITH_AUTHORIZATION_ABI = [
   },
 ] as const;
 
+/**
+ * EIP-712 type definitions for the TransferWithAuthorization message.
+ */
 export const EIP712_TYPES = {
   TransferWithAuthorization: [
     { name: "from", type: "address" },
@@ -72,6 +81,10 @@ export const EIP712_TYPES = {
   ],
 } as const;
 
+/**
+ * Validator for the x402 exact payment payload containing
+ * an EIP-3009 authorization and signature.
+ */
 export const x402ExactPayload = type({
   signature: prefixedHexString,
   authorization: {
@@ -87,6 +100,9 @@ export const x402ExactPayload = type({
 export type x402ExactPayload = typeof x402ExactPayload.infer;
 export type eip3009Authorization = x402ExactPayload["authorization"];
 
+/**
+ * Validator for EIP-712 domain parameters provided in payment requirements.
+ */
 export const eip712Domain = type({
   "name?": "string",
   "version?": "string",

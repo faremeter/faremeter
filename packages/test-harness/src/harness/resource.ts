@@ -47,12 +47,23 @@ export type ResourceContextV2 = ResourceContextBase & {
  */
 export type ResourceContext = ResourceContextV1 | ResourceContextV2;
 
+/**
+ * Result returned by a resource handler after successful payment.
+ */
 export type ResourceResult = {
+  /** HTTP status code to return. */
   status: number;
+  /** Response body (will be JSON serialized). */
   body: unknown;
+  /** Optional headers to include in the response. */
   headers?: Record<string, string>;
 };
 
+/**
+ * Function that generates the response for a protected resource after payment.
+ *
+ * Receives payment context and returns the response to send to the client.
+ */
 export type ResourceHandler = (
   ctx: ResourceContext,
 ) => ResourceResult | Promise<ResourceResult>;
@@ -75,6 +86,9 @@ export function isResourceContextV2(
   return ctx.protocolVersion === 2;
 }
 
+/**
+ * Default resource handler that returns a success response with transaction info.
+ */
 export const defaultResourceHandler: ResourceHandler = (ctx) => {
   if (isResourceContextV1(ctx)) {
     return {

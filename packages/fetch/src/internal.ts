@@ -26,8 +26,18 @@ import { normalizeNetworkId, translateNetworkToLegacy } from "@faremeter/info";
 
 export { X_PAYMENT_HEADER, V2_PAYMENT_HEADER, V2_PAYMENT_REQUIRED_HEADER };
 
+/**
+ * The detected x402 protocol version from a 402 response.
+ * Version 1 uses JSON body, version 2 uses the PAYMENT-REQUIRED header.
+ */
 export type DetectedVersion = 1 | 2;
 
+/**
+ * Default payer chooser that selects the first available payment execer.
+ *
+ * @param possiblePayers - Array of payment execers that can handle the requirements
+ * @returns The first execer in the array
+ */
 export function chooseFirstAvailable(
   possiblePayers: PaymentExecer[],
 ): PaymentExecer {
@@ -44,16 +54,29 @@ export function chooseFirstAvailable(
   return payer;
 }
 
+/**
+ * Options for processing a 402 Payment Required response.
+ */
 export type ProcessPaymentRequiredResponseOpts = {
+  /** Payment handlers that produce execers for payment requirements. */
   handlers: PaymentHandler[];
+  /** Optional function to select among multiple possible payers. Defaults to chooseFirstAvailable. */
   payerChooser?: (execer: PaymentExecer[]) => Promise<PaymentExecer>;
 };
 
+/**
+ * Result of processing a 402 Payment Required response.
+ */
 export type ProcessPaymentRequiredResponseResult = {
+  /** The selected payment execer. */
   payer: PaymentExecer;
+  /** The result from executing the payment. */
   payerResult: { payload: object };
+  /** The payment payload in the detected protocol version format. */
   paymentPayload: x402PaymentPayload | x402PaymentPayloadV1;
+  /** Base64-encoded payment header ready to attach to the retry request. */
   paymentHeader: string;
+  /** The detected protocol version (1 or 2). */
   detectedVersion: DetectedVersion;
 };
 

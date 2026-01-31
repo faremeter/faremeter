@@ -38,10 +38,24 @@ interface WalletForPayment {
   };
 }
 
+/**
+ * Options for creating an EVM exact payment handler.
+ */
 export type CreatePaymentHandlerOpts = {
+  /** The asset to use for payments (defaults to USDC) */
   asset?: AssetNameOrContractInfo;
 };
 
+/**
+ * Creates a payment handler for the EVM exact payment scheme.
+ *
+ * The handler generates EIP-3009 transferWithAuthorization signatures
+ * that can be executed by the facilitator to complete payments.
+ *
+ * @param wallet - Wallet providing chain context and signing capabilities
+ * @param opts - Optional configuration for the asset
+ * @returns A PaymentHandler function for use with the x402 client
+ */
 export function createPaymentHandler(
   wallet: WalletForPayment,
   opts: CreatePaymentHandlerOpts = {},

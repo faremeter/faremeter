@@ -24,13 +24,19 @@ const testPaymentPayload = type({
   "metadata?": "Record<string, unknown>",
 });
 
+/**
+ * Options for creating a test facilitator handler.
+ */
 export type CreateTestFacilitatorHandlerOpts = {
+  /** Address that should receive payments. */
   payTo: string;
+  /** Optional callback invoked during verify. */
   onVerify?: (
     requirements: x402PaymentRequirements,
     payload: x402PaymentPayload,
     testPayload: TestPaymentPayload,
   ) => void;
+  /** Optional callback invoked during settle. */
   onSettle?: (
     requirements: x402PaymentRequirements,
     payload: x402PaymentPayload,

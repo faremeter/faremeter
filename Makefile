@@ -23,7 +23,7 @@ format:
 doc: FORCE
 	for pkg in packages/*; do cd $$pkg && pnpm tsdoc --src=src/index.ts --dest=README.md --types --noemoji && cd ../..; done
 	pnpm prettier -w packages/*/README.md
-	pnpm tsx scripts/generate-docs.ts
+	pnpm typedoc
 	pnpm prettier -w docs/
 
 packages/%: FORCE

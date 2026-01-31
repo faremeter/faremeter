@@ -1,7 +1,10 @@
+/** Payment scheme identifier for test payments. */
 export const TEST_SCHEME = "test";
 
+/** Network identifier for test payments. */
 export const TEST_NETWORK = "test-local";
 
+/** Asset identifier for test payments. */
 export const TEST_ASSET = "TEST";
 
 /**

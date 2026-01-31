@@ -6,11 +6,19 @@ import {
   type NetworkTranslator,
 } from "./x402-adapters";
 
+/**
+ * Context passed to payment handlers with information about the request.
+ */
 export type RequestContext = {
+  /** The original request being made */
   request: RequestInfo | URL;
 };
 
+/**
+ * Result of executing a payment, containing the signed payload.
+ */
 export type PaymentExecResult = {
+  /** The signed payment payload to send to the facilitator */
   payload: object;
 };
 

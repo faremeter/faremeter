@@ -1,3 +1,9 @@
+/**
+ * Extracts the URL string from various request input types.
+ *
+ * @param input - A URL string, URL object, or Request object.
+ * @returns The URL as a string.
+ */
 export function getURLFromRequestInfo(
   input: RequestInfo | URL | string,
 ): string {

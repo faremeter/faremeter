@@ -1,9 +1,21 @@
+/**
+ * Configuration options for the AgedLRUCache.
+ */
 export type AgedLRUCacheOpts = {
+  /** Maximum number of entries. Defaults to 256. */
   capacity?: number;
+  /** Maximum age in milliseconds before entries expire. Defaults to 30000. */
   maxAge?: number;
+  /** Custom time function for testing. Defaults to Date.now. */
   now?: () => number;
 };
 
+/**
+ * An LRU cache with time-based expiration.
+ *
+ * Entries are evicted when they exceed maxAge or when the cache reaches
+ * capacity (least recently used entries are removed first).
+ */
 export class AgedLRUCache<K, V> {
   private maxAge: number;
   private capacity: number;

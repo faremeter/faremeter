@@ -42,6 +42,13 @@ import type {
  */
 export type NetworkTranslator = (network: string) => string;
 
+/**
+ * Converts v1 payment requirements to v2 format.
+ *
+ * @param req - The v1 payment requirements
+ * @param translateNetwork - Function to translate legacy network IDs to CAIP-2
+ * @returns The v2 payment requirements
+ */
 export function adaptRequirementsV1ToV2(
   req: x402PaymentRequirementsV1,
   translateNetwork: NetworkTranslator,
@@ -60,6 +67,14 @@ export function adaptRequirementsV1ToV2(
   return result;
 }
 
+/**
+ * Converts v2 payment requirements to v1 format.
+ *
+ * @param req - The v2 payment requirements
+ * @param resource - Resource information to populate v1 fields
+ * @param translateNetwork - Optional function to translate CAIP-2 to legacy IDs
+ * @returns The v1 payment requirements with mimeType guaranteed
+ */
 export function adaptRequirementsV2ToV1(
   req: x402PaymentRequirements,
   resource: x402ResourceInfo,
@@ -82,6 +97,12 @@ export function adaptRequirementsV2ToV1(
   return result;
 }
 
+/**
+ * Extracts resource information from v1 payment requirements.
+ *
+ * @param req - The v1 payment requirements containing resource fields
+ * @returns The extracted resource information
+ */
 export function extractResourceInfoV1(
   req: x402PaymentRequirementsV1,
 ): x402ResourceInfo {
@@ -97,6 +118,14 @@ export function extractResourceInfoV1(
   return result;
 }
 
+/**
+ * Converts a v1 payment payload to v2 format.
+ *
+ * @param payload - The v1 payment payload
+ * @param requirements - The v1 requirements used for resource extraction
+ * @param translateNetwork - Function to translate legacy network IDs to CAIP-2
+ * @returns The v2 payment payload
+ */
 export function adaptPayloadV1ToV2(
   payload: x402PaymentPayloadV1,
   requirements: x402PaymentRequirementsV1,
@@ -110,6 +139,14 @@ export function adaptPayloadV1ToV2(
   };
 }
 
+/**
+ * Converts a v1 payment required response to v2 format.
+ *
+ * @param v1Response - The v1 payment required response
+ * @param resourceURL - The URL of the protected resource
+ * @param translateNetwork - Function to translate legacy network IDs to CAIP-2
+ * @returns The v2 payment required response
+ */
 export function adaptPaymentRequiredResponseV1ToV2(
   v1Response: x402PaymentRequiredResponseLenient,
   resourceURL: string,
@@ -141,6 +178,13 @@ export function adaptPaymentRequiredResponseV1ToV2(
   return result;
 }
 
+/**
+ * Converts a v2 payment required response to v1 format.
+ *
+ * @param v2Response - The v2 payment required response
+ * @param translateNetwork - Optional function to translate CAIP-2 to legacy IDs
+ * @returns The v1 payment required response
+ */
 export function adaptPaymentRequiredResponseV2ToV1(
   v2Response: x402PaymentRequiredResponse,
   translateNetwork?: NetworkTranslator,
@@ -154,6 +198,12 @@ export function adaptPaymentRequiredResponseV2ToV1(
   };
 }
 
+/**
+ * Converts a v2 verify response to v1 format.
+ *
+ * @param res - The v2 verify response
+ * @returns The v1 verify response
+ */
 export function adaptVerifyResponseV2ToV1(
   res: x402VerifyResponse,
 ): x402VerifyResponseV1 {
@@ -167,6 +217,12 @@ export function adaptVerifyResponseV2ToV1(
   return result;
 }
 
+/**
+ * Converts a v1 verify response to v2 format.
+ *
+ * @param res - The v1 verify response (lenient)
+ * @returns The v2 verify response
+ */
 export function adaptVerifyResponseV1ToV2(
   res: x402VerifyResponseLenient,
 ): x402VerifyResponse {
@@ -300,6 +356,13 @@ export function adaptSettleResponseLenientToV2(
   return adaptSettleResponseV1ToV2(normalized);
 }
 
+/**
+ * Converts a v2 supported kind to v1 format.
+ *
+ * @param kind - The v2 supported kind
+ * @param translateNetwork - Optional function to translate CAIP-2 to legacy IDs
+ * @returns The v1 supported kind
+ */
 export function adaptSupportedKindV2ToV1(
   kind: x402SupportedKind,
   translateNetwork?: NetworkTranslator,
@@ -315,6 +378,13 @@ export function adaptSupportedKindV2ToV1(
   return result;
 }
 
+/**
+ * Converts a v1 supported kind to v2 format.
+ *
+ * @param kind - The v1 supported kind
+ * @param translateNetwork - Function to translate legacy network IDs to CAIP-2
+ * @returns The v2 supported kind
+ */
 export function adaptSupportedKindV1ToV2(
   kind: x402SupportedKindV1,
   translateNetwork: NetworkTranslator,

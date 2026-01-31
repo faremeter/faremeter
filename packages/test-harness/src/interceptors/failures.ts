@@ -1,6 +1,13 @@
 import type { Interceptor, RequestMatcher } from "./types";
 import { getURLFromRequestInfo } from "./utils";
 
+/**
+ * Creates an interceptor that fails matching requests.
+ *
+ * @param match - Predicate to determine which requests to fail.
+ * @param failFn - Function returning the failure (Response or Error).
+ * @returns An interceptor that fails matching requests.
+ */
 export function createFailureInterceptor(
   match: RequestMatcher,
   failFn: () => Response | Error | Promise<Response | Error>,
@@ -20,6 +27,13 @@ export function createFailureInterceptor(
   };
 }
 
+/**
+ * Creates an interceptor that fails the first matching request only.
+ *
+ * @param match - Predicate to determine which requests to fail.
+ * @param failFn - Function returning the failure.
+ * @returns An interceptor that fails once then passes through.
+ */
 export function failOnce(
   match: RequestMatcher,
   failFn: () => Response | Error,
@@ -38,6 +52,14 @@ export function failOnce(
   );
 }
 
+/**
+ * Creates an interceptor that fails the first N matching requests.
+ *
+ * @param n - Number of times to fail before passing through.
+ * @param match - Predicate to determine which requests to fail.
+ * @param failFn - Function returning the failure.
+ * @returns An interceptor that fails N times then passes through.
+ */
 export function failNTimes(
   n: number,
   match: RequestMatcher,
@@ -57,6 +79,15 @@ export function failNTimes(
   );
 }
 
+/**
+ * Creates an interceptor that fails until manually cleared.
+ *
+ * Call `clear()` on the returned interceptor to stop failing.
+ *
+ * @param match - Predicate to determine which requests to fail.
+ * @param failFn - Function returning the failure.
+ * @returns An interceptor with a `clear()` method.
+ */
 export function failUntilCleared(
   match: RequestMatcher,
   failFn: () => Response | Error,
@@ -75,6 +106,17 @@ export function failUntilCleared(
   return interceptor;
 }
 
+/**
+ * Creates an interceptor that fails based on a dynamic condition.
+ *
+ * The condition receives the URL and attempt count, allowing patterns
+ * like "fail every other request" or "fail first 3 attempts".
+ *
+ * @param match - Predicate to determine which requests to consider.
+ * @param shouldFail - Condition that receives context with attempt count.
+ * @param failFn - Function returning the failure.
+ * @returns An interceptor with conditional failure logic.
+ */
 export function failWhen(
   match: RequestMatcher,
   shouldFail: (ctx: { url: string; attemptCount: number }) => boolean,

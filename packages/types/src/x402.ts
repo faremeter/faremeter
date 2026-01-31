@@ -2,10 +2,14 @@ import { type } from "arktype";
 import { caseInsensitiveLiteral } from "./literal";
 import { isValidationError } from "./validation";
 
-// HTTP header name for client payment payload
+/**
+ * HTTP header name for v1 client payment payloads.
+ */
 export const X_PAYMENT_HEADER = "X-PAYMENT";
 
-// HTTP header name for server payment response
+/**
+ * HTTP header name for v1 server payment responses.
+ */
 export const X_PAYMENT_RESPONSE_HEADER = "X-PAYMENT-RESPONSE";
 
 export const x402PaymentId = type({
@@ -188,6 +192,17 @@ export const x402SupportedResponse = type({
 
 export type x402SupportedResponse = typeof x402SupportedResponse.infer;
 
+/**
+ * Creates a matcher function for filtering payment requirements.
+ *
+ * The matcher performs case-insensitive matching on scheme, network,
+ * and asset fields.
+ *
+ * @param scheme - Accepted payment scheme names
+ * @param network - Accepted network identifiers
+ * @param asset - Accepted asset addresses
+ * @returns Object with the matcher tuple and isMatchingRequirement function
+ */
 export function generateRequirementsMatcher(
   scheme: string[],
   network: string[],

@@ -25,9 +25,26 @@ pnpm install @faremeter/wallet-solana-squads
 
 ### createSquadsWallet
 
+Creates a Squads multisig wallet for Solana.
+
+Wraps the Squads SDK to create proposals, gather approvals, and execute
+vault transactions through a multisig workflow.
+
 | Function             | Type                                                                                                                                                                                                                                           |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `createSquadsWallet` | `(network: string, connection: Connection, keypair: Keypair, multisigPda: PublicKey, squadMember: Keypair) => Promise<{ network: string; publicKey: PublicKey; buildTransaction: (instructions: TransactionInstruction[]) => Promise<...>; }>` |
+
+Parameters:
+
+- `network`: - Solana network identifier.
+- `connection`: - Solana RPC connection.
+- `keypair`: - Admin keypair for creating and signing proposals.
+- `multisigPda`: - Program-derived address of the Squads multisig account.
+- `squadMember`: - Additional squad member keypair for approval quorum.
+
+Returns:
+
+A wallet object that builds and executes multisig transactions.
 
 <!-- TSDOC_END -->
 

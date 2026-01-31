@@ -14,6 +14,13 @@ function convertArgs([msg, context]: LogArgs): [string, Context?] {
   return [msg];
 }
 
+/**
+ * Logging backend powered by the logtape library.
+ *
+ * Provides structured logging with configurable sinks. When available,
+ * this backend is preferred over {@link ConsoleBackend} for its richer
+ * formatting and sink flexibility.
+ */
 export const LogtapeBackend: LoggingBackend<{
   level: LogLevel;
   sink?: Sink;

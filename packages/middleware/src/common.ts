@@ -107,6 +107,13 @@ function findMatching<R extends MatchCriteria>(
   return possible[0];
 }
 
+/**
+ * Finds the payment requirement that matches the client's v1 payment payload.
+ *
+ * @param accepts - Array of accepted payment requirements from the facilitator
+ * @param payload - The client's payment payload
+ * @returns The matching requirement, or undefined if no match found
+ */
 export function findMatchingPaymentRequirements(
   accepts: x402PaymentRequirementsV1[],
   payload: x402PaymentPayloadV1,
@@ -114,6 +121,13 @@ export function findMatchingPaymentRequirements(
   return findMatching(accepts, payload, "v1", payload);
 }
 
+/**
+ * Finds the payment requirement that matches the client's v2 payment payload.
+ *
+ * @param accepts - Array of accepted payment requirements from the facilitator
+ * @param payload - The client's v2 payment payload
+ * @returns The matching requirement, or undefined if no match found
+ */
 export function findMatchingPaymentRequirementsV2(
   accepts: x402PaymentRequirements[],
   payload: x402PaymentPayload,
@@ -121,6 +135,11 @@ export function findMatchingPaymentRequirementsV2(
   return findMatching(accepts, payload.accepted, "v2", payload);
 }
 
+/**
+ * Validates that a facilitator response is successful, throwing if not.
+ *
+ * @param res - The Response from the facilitator
+ */
 export function gateGetPaymentRequiredResponse(res: Response) {
   if (res.status === 200) {
     return;
@@ -194,6 +213,12 @@ type getPaymentRequiredResponseArgs = {
   fetch?: typeof fetch;
 };
 
+/**
+ * Fetches v1 payment requirements from the facilitator's /accepts endpoint.
+ *
+ * @param args - Arguments including facilitator URL and accepted payment types
+ * @returns The validated payment required response from the facilitator
+ */
 export async function getPaymentRequiredResponse(
   args: getPaymentRequiredResponseArgs,
 ) {
@@ -236,6 +261,12 @@ type getPaymentRequiredResponseV2Args = {
   fetch?: typeof fetch;
 };
 
+/**
+ * Fetches v2 payment requirements from the facilitator's /accepts endpoint.
+ *
+ * @param args - Arguments including facilitator URL, resource info, and accepted payment types
+ * @returns The validated v2 payment required response from the facilitator
+ */
 export async function getPaymentRequiredResponseV2(
   args: getPaymentRequiredResponseV2Args,
 ) {
@@ -303,10 +334,17 @@ export function resolveSupportedVersions(
   return resolved;
 }
 
+/**
+ * Common configuration arguments shared by all middleware implementations.
+ */
 export type CommonMiddlewareArgs = {
+  /** URL of the facilitator service. */
   facilitatorURL: string;
+  /** Payment requirements this endpoint accepts. Can be flat or nested arrays. */
   accepts: (RelaxedRequirements | RelaxedRequirements[])[];
+  /** Optional cache configuration for payment requirements responses. */
   cacheConfig?: createPaymentRequiredResponseCacheOpts;
+  /** Which x402 protocol versions to support. */
   supportedVersions?: SupportedVersionsConfig;
 };
 
@@ -334,6 +372,10 @@ export type VerifyResult<MiddlewareResponse> =
   | VerifyResultV1<MiddlewareResponse>
   | VerifyResultV2<MiddlewareResponse>;
 
+/**
+ * Context provided to the middleware body handler for v1 protocol requests.
+ * Contains payment information and functions to verify or settle the payment.
+ */
 export type MiddlewareBodyContextV1<MiddlewareResponse> = {
   protocolVersion: 1;
   paymentRequirements: x402PaymentRequirementsV1;
@@ -342,6 +384,10 @@ export type MiddlewareBodyContextV1<MiddlewareResponse> = {
   verify: () => Promise<VerifyResultV1<MiddlewareResponse>>;
 };
 
+/**
+ * Context provided to the middleware body handler for v2 protocol requests.
+ * Contains payment information and functions to verify or settle the payment.
+ */
 export type MiddlewareBodyContextV2<MiddlewareResponse> = {
   protocolVersion: 2;
   paymentRequirements: x402PaymentRequirements;
@@ -350,31 +396,59 @@ export type MiddlewareBodyContextV2<MiddlewareResponse> = {
   verify: () => Promise<VerifyResultV2<MiddlewareResponse>>;
 };
 
+/**
+ * Context provided to the middleware body handler.
+ * Use protocolVersion to discriminate between v1 and v2 request types.
+ */
 export type MiddlewareBodyContext<MiddlewareResponse> =
   | MiddlewareBodyContextV1<MiddlewareResponse>
   | MiddlewareBodyContextV2<MiddlewareResponse>;
 
+/**
+ * Arguments for the core middleware request handler.
+ * Framework-specific middleware implementations adapt their request/response
+ * objects to this interface.
+ */
 export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = Omit<
   CommonMiddlewareArgs,
   "supportedVersions"
 > & {
+  /** The resource URL being accessed. */
   resource: string;
+  /** Function to retrieve a request header value. */
   getHeader: (key: string) => string | undefined;
+  /** Function to fetch v1 payment requirements from the facilitator. */
   getPaymentRequiredResponse: typeof getPaymentRequiredResponse;
+  /** Optional function to fetch v2 payment requirements from the facilitator. */
   getPaymentRequiredResponseV2?: typeof getPaymentRequiredResponseV2;
+  /** Resolved supported versions configuration. */
   supportedVersions: Required<SupportedVersionsConfig>;
+  /** Function to send a JSON response with optional headers. */
   sendJSONResponse: (
     status: PossibleStatusCodes,
     body?: PossibleJSONResponse,
     headers?: Record<string, string>,
   ) => MiddlewareResponse;
+  /** Handler function called when a valid payment is received. */
   body: (
     context: MiddlewareBodyContext<MiddlewareResponse>,
   ) => Promise<MiddlewareResponse | undefined>;
+  /** Optional function to set a response header. */
   setResponseHeader?: (key: string, value: string) => void;
+  /** Optional custom fetch function for facilitator requests. */
   fetch?: typeof fetch;
 };
 
+/**
+ * Core middleware request handler that processes x402 payment flows.
+ *
+ * This function handles both v1 and v2 protocol versions, validates payment
+ * headers, communicates with the facilitator, and delegates to the body
+ * handler when payment is valid.
+ *
+ * @param args - Handler arguments including framework-specific adapters
+ * @returns The middleware response, or undefined if the body handler should continue
+ */
 export async function handleMiddlewareRequest<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
 ) {
@@ -707,9 +781,23 @@ async function handleV2Request<MiddlewareResponse>(
   });
 }
 
+/**
+ * Configuration options for the payment requirements response cache.
+ */
 export type createPaymentRequiredResponseCacheOpts = AgedLRUCacheOpts & {
+  /** If true, disables caching entirely. */
   disable?: boolean;
 };
+
+/**
+ * Creates a cached wrapper around payment requirements fetching functions.
+ *
+ * The cache reduces load on the facilitator by reusing recent responses
+ * for identical requirements.
+ *
+ * @param opts - Cache configuration options
+ * @returns Object containing cached getPaymentRequiredResponse functions
+ */
 export function createPaymentRequiredResponseCache(
   opts: createPaymentRequiredResponseCacheOpts = {},
 ) {

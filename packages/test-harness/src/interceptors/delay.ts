@@ -1,6 +1,13 @@
 import type { Interceptor, RequestMatcher } from "./types";
 import { getURLFromRequestInfo } from "./utils";
 
+/**
+ * Creates an interceptor that delays matching requests before sending.
+ *
+ * @param match - Predicate to determine which requests to delay.
+ * @param delayMs - Delay in milliseconds.
+ * @returns An interceptor that adds request delay.
+ */
 export function createDelayInterceptor(
   match: RequestMatcher,
   delayMs: number,
@@ -16,6 +23,13 @@ export function createDelayInterceptor(
   };
 }
 
+/**
+ * Creates an interceptor that delays matching responses after receiving.
+ *
+ * @param match - Predicate to determine which responses to delay.
+ * @param delayMs - Delay in milliseconds.
+ * @returns An interceptor that adds response delay.
+ */
 export function createResponseDelayInterceptor(
   match: RequestMatcher,
   delayMs: number,
@@ -32,6 +46,13 @@ export function createResponseDelayInterceptor(
   };
 }
 
+/**
+ * Creates an interceptor with variable delay based on request context.
+ *
+ * @param match - Predicate to determine which requests to delay.
+ * @param getDelay - Function returning delay in ms for each request.
+ * @returns An interceptor with dynamic delay.
+ */
 export function createVariableDelayInterceptor(
   match: RequestMatcher,
   getDelay: (url: string, init?: RequestInit) => number,

@@ -72,6 +72,10 @@ export const EIP712_TYPES = {
   ],
 } as const;
 
+/**
+ * Validator for the x402 exact payment payload containing
+ * an EIP-3009 authorization and signature.
+ */
 export const x402ExactPayload = type({
   signature: prefixedHexString,
   authorization: {
@@ -87,6 +91,9 @@ export const x402ExactPayload = type({
 export type x402ExactPayload = typeof x402ExactPayload.infer;
 export type eip3009Authorization = x402ExactPayload["authorization"];
 
+/**
+ * Validator for EIP-712 domain parameters provided in payment requirements.
+ */
 export const eip712Domain = type({
   "name?": "string",
   "version?": "string",

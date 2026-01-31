@@ -181,6 +181,19 @@ const sendTransaction = async (
   return { success: false, error: "Transaction confirmation timeout" };
 };
 
+/**
+ * Creates a facilitator handler for the Solana exact payment scheme.
+ *
+ * The handler validates incoming payment transactions, signs them with the
+ * fee payer keypair, and submits them to the Solana network.
+ *
+ * @param network - Solana network identifier (cluster name or CAIP-2 format)
+ * @param rpc - Solana RPC client
+ * @param feePayerKeypair - Keypair for paying transaction fees
+ * @param mint - SPL token mint public key
+ * @param config - Optional configuration for retries, fees, and hooks
+ * @returns A FacilitatorHandler for processing Solana exact payments
+ */
 export const createFacilitatorHandler = async (
   network: string,
   rpc: Rpc<SolanaRpcApi>,

@@ -12,6 +12,13 @@ function convertArgs([msg, context]: LogArgs) {
 
 let configuredLevel: LogLevel = "info";
 
+/**
+ * Logging backend that outputs to the browser or Node.js console.
+ *
+ * This is the default fallback backend when logtape is not available.
+ * It uses native `console.debug`, `console.info`, `console.warn`, and
+ * `console.error` methods for output.
+ */
 export const ConsoleBackend: LoggingBackend = {
   async configureApp(args: { level: LogLevel }) {
     configuredLevel = args.level;

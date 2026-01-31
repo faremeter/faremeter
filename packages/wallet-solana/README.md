@@ -24,15 +24,28 @@ pnpm install @faremeter/wallet-solana
 
 ### createLocalWallet
 
+Creates a local Solana wallet from a keypair for signing transactions.
+
 | Function            | Type                                                                                                                                                                         |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `createLocalWallet` | `(network: string, keypair: Keypair) => Promise<{ network: string; publicKey: PublicKey; updateTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>; }>` |
+
+Parameters:
+
+- `network`: - Network identifier (e.g., "mainnet-beta", "devnet").
+- `keypair`: - Solana keypair containing the private key.
+
+Returns:
+
+A wallet object that can sign versioned transactions.
 
 ## Types
 
 - [LocalWallet](#localwallet)
 
 ### LocalWallet
+
+Type representing a local Solana wallet created by {@link createLocalWallet}.
 
 | Type          | Type                                            |
 | ------------- | ----------------------------------------------- |

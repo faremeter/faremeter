@@ -1,6 +1,13 @@
 import type { Interceptor, RequestMatcher } from "./types";
 import { getURLFromRequestInfo } from "./utils";
 
+/**
+ * Creates an interceptor that calls a hook before matching requests.
+ *
+ * @param match - Predicate to determine which requests to hook.
+ * @param hook - Callback invoked before the request is sent.
+ * @returns An interceptor with request-side hooks.
+ */
 export function createRequestHook(
   match: RequestMatcher,
   hook: (url: string, init?: RequestInit) => void | Promise<void>,
@@ -16,6 +23,13 @@ export function createRequestHook(
   };
 }
 
+/**
+ * Creates an interceptor that calls a hook after matching responses.
+ *
+ * @param match - Predicate to determine which responses to hook.
+ * @param hook - Callback invoked after the response is received.
+ * @returns An interceptor with response-side hooks.
+ */
 export function createResponseHook(
   match: RequestMatcher,
   hook: (
@@ -36,6 +50,13 @@ export function createResponseHook(
   };
 }
 
+/**
+ * Creates an interceptor with both request and response hooks.
+ *
+ * @param match - Predicate to determine which requests to hook.
+ * @param hooks - Object with optional onRequest and onResponse callbacks.
+ * @returns An interceptor with both-side hooks.
+ */
 export function createHook(
   match: RequestMatcher,
   hooks: {
@@ -71,6 +92,12 @@ type CapturedRequest = {
   timestamp: number;
 };
 
+/**
+ * Creates an interceptor that captures matching requests for later inspection.
+ *
+ * @param match - Predicate to determine which requests to capture.
+ * @returns Object with the interceptor, captured array, and clear function.
+ */
 export function createCaptureInterceptor(match: RequestMatcher): {
   interceptor: Interceptor;
   captured: CapturedRequest[];

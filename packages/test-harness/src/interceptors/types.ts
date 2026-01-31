@@ -1,3 +1,9 @@
+/**
+ * A function that wraps fetch to intercept requests and responses.
+ *
+ * Interceptors can modify requests before they're sent, inspect or modify
+ * responses, inject failures, add delays, or log activity.
+ */
 export type Interceptor = (
   fetch: typeof globalThis.fetch,
 ) => typeof globalThis.fetch;
@@ -28,4 +34,9 @@ export function composeInterceptors(
     );
 }
 
+/**
+ * Predicate function that determines whether a request should be matched.
+ *
+ * Used by interceptors to selectively apply behavior to specific requests.
+ */
 export type RequestMatcher = (url: string, init?: RequestInit) => boolean;

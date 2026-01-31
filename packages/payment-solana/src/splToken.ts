@@ -7,12 +7,28 @@ import {
   TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
 
+/**
+ * Arguments for retrieving an SPL token balance.
+ */
 export interface GetTokenBalanceArgs {
+  /** The SPL token mint address */
   asset: Base58Address;
+  /** The wallet address to check the balance for */
   account: Base58Address;
+  /** Solana RPC client with token balance API support */
   rpcClient: Rpc<GetTokenAccountBalanceApi>;
 }
 
+/**
+ * Checks if an error indicates a token account was not found.
+ *
+ * This handles various error formats from Solana RPC responses,
+ * including TokenAccountNotFoundError and AccountNotFoundError names,
+ * as well as message-based detection.
+ *
+ * @param e - The error to check
+ * @returns True if the error indicates the account does not exist
+ */
 // XXX - There has got to be a better way to do this.
 export function isAccountNotFoundError(e: unknown) {
   if (!e || !(e instanceof Error)) {
@@ -34,6 +50,16 @@ export function isAccountNotFoundError(e: unknown) {
   return false;
 }
 
+/**
+ * Retrieves the SPL token balance for an account.
+ *
+ * Looks up the associated token account (ATA) for the given wallet and
+ * mint, then fetches the token balance. Returns null if the account
+ * does not exist.
+ *
+ * @param args - The asset, account, and RPC client
+ * @returns The balance amount and decimals, or null if the account does not exist
+ */
 export async function getTokenBalance(args: GetTokenBalanceArgs) {
   const { asset, account, rpcClient } = args;
 

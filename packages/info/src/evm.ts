@@ -25,10 +25,22 @@ const legacyNameToCAIP2Map = new Map<string, CAIP2Network>(
   ]),
 );
 
+/**
+ * Converts an EVM chain ID to CAIP-2 network identifier.
+ *
+ * @param chainId - The EVM chain ID
+ * @returns The CAIP-2 network identifier (eip155:chainId)
+ */
 export function chainIdToCAIP2(chainId: number): string {
   return `eip155:${chainId}`;
 }
 
+/**
+ * Extracts the EVM chain ID from a CAIP-2 network identifier.
+ *
+ * @param caip2 - The CAIP-2 network identifier
+ * @returns The chain ID, or null if not a valid eip155 identifier
+ */
 export function caip2ToChainId(caip2: string): number | null {
   const match = /^eip155:(\d+)$/.exec(caip2);
   if (!match?.[1]) {
@@ -37,15 +49,36 @@ export function caip2ToChainId(caip2: string): number | null {
   return parseInt(match[1], 10);
 }
 
+/**
+ * Converts a legacy EVM network name to CAIP-2 format.
+ *
+ * @param legacy - Legacy network name (e.g., "base", "polygon")
+ * @returns The CAIP-2 network identifier, or null if unknown
+ */
 export function legacyNameToCAIP2(legacy: string): string | null {
   return legacyNameToCAIP2Map.get(legacy) ?? null;
 }
 
+/**
+ * Converts a CAIP-2 network identifier to legacy EVM network name.
+ *
+ * @param caip2 - The CAIP-2 network identifier
+ * @returns The legacy network name, or null if unknown
+ */
 export function caip2ToLegacyName(caip2: string): string | null {
   const network = knownX402Networks[caip2 as CAIP2Network];
   return network?.legacyName ?? null;
 }
 
+/**
+ * Normalizes an EVM network identifier to CAIP-2 format.
+ *
+ * Accepts chain IDs (number or string), legacy names, or CAIP-2 identifiers.
+ * Returns the input unchanged if no mapping exists.
+ *
+ * @param network - The network identifier in any supported format
+ * @returns The CAIP-2 network identifier
+ */
 export function normalizeNetworkId(network: string | number): string {
   if (typeof network === "number") {
     return chainIdToCAIP2(network);
@@ -68,10 +101,22 @@ export function normalizeNetworkId(network: string | number): string {
   return network;
 }
 
+/**
+ * Type guard that checks if a string is a known EVM CAIP-2 network.
+ *
+ * @param n - The string to check
+ * @returns True if the string is a known EVM CAIP-2 network identifier
+ */
 export function isKnownCAIP2Network(n: string): n is CAIP2Network {
   return n in knownX402Networks;
 }
 
+/**
+ * Looks up network information by CAIP-2 identifier.
+ *
+ * @param n - The CAIP-2 network identifier
+ * @returns Network information including legacy name and chain ID
+ */
 export function lookupKnownCAIP2Network(n: CAIP2Network) {
   return {
     ...knownX402Networks[n],
@@ -79,6 +124,12 @@ export function lookupKnownCAIP2Network(n: CAIP2Network) {
   };
 }
 
+/**
+ * Looks up the x402 network identifier for an EVM chain ID.
+ *
+ * @param chainId - The EVM chain ID
+ * @returns The CAIP-2 network identifier
+ */
 export function lookupX402Network(chainId: number): string {
   return chainIdToCAIP2(chainId);
 }
@@ -141,6 +192,13 @@ const knownAssets = {
 
 export type KnownAsset = keyof typeof knownAssets;
 
+/**
+ * Looks up asset information by network and asset name.
+ *
+ * @param network - The network identifier (chain ID, CAIP-2, or legacy name)
+ * @param name - The known asset name (e.g., "USDC")
+ * @returns Asset information including contract address, or undefined if not found
+ */
 export function lookupKnownAsset(network: string | number, name: KnownAsset) {
   const assetInfo: AssetInfo = knownAssets[name];
 
@@ -163,12 +221,26 @@ export function lookupKnownAsset(network: string | number, name: KnownAsset) {
   };
 }
 
+/**
+ * Type guard that checks if a string is a known EVM asset name.
+ *
+ * @param asset - The string to check
+ * @returns True if the string is a known asset name
+ */
 export function isKnownAsset(asset: string): asset is KnownAsset {
   return asset in knownAssets;
 }
 
 export type AssetNameOrContractInfo = string | ContractInfo;
 
+/**
+ * Finds asset information by network and asset name or contract info.
+ *
+ * @param network - The network identifier
+ * @param assetNameOrInfo - Asset name (e.g., "USDC") or direct ContractInfo
+ * @returns Contract information for the asset
+ * @throws Error if the asset is unknown or not found on the network
+ */
 export function findAssetInfo(
   network: string | number,
   assetNameOrInfo: AssetNameOrContractInfo,
@@ -204,6 +276,12 @@ export type x402ExactArgs = {
   payTo: Address;
 };
 
+/**
+ * Creates x402 exact payment requirements for EVM.
+ *
+ * @param args - Payment configuration including network, asset, amount, and payTo
+ * @returns x402 payment requirement for the exact scheme
+ */
 export function x402Exact(args: x402ExactArgs) {
   const tokenInfo = lookupKnownAsset(args.network, args.asset);
 

@@ -133,8 +133,13 @@ export function createInvalidPayloadHandler(
   };
 }
 
+/**
+ * Options for creating a simple facilitator handler.
+ */
 export type CreateSimpleFacilitatorHandlerOpts = {
+  /** Network identifier for settle responses. */
   networkId: string;
+  /** Optional function returning supported payment kinds. */
   getSupported?: () => Promise<x402SupportedKind>[];
 };
 

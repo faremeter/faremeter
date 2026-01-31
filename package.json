@@ -11,6 +11,8 @@
     "tap": "catalog:",
     "tsdoc-markdown": "catalog:",
     "tsx": "catalog:",
+    "typedoc": "catalog:",
+    "typedoc-plugin-markdown": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
     "typescript-language-server": "catalog:"

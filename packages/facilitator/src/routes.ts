@@ -76,6 +76,15 @@ function summarizeRequirements({
   };
 }
 
+export function getClientIP(c: Context): string | undefined {
+  const xff = c.req.header("X-Forwarded-For");
+  if (xff) {
+    const firstIP = xff.split(",")[0]?.trim();
+    if (firstIP) return firstIP;
+  }
+  return c.req.header("X-Real-IP");
+}
+
 function processException<T>(step: string, e: unknown, cb: (msg: string) => T) {
   // XXX - We can do a better job of determining if it's a chain
   // error, or some other issue.
@@ -216,7 +225,11 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
     const v2Req = x2.x402VerifyRequest(body);
 
     if (!isValidationError(v2Req)) {
-      logger.debug("starting verification attempt for v2 request", v2Req);
+      const clientIP = getClientIP(c);
+      logger.debug("starting verification attempt for v2 request", {
+        ...v2Req,
+        clientIP,
+      });
 
       let result: x2.x402VerifyResponse | null;
       try {
@@ -247,6 +260,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
         {
           ...result,
           requirements: summarizeRequirements(v2Req.paymentRequirements),
+          clientIP,
         },
       );
       return c.json(result);
@@ -279,7 +293,11 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       paymentPayload = decodedHeader;
     }
 
-    logger.debug("starting verification attempt for v1 request", v1Req);
+    const clientIP = getClientIP(c);
+    logger.debug("starting verification attempt for v1 request", {
+      ...v1Req,
+      clientIP,
+    });
 
     const v2Requirements = adaptRequirementsV1ToV2(
       v1Req.paymentRequirements,
@@ -317,6 +335,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       {
         ...result,
         requirements: summarizeRequirements(v2Requirements),
+        clientIP,
       },
     );
     return c.json(adaptVerifyResponseV2ToV1(result));
@@ -329,7 +348,11 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
     const v2Req = x2.x402SettleRequest(body);
 
     if (!isValidationError(v2Req)) {
-      logger.debug("starting settlement attempt for v2 request", v2Req);
+      const clientIP = getClientIP(c);
+      logger.debug("starting settlement attempt for v2 request", {
+        ...v2Req,
+        clientIP,
+      });
 
       let result: x2.x402SettleResponse | null;
       try {
@@ -355,6 +378,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
         {
           requirements: summarizeRequirements(v2Req.paymentRequirements),
           transaction: result.transaction,
+          clientIP,
         },
       );
       return c.json(result);
@@ -387,7 +411,11 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       paymentPayload = decodedHeader;
     }
 
-    logger.debug("starting settlement attempt for v1 request", v1Req);
+    const clientIP = getClientIP(c);
+    logger.debug("starting settlement attempt for v1 request", {
+      ...v1Req,
+      clientIP,
+    });
 
     const v2Requirements = adaptRequirementsV1ToV2(
       v1Req.paymentRequirements,
@@ -423,6 +451,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       {
         requirements: summarizeRequirements(v2Requirements),
         transaction: result.transaction,
+        clientIP,
       },
     );
     return c.json(adaptSettleResponseV2ToV1(result, translateNetwork));
@@ -430,6 +459,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
 
   router.post("/accepts", async (c) => {
     const body: unknown = await c.req.json();
+    const clientIP = getClientIP(c);
 
     // The /accepts request body shares the same shape as the payment required
     // response (resource + accepts array), so we reuse the response validator.
@@ -456,6 +486,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
 
       logger.debug(`returning ${accepts.length} accepts for v2 request`, {
         accepts: accepts.map(summarizeRequirements),
+        clientIP,
       });
 
       c.status(200);
@@ -514,6 +545,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
         asset: a.asset,
         payTo: a.payTo,
       })),
+      clientIP,
     });
 
     c.status(200);
@@ -525,6 +557,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
   });
 
   router.get("/supported", async (c) => {
+    const clientIP = getClientIP(c);
     const results = await allSettledWithTimeout(
       args.handlers.flatMap((handler) =>
         handler.getSupported ? handler.getSupported() : [],
@@ -574,6 +607,7 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
 
     logger.debug(`returning ${allKinds.length} kinds supported`, {
       kinds: allKinds,
+      clientIP,
     });
 
     c.status(200);

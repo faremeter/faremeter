@@ -7,7 +7,7 @@ Instructions for AI agents working in this repository.
 At the start of every session, before doing any other work:
 
 1. Read `CONVENTIONS.md` and follow all conventions defined there
-2. Glob for all `SKILL.md` files under `.claude/skills/` and load each one
+2. Glob for all `SKILL.md` files under `skills/` and load each one
 
 Do not proceed with any user requests until both steps are complete.
 

@@ -17,5 +17,6 @@
     "tests/**",
     "**/*.test.ts"
   ],
-  "tsconfig": "tsconfig.typedoc.json"
+  "tsconfig": "tsconfig.typedoc.json",
+  "sanitizeComments": true
 }

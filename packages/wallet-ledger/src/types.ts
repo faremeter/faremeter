@@ -20,6 +20,9 @@ export interface LedgerEvmWallet {
 export interface LedgerSolanaWallet {
   network: string;
   publicKey: PublicKey;
+  partiallySignTransaction: (
+    tx: VersionedTransaction,
+  ) => Promise<VersionedTransaction>;
   updateTransaction: (
     tx: VersionedTransaction,
   ) => Promise<VersionedTransaction>;

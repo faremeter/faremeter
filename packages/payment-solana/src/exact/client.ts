@@ -27,6 +27,7 @@ import {
 } from "@solana/web3.js";
 import { PaymentRequirementsExtra } from "./facilitator";
 import { generateMatcher } from "./common";
+import { logger } from "./logger";
 
 export type Wallet = {
   network: string;
@@ -34,6 +35,9 @@ export type Wallet = {
   buildTransaction?: (
     instructions: TransactionInstruction[],
     recentBlockHash: string,
+  ) => Promise<VersionedTransaction>;
+  partiallySignTransaction?: (
+    tx: VersionedTransaction,
   ) => Promise<VersionedTransaction>;
   updateTransaction?: (
     tx: VersionedTransaction,
@@ -154,6 +158,24 @@ export function createPaymentHandler(
   const getAssociatedTokenAddressSyncRest =
     generateGetAssociatedTokenAddressSyncRest(options?.token ?? {});
 
+  let hasWarnedAboutDeprecation = false;
+
+  const signTransaction = async (tx: VersionedTransaction) => {
+    if (wallet.partiallySignTransaction) {
+      return wallet.partiallySignTransaction(tx);
+    }
+    if (wallet.updateTransaction) {
+      if (!hasWarnedAboutDeprecation) {
+        logger.warning(
+          "wallet.partiallySignTransaction is not available, falling back to updateTransaction",
+        );
+        hasWarnedAboutDeprecation = true;
+      }
+      return wallet.updateTransaction(tx);
+    }
+    return tx;
+  };
+
   const { isMatchingRequirement } = generateMatcher(
     wallet.network,
     mint ? mint.toBase58() : "sol",
@@ -229,9 +251,7 @@ export function createPaymentHandler(
               tx = new VersionedTransaction(message);
             }
 
-            if (wallet.updateTransaction) {
-              tx = await wallet.updateTransaction(tx);
-            }
+            tx = await signTransaction(tx);
 
             const base64EncodedWireTransaction =
               getBase64EncodedWireTransaction({
@@ -285,9 +305,7 @@ export function createPaymentHandler(
               tx = new VersionedTransaction(message);
             }
 
-            if (wallet.updateTransaction) {
-              tx = await wallet.updateTransaction(tx);
-            }
+            tx = await signTransaction(tx);
 
             if (!wallet.sendTransaction) {
               throw new Error(

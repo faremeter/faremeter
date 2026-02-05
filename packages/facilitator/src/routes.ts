@@ -46,8 +46,8 @@ function normalizeNetwork(network: string): string {
   const evmCaip2 = legacyNameToCAIP2(network);
   if (evmCaip2) return evmCaip2;
 
-  const solanaCaip2 = legacyNetworkIdToCAIP2(network);
-  if (solanaCaip2) return solanaCaip2;
+  const solanaNetwork = legacyNetworkIdToCAIP2(network);
+  if (solanaNetwork) return solanaNetwork.caip2;
 
   return network;
 }

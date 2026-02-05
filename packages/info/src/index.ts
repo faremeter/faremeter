@@ -15,8 +15,8 @@ export function normalizeNetworkId(network: string): string {
   if (evmCaip2) return evmCaip2;
 
   if (network.startsWith("solana:")) return network;
-  const solanaCaip2 = solana.legacyNetworkIdToCAIP2(network);
-  if (solanaCaip2) return solanaCaip2;
+  const solanaNetwork = solana.legacyNetworkIdToCAIP2(network);
+  if (solanaNetwork) return solanaNetwork.caip2;
 
   return network;
 }

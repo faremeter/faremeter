@@ -1,127 +1,65 @@
 import { type UnitInput, addX402PaymentRequirementDefaults } from "./common";
-import { Base58Address } from "@faremeter/types/solana";
+import {
+  type SolanaCluster,
+  type SolanaCAIP2Network,
+  Base58Address,
+  isSolanaCluster,
+  isSolanaCAIP2Network,
+  isSolanaCAIP2NetworkString,
+  createSolanaNetwork,
+} from "@faremeter/types/solana";
 
-const knownClusters = ["devnet", "testnet", "mainnet-beta"] as const;
-export type KnownCluster = (typeof knownClusters)[number];
+export type { SolanaCluster, SolanaCAIP2Network };
 
-/**
- * Type guard that checks if a string is a known Solana cluster name.
- *
- * @param c - The string to check
- * @returns True if the string is a known cluster (devnet, testnet, mainnet-beta)
- */
+export type KnownCluster = SolanaCluster;
+
+export {
+  isSolanaCluster,
+  isSolanaCAIP2Network,
+  isSolanaCAIP2NetworkString,
+  createSolanaNetwork,
+};
+
 export function isKnownCluster(c: string): c is KnownCluster {
-  return knownClusters.includes(c as KnownCluster);
+  return isSolanaCluster(c);
 }
 
-const knownSolanaNetworks = {
-  "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": {
-    cluster: "mainnet-beta" as const,
-    legacyNetworkIds: ["solana-mainnet-beta", "solana"],
-  },
-  "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1": {
-    cluster: "devnet" as const,
-    legacyNetworkIds: ["solana-devnet"],
-  },
-  "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z": {
-    cluster: "testnet" as const,
-    legacyNetworkIds: ["solana-testnet"],
-  },
-} as const;
-
-type KnownSolanaNetworks = typeof knownSolanaNetworks;
-export type SolanaCAIP2Network = keyof KnownSolanaNetworks;
-
-const clusterToCAIP2Map = new Map<KnownCluster, SolanaCAIP2Network>(
-  Object.entries(knownSolanaNetworks).map(([caip2, info]) => [
-    info.cluster,
-    caip2 as SolanaCAIP2Network,
-  ]),
+export const SOLANA_MAINNET_BETA = createSolanaNetwork(
+  "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+  "mainnet-beta",
 );
 
-const legacyNetworkIdToCAIP2Map = new Map<string, SolanaCAIP2Network>();
-for (const [caip2, info] of Object.entries(knownSolanaNetworks)) {
-  for (const legacyId of info.legacyNetworkIds) {
-    legacyNetworkIdToCAIP2Map.set(legacyId, caip2 as SolanaCAIP2Network);
-  }
-}
+export const SOLANA_DEVNET = createSolanaNetwork(
+  "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+  "devnet",
+);
 
-/**
- * Converts a Solana cluster name to CAIP-2 network identifier.
- *
- * @param cluster - The Solana cluster name
- * @returns The corresponding CAIP-2 network identifier
- * @throws Error if the cluster is unknown
- */
-export function clusterToCAIP2(cluster: KnownCluster): SolanaCAIP2Network {
-  const caip2 = clusterToCAIP2Map.get(cluster);
-  if (!caip2) {
-    throw new Error(`Unknown Solana cluster: ${cluster}`);
-  }
-  return caip2;
-}
+export const SOLANA_TESTNET = createSolanaNetwork(
+  "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z",
+  "testnet",
+);
 
-/**
- * Converts a CAIP-2 network identifier to Solana cluster name.
- *
- * @param caip2 - The CAIP-2 network identifier
- * @returns The cluster name, or null if not a known Solana network
- */
-export function caip2ToCluster(caip2: string): KnownCluster | null {
-  const network = knownSolanaNetworks[caip2 as SolanaCAIP2Network];
-  return network?.cluster ?? null;
-}
+type NamedSolanaNetwork = SolanaCAIP2Network & { readonly name: SolanaCluster };
 
-/**
- * Converts a legacy Solana network ID to CAIP-2 format.
- *
- * @param legacy - Legacy network identifier (e.g., "solana-mainnet-beta")
- * @returns The CAIP-2 network identifier, or null if unknown
- */
-export function legacyNetworkIdToCAIP2(
-  legacy: string,
-): SolanaCAIP2Network | null {
-  return legacyNetworkIdToCAIP2Map.get(legacy) ?? null;
-}
+type KnownSolanaNetworkInfo = {
+  network: NamedSolanaNetwork;
+  legacyNetworkIds: readonly string[];
+};
 
-/**
- * Converts a CAIP-2 network identifier to legacy Solana network IDs.
- *
- * @param caip2 - The CAIP-2 network identifier
- * @returns Array of legacy network IDs, or null if unknown
- */
-export function caip2ToLegacyNetworkIds(
-  caip2: string,
-): readonly string[] | null {
-  const network = knownSolanaNetworks[caip2 as SolanaCAIP2Network];
-  return network?.legacyNetworkIds ?? null;
-}
-
-/**
- * Normalizes a Solana network identifier to CAIP-2 format.
- *
- * Accepts cluster names, legacy IDs, or CAIP-2 identifiers.
- * Returns the input unchanged if no mapping exists.
- *
- * @param network - The network identifier in any supported format
- * @returns The CAIP-2 network identifier
- */
-export function normalizeNetworkId(network: string): string {
-  if (network.startsWith("solana:")) {
-    return network;
-  }
-
-  if (isKnownCluster(network)) {
-    return clusterToCAIP2(network);
-  }
-
-  const caip2 = legacyNetworkIdToCAIP2(network);
-  if (caip2) {
-    return caip2;
-  }
-
-  return network;
-}
+const knownSolanaNetworks: Record<string, KnownSolanaNetworkInfo> = {
+  [SOLANA_MAINNET_BETA.caip2]: {
+    network: SOLANA_MAINNET_BETA as NamedSolanaNetwork,
+    legacyNetworkIds: ["solana-mainnet-beta", "solana"],
+  },
+  [SOLANA_DEVNET.caip2]: {
+    network: SOLANA_DEVNET as NamedSolanaNetwork,
+    legacyNetworkIds: ["solana-devnet"],
+  },
+  [SOLANA_TESTNET.caip2]: {
+    network: SOLANA_TESTNET as NamedSolanaNetwork,
+    legacyNetworkIds: ["solana-testnet"],
+  },
+};
 
 /**
  * Type guard that checks if a string is a known Solana CAIP-2 network.
@@ -129,32 +67,142 @@ export function normalizeNetworkId(network: string): string {
  * @param n - The string to check
  * @returns True if the string is a known Solana CAIP-2 network identifier
  */
-export function isKnownSolanaCAIP2Network(n: string): n is SolanaCAIP2Network {
+export function isKnownSolanaCAIP2Network(n: string): boolean {
   return n in knownSolanaNetworks;
+}
+
+const clusterToNetworkMap = new Map<SolanaCluster, SolanaCAIP2Network>(
+  Object.values(knownSolanaNetworks).map((info) => [
+    info.network.name,
+    info.network,
+  ]),
+);
+
+const legacyNetworkIdToNetworkMap = new Map<string, SolanaCAIP2Network>();
+for (const info of Object.values(knownSolanaNetworks)) {
+  for (const legacyId of info.legacyNetworkIds) {
+    legacyNetworkIdToNetworkMap.set(legacyId, info.network);
+  }
+}
+
+/**
+ * Converts a Solana cluster name to a SolanaCAIP2Network object.
+ *
+ * @param cluster - The Solana cluster name
+ * @returns The corresponding SolanaCAIP2Network object
+ * @throws Error if the cluster is unknown
+ */
+export function clusterToCAIP2(cluster: SolanaCluster): SolanaCAIP2Network {
+  const network = clusterToNetworkMap.get(cluster);
+  if (!network) {
+    throw new Error(`Unknown Solana cluster: ${cluster}`);
+  }
+  return network;
+}
+
+/**
+ * Converts a CAIP-2 network identifier to Solana cluster name.
+ *
+ * @param caip2 - The CAIP-2 network identifier string
+ * @returns The cluster name, or null if not a known Solana network
+ */
+export function caip2ToCluster(caip2: string): SolanaCluster | null {
+  const info = knownSolanaNetworks[caip2];
+  if (!info) {
+    return null;
+  }
+  return info.network.name;
+}
+
+/**
+ * Converts a legacy Solana network ID to a SolanaCAIP2Network object.
+ *
+ * @param legacy - Legacy network identifier (e.g., "solana-mainnet-beta")
+ * @returns The SolanaCAIP2Network object, or null if unknown
+ */
+export function legacyNetworkIdToCAIP2(
+  legacy: string,
+): SolanaCAIP2Network | null {
+  return legacyNetworkIdToNetworkMap.get(legacy) ?? null;
+}
+
+/**
+ * Converts a CAIP-2 network identifier to legacy Solana network IDs.
+ *
+ * @param caip2 - The CAIP-2 network identifier string
+ * @returns Array of legacy network IDs, or null if unknown
+ */
+export function caip2ToLegacyNetworkIds(
+  caip2: string,
+): readonly string[] | null {
+  const info = knownSolanaNetworks[caip2];
+  if (!info) {
+    return null;
+  }
+  return info.legacyNetworkIds;
+}
+
+/**
+ * Normalizes a Solana network identifier to CAIP-2 format string.
+ *
+ * Accepts cluster names, legacy IDs, or CAIP-2 identifiers.
+ * Returns the input unchanged if no mapping exists.
+ *
+ * @param network - The network identifier in any supported format
+ * @returns The CAIP-2 network identifier string, or the original string if unrecognized
+ */
+export function normalizeNetworkId(network: string): string {
+  if (isSolanaCAIP2NetworkString(network)) {
+    return network;
+  }
+
+  if (isSolanaCluster(network)) {
+    return clusterToCAIP2(network).caip2;
+  }
+
+  const networkObj = legacyNetworkIdToCAIP2(network);
+  if (networkObj) {
+    return networkObj.caip2;
+  }
+
+  return network;
 }
 
 /**
  * Looks up the x402 network identifier for a Solana cluster.
  *
- * @param cluster - Cluster name, CAIP-2 ID, or legacy network ID
- * @returns The CAIP-2 network identifier
- * @throws Error if the network is unknown
+ * Accepts a cluster name, CAIP-2 identifier string, legacy network ID,
+ * or an existing SolanaCAIP2Network object.
+ *
+ * @param network - Cluster name, CAIP-2 ID, legacy network ID, or SolanaCAIP2Network object
+ * @returns A SolanaCAIP2Network object
+ * @throws Error if the network is unknown or invalid
  */
-export function lookupX402Network(cluster: string): string {
-  if (isKnownCluster(cluster)) {
-    return clusterToCAIP2(cluster);
+export function lookupX402Network(
+  network: string | SolanaCAIP2Network,
+): SolanaCAIP2Network {
+  if (isSolanaCAIP2Network(network)) {
+    return network;
   }
 
-  if (cluster.startsWith("solana:")) {
-    return cluster;
+  if (isSolanaCluster(network)) {
+    return clusterToCAIP2(network);
   }
 
-  const caip2 = legacyNetworkIdToCAIP2(cluster);
-  if (caip2) {
-    return caip2;
+  if (isSolanaCAIP2NetworkString(network)) {
+    const known = knownSolanaNetworks[network];
+    if (known) {
+      return known.network;
+    }
+    return createSolanaNetwork(network);
   }
 
-  throw new Error(`Unknown Solana network: ${cluster}`);
+  const networkObj = legacyNetworkIdToCAIP2(network);
+  if (networkObj) {
+    return networkObj;
+  }
+
+  throw new Error(`Unknown Solana network: ${network}`);
 }
 
 /**
@@ -164,8 +212,8 @@ export function lookupX402Network(cluster: string): string {
  * @returns Array of legacy network IDs for v1 compatibility
  */
 export function getV1NetworkIds(cluster: KnownCluster): string[] {
-  const caip2 = clusterToCAIP2(cluster);
-  const legacyIds = caip2ToLegacyNetworkIds(caip2) ?? [];
+  const network = clusterToCAIP2(cluster);
+  const legacyIds = caip2ToLegacyNetworkIds(network.caip2) ?? [];
   return [...legacyIds];
 }
 

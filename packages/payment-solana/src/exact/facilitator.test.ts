@@ -87,20 +87,20 @@ await t.test(
 
 await t.test("clusterToCAIP2 returns CAIP-2 network identifiers", async (t) => {
   await t.test("mainnet-beta maps to solana genesis hash", (t) => {
-    const caip2 = clusterToCAIP2("mainnet-beta");
-    t.equal(caip2, "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp");
+    const network = clusterToCAIP2("mainnet-beta");
+    t.equal(network.caip2, "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp");
     t.end();
   });
 
   await t.test("devnet maps to solana devnet genesis hash", (t) => {
-    const caip2 = clusterToCAIP2("devnet");
-    t.equal(caip2, "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1");
+    const network = clusterToCAIP2("devnet");
+    t.equal(network.caip2, "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1");
     t.end();
   });
 
   await t.test("testnet maps to solana testnet genesis hash", (t) => {
-    const caip2 = clusterToCAIP2("testnet");
-    t.equal(caip2, "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z");
+    const network = clusterToCAIP2("testnet");
+    t.equal(network.caip2, "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z");
     t.end();
   });
 

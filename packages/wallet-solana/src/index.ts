@@ -8,13 +8,16 @@ import type { Keypair, VersionedTransaction } from "@solana/web3.js";
  * @returns A wallet object that can sign versioned transactions.
  */
 export async function createLocalWallet(network: string, keypair: Keypair) {
+  const signTransaction = async (tx: VersionedTransaction) => {
+    tx.sign([keypair]);
+    return tx;
+  };
+
   return {
     network,
     publicKey: keypair.publicKey,
-    updateTransaction: async (tx: VersionedTransaction) => {
-      tx.sign([keypair]);
-      return tx;
-    },
+    partiallySignTransaction: signTransaction,
+    updateTransaction: signTransaction,
   };
 }
 

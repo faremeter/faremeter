@@ -23,21 +23,24 @@ export async function createLedgerSolanaWallet(
   const { address } = await solana.getAddress(derivationPath);
   const publicKey = new PublicKey(address);
 
+  const signTransaction = async (tx: VersionedTransaction) => {
+    const message = tx.message.serialize();
+
+    const signature = await solana.signTransaction(
+      derivationPath,
+      Buffer.from(message),
+    );
+
+    tx.addSignature(publicKey, signature.signature);
+
+    return tx;
+  };
+
   return {
     network,
     publicKey,
-    updateTransaction: async (tx: VersionedTransaction) => {
-      const message = tx.message.serialize();
-
-      const signature = await solana.signTransaction(
-        derivationPath,
-        Buffer.from(message),
-      );
-
-      tx.addSignature(publicKey, signature.signature);
-
-      return tx;
-    },
+    partiallySignTransaction: signTransaction,
+    updateTransaction: signTransaction,
     disconnect: async () => {
       await transport.close();
     },

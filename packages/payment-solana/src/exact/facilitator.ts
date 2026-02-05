@@ -333,7 +333,7 @@ export const createFacilitatorHandler = async (
   ) => {
     const errorResponse = (error: string) => ({ error });
 
-    let transactionMessage, transaction, signature, blockHeight;
+    let transactionMessage, transaction, blockHeight;
     try {
       transaction = paymentPayload.transaction;
       const compiledTransactionMessage =
@@ -342,7 +342,6 @@ export const createFacilitatorHandler = async (
         compiledTransactionMessage,
       );
 
-      signature = getSignatureFromTransaction(transaction);
       const lifetimeConstraint = transactionMessage.lifetimeConstraint;
 
       if ("blockhash" in lifetimeConstraint) {
@@ -374,7 +373,6 @@ export const createFacilitatorHandler = async (
 
     return {
       payer,
-      signature,
       blockHeight,
       settle: async () => {
         let signedTransaction;
@@ -562,16 +560,20 @@ export const createFacilitatorHandler = async (
 
     const { payer } = verifyResult;
 
-    if (config?.features?.enableDuplicateCheck && "signature" in verifyResult) {
-      const { signature, blockHeight } = verifyResult;
+    const { signedTransaction } = await verifyResult.settle();
+
+    if (
+      config?.features?.enableDuplicateCheck &&
+      "blockHeight" in verifyResult
+    ) {
+      const signature = getSignatureFromTransaction(signedTransaction);
+      const { blockHeight } = verifyResult;
       if (seenTxs.has(signature)) {
         logger.warning("Duplicate transaction rejected", { signature });
         return errorResponse("Duplicate transaction");
       }
       seenTxs.add(signature, blockHeight);
     }
-
-    const { signedTransaction } = await verifyResult.settle();
 
     let result;
     try {

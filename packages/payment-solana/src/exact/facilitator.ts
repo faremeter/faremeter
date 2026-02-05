@@ -11,7 +11,9 @@ import {
   clusterToCAIP2,
   isKnownCluster,
   caip2ToCluster,
+  isSolanaCAIP2Network,
   type KnownCluster,
+  type SolanaCAIP2Network,
 } from "@faremeter/info/solana";
 import { fetchMint } from "@solana-program/token";
 import {
@@ -54,7 +56,7 @@ import { getAddMemoInstruction } from "@solana-program/memo";
 import { TransactionStore } from "./cache";
 
 export interface HookBaseArgs {
-  network: string;
+  network: string | SolanaCAIP2Network;
   rpc: Rpc<SolanaRpcApi>;
   feePayerKeypair: Keypair;
   mint: PublicKey;
@@ -191,7 +193,7 @@ const sendTransaction = async (
  * The handler validates incoming payment transactions, signs them with the
  * fee payer keypair, and submits them to the Solana network.
  *
- * @param network - Solana network identifier (cluster name or CAIP-2 format)
+ * @param network - Solana network identifier (cluster name, CAIP-2 string, or SolanaCAIP2Network object)
  * @param rpc - Solana RPC client
  * @param feePayerKeypair - Keypair for paying transaction fees
  * @param mint - SPL token mint public key
@@ -199,7 +201,7 @@ const sendTransaction = async (
  * @returns A FacilitatorHandler for processing Solana exact payments
  */
 export const createFacilitatorHandler = async (
-  network: string,
+  network: string | SolanaCAIP2Network,
   rpc: Rpc<SolanaRpcApi>,
   feePayerKeypair: Keypair,
   mint: PublicKey,
@@ -424,6 +426,13 @@ export const createFacilitatorHandler = async (
   };
 
   const resolveCluster = (): KnownCluster => {
+    if (isSolanaCAIP2Network(network)) {
+      const resolved = caip2ToCluster(network.caip2);
+      if (resolved) {
+        return resolved;
+      }
+      throw new Error(`Unknown Solana network: ${network.caip2}`);
+    }
     if (isKnownCluster(network)) {
       return network;
     }
@@ -439,7 +448,7 @@ export const createFacilitatorHandler = async (
       Promise.resolve({
         x402Version: 2,
         scheme: x402Scheme,
-        network: clusterToCAIP2(resolveCluster()),
+        network: clusterToCAIP2(resolveCluster()).caip2,
         extra: {
           feePayer: feePayerKeypair.publicKey.toString(),
           features,

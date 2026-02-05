@@ -14,15 +14,15 @@ await t.test("basicClusterLookup", async (t) => {
 await t.test("caip2Conversions", async (t) => {
   await t.test("clusterToCAIP2", (t) => {
     t.equal(
-      solana.clusterToCAIP2("mainnet-beta"),
+      solana.clusterToCAIP2("mainnet-beta").caip2,
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
     );
     t.equal(
-      solana.clusterToCAIP2("devnet"),
+      solana.clusterToCAIP2("devnet").caip2,
       "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
     );
     t.equal(
-      solana.clusterToCAIP2("testnet"),
+      solana.clusterToCAIP2("testnet").caip2,
       "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z",
     );
     t.end();
@@ -47,19 +47,19 @@ await t.test("caip2Conversions", async (t) => {
 
   await t.test("legacyNetworkIdToCAIP2", (t) => {
     t.equal(
-      solana.legacyNetworkIdToCAIP2("solana-mainnet-beta"),
+      solana.legacyNetworkIdToCAIP2("solana-mainnet-beta")?.caip2,
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
     );
     t.equal(
-      solana.legacyNetworkIdToCAIP2("solana"),
+      solana.legacyNetworkIdToCAIP2("solana")?.caip2,
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
     );
     t.equal(
-      solana.legacyNetworkIdToCAIP2("solana-devnet"),
+      solana.legacyNetworkIdToCAIP2("solana-devnet")?.caip2,
       "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
     );
     t.equal(
-      solana.legacyNetworkIdToCAIP2("solana-testnet"),
+      solana.legacyNetworkIdToCAIP2("solana-testnet")?.caip2,
       "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z",
     );
     t.equal(solana.legacyNetworkIdToCAIP2("unknown"), null);
@@ -91,15 +91,15 @@ await t.test("caip2Conversions", async (t) => {
 
 await t.test("lookupX402Network", async (t) => {
   t.equal(
-    solana.lookupX402Network("mainnet-beta"),
+    solana.lookupX402Network("mainnet-beta").caip2,
     "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
   );
   t.equal(
-    solana.lookupX402Network("devnet"),
+    solana.lookupX402Network("devnet").caip2,
     "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
   );
   t.equal(
-    solana.lookupX402Network("solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1"),
+    solana.lookupX402Network("solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1").caip2,
     "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
   );
   t.throws(() => solana.lookupX402Network("unknown-network"));

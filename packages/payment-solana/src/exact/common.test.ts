@@ -15,10 +15,10 @@ await t.test("testBasicMatching", async (t) => {
     }
 
     const { matchTuple } = generateMatcher("mainnet-beta", tokenInfo.address);
-    const caip2 = clusterToCAIP2("mainnet-beta");
+    const network = clusterToCAIP2("mainnet-beta");
 
     const req = {
-      network: caip2,
+      network: network.caip2,
       scheme: "exact",
       asset: tokenInfo.address,
     };

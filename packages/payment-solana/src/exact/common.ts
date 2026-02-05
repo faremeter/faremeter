@@ -1,10 +1,20 @@
 import { generateRequirementsMatcher } from "@faremeter/types/x402";
-import { lookupX402Network } from "@faremeter/info/solana";
+import {
+  lookupX402Network,
+  type SolanaCAIP2Network,
+} from "@faremeter/info/solana";
 
 export const x402Scheme = "exact";
 
-export function generateMatcher(network: string, asset: string) {
-  const caip2Network = lookupX402Network(network);
+export function generateMatcher(
+  network: string | SolanaCAIP2Network,
+  asset: string,
+) {
+  const solanaNetwork = lookupX402Network(network);
 
-  return generateRequirementsMatcher([x402Scheme], [caip2Network], [asset]);
+  return generateRequirementsMatcher(
+    [x402Scheme],
+    [solanaNetwork.caip2],
+    [asset],
+  );
 }

@@ -5,6 +5,7 @@ import type {
   PaymentHandler,
   RequestContext,
 } from "@faremeter/types/client";
+import type { SolanaCAIP2Network } from "@faremeter/info/solana";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferCheckedInstruction,
@@ -30,7 +31,7 @@ import { generateMatcher } from "./common";
 import { logger } from "./logger";
 
 export type Wallet = {
-  network: string;
+  network: string | SolanaCAIP2Network;
   publicKey: PublicKey;
   buildTransaction?: (
     instructions: TransactionInstruction[],

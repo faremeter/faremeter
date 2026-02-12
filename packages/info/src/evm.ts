@@ -12,6 +12,8 @@ const knownX402Networks = {
   "eip155:80002": { legacyName: "polygon-amoy", chainId: 80002 },
   "eip155:143": { legacyName: "monad", chainId: 143 },
   "eip155:10143": { legacyName: "monad-testnet", chainId: 10143 },
+  "eip155:324705682": { legacyName: "skale-base-sepolia", chainId: 324705682 },
+  "eip155:1187947933": { legacyName: "skale-base", chainId: 1187947933 },
 } as const;
 
 type KnownX402Networks = typeof knownX402Networks;
@@ -184,6 +186,14 @@ const knownAssets = {
       "eip155:10143": {
         address: "0x534b2f3A21130d7a60830c2Df862319e593943A3",
         contractName: "USDC",
+      },
+      "eip155:324705682": {
+        address: "0x2e08028E3C4c2356572E096d8EF835cD5C6030bD",
+        contractName: "Bridged USDC (SKALE Bridge)",
+      },
+      "eip155:1187947933": {
+        address: "0x85889c8c714505E0c94b30fcfcF64fE3Ac8FCb20",
+        contractName: "Bridged USDC (SKALE Bridge)",
       },
     },
     toUnit: (v: UnitInput) => v.toString(),

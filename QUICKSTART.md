@@ -47,7 +47,10 @@ solana-keygen new --no-bip39-passphrase -o keypairs/admin.json
 
 ### For EVM
 
-Generate EVM private keys for testing:
+Generate 2 sets of EVM private keys for testing:
+
+Run this command twice, one will be the facilitator and the other the client.
+Save both sets of keys and ensure they're labeled.
 
 ```
 # Generate a new EVM wallet
@@ -101,6 +104,7 @@ EOF
 # Add to scripts/.env
 cat >> scripts/.env <<EOF
 EVM_PRIVATE_KEY=0xYOUR_CLIENT_PRIVATE_KEY_HERE
+EVM_RECEIVING_ADDRESS=0xYOUR_FACILITATOR_PUBLIC_ADDRESS_HERE
 EOF
 ```
 

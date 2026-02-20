@@ -49,7 +49,6 @@ import {
   TOKEN_PROGRAM_ADDRESS,
   findAssociatedTokenPda,
   getTransferCheckedInstruction,
-  getCloseAccountInstruction,
 } from "@solana-program/token";
 
 import { getAddMemoInstruction } from "@solana-program/memo";
@@ -297,11 +296,6 @@ export const createFacilitatorHandler = async (
           authority: settleSigner,
           amount: BigInt(requirements.amount),
           decimals: mintInfo.data.decimals,
-        }),
-        getCloseAccountInstruction({
-          account: settleATA,
-          destination: feePayerSigner.address,
-          owner: settleSigner,
         }),
       ];
       const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();

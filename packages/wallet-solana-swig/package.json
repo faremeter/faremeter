@@ -1,0 +1,29 @@
+{
+  "name": "@faremeter/wallet-solana-swig",
+  "version": "0.11.0",
+  "license": "LGPL-3.0-only",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "packageManager": "pnpm@10.12.1",
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@tapjs/asserts": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "tap": "catalog:",
+    "tsc-esm-fix": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "typescript-language-server": "catalog:"
+  },
+  "dependencies": {
+    "@logtape/logtape": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "@swig-wallet/classic": "^1.4.0",
+    "fastestsmallesttextencoderdecoder": "^1.0.22"
+  }
+}

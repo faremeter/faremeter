@@ -122,6 +122,7 @@ export const PaymentPayloadSettlementAccount = type({
   settleSecretKey: type("string.base64").pipe.try((s) =>
     Uint8Array.from(Buffer.from(s, "base64")),
   ),
+  "settlementRentDestination?": "string",
 });
 export type PaymentPayloadSettlementAccount =
   typeof PaymentPayloadSettlementAccount.infer;
@@ -288,6 +289,10 @@ export const createFacilitatorHandler = async (
         tokenProgram: TOKEN_PROGRAM_ADDRESS,
       });
 
+      const closeDestination = paymentPayload.settlementRentDestination
+        ? address(paymentPayload.settlementRentDestination)
+        : feePayerSigner.address;
+
       const instructions = [
         getAddMemoInstruction({ memo: crypto.randomUUID() }),
         getTransferCheckedInstruction({
@@ -300,7 +305,7 @@ export const createFacilitatorHandler = async (
         }),
         getCloseAccountInstruction({
           account: settleATA,
-          destination: feePayerSigner.address,
+          destination: closeDestination,
           owner: settleSigner,
         }),
       ];

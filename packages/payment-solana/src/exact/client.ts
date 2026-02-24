@@ -133,6 +133,7 @@ async function extractMetadata(args: {
 
 interface CreatePaymentHandlerOptions {
   token?: GetAssociatedTokenAddressSyncOptions;
+  settlementRentDestination?: string;
   features?: {
     enableSettlementAccounts?: boolean;
   };
@@ -320,9 +321,13 @@ export function createPaymentHandler(
               settleKeypair.secretKey,
             ).toString("base64");
 
+            const settlementRentDestination =
+              options?.settlementRentDestination ?? wallet.publicKey.toBase58();
+
             const payload = {
               settleSecretKey,
               transactionSignature,
+              settlementRentDestination,
             };
 
             return { payload };

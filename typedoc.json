@@ -18,5 +18,6 @@
     "**/*.test.ts"
   ],
   "tsconfig": "tsconfig.typedoc.json",
-  "sanitizeComments": true
+  "sanitizeComments": true,
+  "flattenOutputFiles": true
 }

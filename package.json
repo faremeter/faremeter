@@ -12,6 +12,7 @@
     "tsdoc-markdown": "catalog:",
     "tsx": "catalog:",
     "typedoc": "catalog:",
+    "typedoc-plugin-frontmatter": "catalog:",
     "typedoc-plugin-markdown": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",

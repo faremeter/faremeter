@@ -5,7 +5,7 @@
   "entryPoints": ["packages/*/src/index.ts"],
   "out": "docs",
   "readme": "none",
-  "entryFileName": "README",
+  "entryFileName": "index",
   "router": "module",
   "cleanOutputDir": true,
   "excludeScopesInPaths": true,

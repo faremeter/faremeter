@@ -1,3 +1,9 @@
+/**
+ * @title Crossmint Wallet Package
+ * @sidebarTitle Wallet Crossmint
+ * @description Crossmint custodial wallet integration for Solana
+ * @packageDocumentation
+ */
 import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import {
   createCrossmint,

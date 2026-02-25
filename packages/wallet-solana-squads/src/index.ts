@@ -1,3 +1,9 @@
+/**
+ * @title Squads Multisig Wallet Package
+ * @sidebarTitle Wallet Squads
+ * @description Squads multisig wallet integration for Solana
+ * @packageDocumentation
+ */
 import {
   type Connection,
   type Keypair,

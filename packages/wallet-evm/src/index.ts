@@ -1,3 +1,9 @@
+/**
+ * @title EVM Wallet Package
+ * @sidebarTitle Wallet EVM
+ * @description Local wallet creation for EVM chains using private keys
+ * @packageDocumentation
+ */
 import { isPrivateKey, type ChainInfo } from "@faremeter/types/evm";
 import { type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";

@@ -1,3 +1,9 @@
+/**
+ * @title Logs Package
+ * @sidebarTitle Logs
+ * @description Structured logging system with pluggable backends
+ * @packageDocumentation
+ */
 import { ConsoleBackend } from "./console";
 import type { Logger, LoggingBackend, LogLevel } from "./types";
 

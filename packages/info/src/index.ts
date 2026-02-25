@@ -1,7 +1,24 @@
+/**
+ * @title Info Package
+ * @sidebarTitle Info
+ * @description Network and asset information utilities for EVM and Solana chains
+ * @packageDocumentation
+ */
 import * as solana from "./solana";
 import * as evm from "./evm";
 
-export { solana, evm };
+/**
+ * @title Solana Network Info
+ * @sidebarTitle Info / Solana
+ * @description Solana cluster, network ID, and SPL token utilities
+ */
+export { solana };
+/**
+ * @title EVM Network Info
+ * @sidebarTitle Info / EVM
+ * @description EVM chain ID, CAIP-2, and ERC-20 token utilities
+ */
+export { evm };
 
 /**
  * Normalize a legacy network identifier to CAIP-2 format.

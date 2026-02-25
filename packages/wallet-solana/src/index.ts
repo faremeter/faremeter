@@ -1,3 +1,9 @@
+/**
+ * @title Solana Wallet Package
+ * @sidebarTitle Wallet Solana
+ * @description Local wallet creation for Solana using keypairs
+ * @packageDocumentation
+ */
 import type { Keypair, VersionedTransaction } from "@solana/web3.js";
 
 /**

@@ -1,3 +1,9 @@
+/**
+ * @title Test Harness Package
+ * @sidebarTitle Test Harness
+ * @description In-process test environment for x402 protocol testing
+ * @packageDocumentation
+ */
 export { TestHarness } from "./harness/harness";
 export type { TestHarnessConfig, SettleMode } from "./harness/config";
 export type {

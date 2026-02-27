@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/middleware",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "Server middleware for adding payment walls to API endpoints using x402 protocol",
   "keywords": [
     "faremeter",

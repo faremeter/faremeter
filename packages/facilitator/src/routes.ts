@@ -518,8 +518,8 @@ export function createFacilitatorRoutes(args: CreateFacilitatorRoutesArgs) {
       } satisfies x2.x402PaymentRequiredResponse);
     }
 
-    // Try v1 format
-    const v1Req = x.x402PaymentRequiredResponse(body);
+    // Try v1 format (lenient: Coinbase's implementation omits the error field)
+    const v1Req = x.x402PaymentRequiredResponseLenient(body);
 
     if (isValidationError(v1Req)) {
       return sendAcceptsError(

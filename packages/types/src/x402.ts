@@ -103,6 +103,24 @@ export const x402VerifyResponseLenient = type({
 
 export type x402VerifyResponseLenient = typeof x402VerifyResponseLenient.infer;
 
+/**
+ * Normalize a lenient verify response to spec-compliant field values.
+ * Defaults payer to empty string and strips null from invalidReason.
+ */
+export function normalizeVerifyResponse(
+  res: x402VerifyResponseLenient,
+): x402VerifyResponse {
+  const result: x402VerifyResponse = {
+    isValid: res.isValid,
+    payer: res.payer ?? "",
+  };
+  const invalidReason = res.invalidReason;
+  if (invalidReason !== undefined && invalidReason !== null) {
+    result.invalidReason = invalidReason;
+  }
+  return result;
+}
+
 export const x402SettleRequest = x402VerifyRequest;
 export type x402SettleRequest = typeof x402SettleRequest.infer;
 

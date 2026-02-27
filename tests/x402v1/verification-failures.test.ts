@@ -366,6 +366,76 @@ await t.test("x402 v1 verification failures", async (t) => {
   );
 
   await t.test(
+    "verification succeeds when facilitator omits payer field",
+    async (t) => {
+      const harness = new TestHarness({
+        settleMode: "verify-then-settle",
+        accepts: [accepts()],
+        facilitatorHandlers: [
+          createTestFacilitatorHandler({ payTo: "test-receiver" }),
+        ],
+        clientHandlers: [createTestPaymentHandler()],
+        middlewareInterceptors: [
+          createFailureInterceptor(matchFacilitatorVerify, () =>
+            jsonResponse(200, { isValid: true }),
+          ),
+        ],
+      });
+
+      const fetch = harness.createFetch();
+      const response = await fetch("/test-resource");
+
+      t.equal(
+        response.status,
+        200,
+        "should succeed when verify response has no payer field",
+      );
+
+      t.end();
+    },
+  );
+
+  await t.test(
+    "verification failure accepted when facilitator omits payer field",
+    async (t) => {
+      const harness = new TestHarness({
+        settleMode: "verify-then-settle",
+        accepts: [accepts()],
+        facilitatorHandlers: [
+          createTestFacilitatorHandler({ payTo: "test-receiver" }),
+        ],
+        clientHandlers: [createTestPaymentHandler()],
+        middlewareInterceptors: [
+          createFailureInterceptor(matchFacilitatorVerify, () =>
+            jsonResponse(200, {
+              isValid: false,
+              invalidReason: "bad payment",
+            }),
+          ),
+        ],
+      });
+
+      const fetch = harness.createFetch();
+
+      try {
+        await fetch("/test-resource");
+        t.fail("should throw WrappedFetchError on persistent verify failure");
+      } catch (error) {
+        t.ok(error instanceof Error, "should throw an error");
+        if (error instanceof Error) {
+          t.match(
+            error.message,
+            /failed to complete payment after retries/,
+            "should be WrappedFetchError",
+          );
+        }
+      }
+
+      t.end();
+    },
+  );
+
+  await t.test(
     "settle-only mode bypasses verify endpoint entirely",
     async (t) => {
       let verifyWasCalled = false;

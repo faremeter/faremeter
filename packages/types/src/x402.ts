@@ -75,7 +75,6 @@ export const x402PaymentHeaderToPayload = type("string.base64")
   .to(x402PaymentPayload);
 
 export const x402VerifyRequest = type({
-  x402Version: "number.integer",
   paymentHeader: "string?",
   paymentPayload: x402PaymentPayload.optional(),
   paymentRequirements: x402PaymentRequirements,

@@ -59,6 +59,20 @@ export const x402PaymentRequiredResponseLenient = type({
 export type x402PaymentRequiredResponseLenient =
   typeof x402PaymentRequiredResponseLenient.infer;
 
+/**
+ * Normalize a lenient payment required response to spec-compliant field values.
+ * Defaults error to empty string when missing.
+ */
+export function normalizePaymentRequiredResponse(
+  res: x402PaymentRequiredResponseLenient,
+): x402PaymentRequiredResponse {
+  return {
+    x402Version: res.x402Version,
+    accepts: res.accepts,
+    error: res.error ?? "",
+  };
+}
+
 export const x402PaymentPayload = type({
   x402Version: "number.integer",
   scheme: "string",

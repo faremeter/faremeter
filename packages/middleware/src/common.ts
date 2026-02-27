@@ -3,7 +3,9 @@ import {
   type x402PaymentRequirements as x402PaymentRequirementsV1,
   type x402PaymentPayload as x402PaymentPayloadV1,
   type x402VerifyResponse as x402VerifyResponseV1,
-  x402PaymentRequiredResponse as x402PaymentRequiredResponseV1,
+  type x402PaymentRequiredResponse as x402PaymentRequiredResponseV1,
+  x402PaymentRequiredResponseLenient,
+  normalizePaymentRequiredResponse,
   x402PaymentHeaderToPayload as x402PaymentHeaderToPayloadV1,
   x402VerifyRequest as x402VerifyRequestV1,
   x402VerifyResponseLenient,
@@ -245,15 +247,15 @@ export async function getPaymentRequiredResponse(
 
   gateGetPaymentRequiredResponse(t);
 
-  const response = x402PaymentRequiredResponseV1(await t.json());
+  const rawResponse = x402PaymentRequiredResponseLenient(await t.json());
 
-  if (isValidationError(response)) {
+  if (isValidationError(rawResponse)) {
     throw new Error(
-      `invalid payment requirements from facilitator: ${response.summary}`,
+      `invalid payment requirements from facilitator: ${rawResponse.summary}`,
     );
   }
 
-  return response;
+  return normalizePaymentRequiredResponse(rawResponse);
 }
 
 type getPaymentRequiredResponseV2Args = {

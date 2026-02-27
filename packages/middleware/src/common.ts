@@ -587,7 +587,6 @@ async function handleV1Request<MiddlewareResponse>(
 
   const settle = async (): Promise<SettleResultV1<MiddlewareResponse>> => {
     const settleRequest: x402SettleRequestV1 = {
-      x402Version: 1,
       paymentHeader,
       paymentPayload,
       paymentRequirements,
@@ -599,7 +598,9 @@ async function handleV1Request<MiddlewareResponse>(
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(settleRequest),
+      // x402Version is not part of the v1 spec but older Faremeter
+      // facilitators require it, so include it for backwards compatibility.
+      body: JSON.stringify({ x402Version: 1, ...settleRequest }),
     });
     // Parse with lenient type to accept both legacy and spec-compliant field names
     const rawSettlementResponse = x402SettleResponseLenient(await t.json());
@@ -634,7 +635,6 @@ async function handleV1Request<MiddlewareResponse>(
 
   const verify = async (): Promise<VerifyResultV1<MiddlewareResponse>> => {
     const verifyRequest: x402VerifyRequestV1 = {
-      x402Version: 1,
       paymentHeader,
       paymentPayload,
       paymentRequirements,
@@ -646,7 +646,9 @@ async function handleV1Request<MiddlewareResponse>(
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(verifyRequest),
+      // x402Version is not part of the v1 spec but older Faremeter
+      // facilitators require it, so include it for backwards compatibility.
+      body: JSON.stringify({ x402Version: 1, ...verifyRequest }),
     });
     const verifyResponse = x402VerifyResponseV1(await t.json());
 

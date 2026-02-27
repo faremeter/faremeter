@@ -94,7 +94,17 @@ export function createPayer(args?: CreatePayerArgs) {
           continue;
         }
 
-        const balance = await getBalance();
+        let balance;
+
+        try {
+          balance = await getBalance();
+        } catch (cause) {
+          logger.warning(
+            `failed to check balance on ${req.network} for ${req.scheme}, skipping`,
+            { cause },
+          );
+          continue;
+        }
 
         // XXX - We need to do a better job of understanding decimals here.
         if (balance.amount < BigInt(req.amount)) {

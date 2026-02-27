@@ -2,10 +2,12 @@ import { isValidationError } from "@faremeter/types";
 import {
   type x402PaymentRequirements as x402PaymentRequirementsV1,
   type x402PaymentPayload as x402PaymentPayloadV1,
+  type x402VerifyResponse as x402VerifyResponseV1,
   x402PaymentRequiredResponse as x402PaymentRequiredResponseV1,
   x402PaymentHeaderToPayload as x402PaymentHeaderToPayloadV1,
   x402VerifyRequest as x402VerifyRequestV1,
-  x402VerifyResponse as x402VerifyResponseV1,
+  x402VerifyResponseLenient,
+  normalizeVerifyResponse,
   x402SettleRequest as x402SettleRequestV1,
   x402SettleResponse as x402SettleResponseV1,
   x402SettleResponseLenient,
@@ -650,13 +652,15 @@ async function handleV1Request<MiddlewareResponse>(
       // facilitators require it, so include it for backwards compatibility.
       body: JSON.stringify({ x402Version: 1, ...verifyRequest }),
     });
-    const verifyResponse = x402VerifyResponseV1(await t.json());
+    const rawVerifyResponse = x402VerifyResponseLenient(await t.json());
 
-    if (isValidationError(verifyResponse)) {
-      const msg = `error getting response from facilitator for verification: ${verifyResponse.summary}`;
+    if (isValidationError(rawVerifyResponse)) {
+      const msg = `error getting response from facilitator for verification: ${rawVerifyResponse.summary}`;
       logger.error(msg);
       throw new Error(msg);
     }
+
+    const verifyResponse = normalizeVerifyResponse(rawVerifyResponse);
 
     if (!verifyResponse.isValid) {
       logger.warning(

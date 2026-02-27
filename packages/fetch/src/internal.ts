@@ -5,7 +5,7 @@ import {
 } from "@faremeter/types/client";
 
 import {
-  x402PaymentRequiredResponse as x402PaymentRequiredResponseV1,
+  x402PaymentRequiredResponseLenient as x402PaymentRequiredResponseV1,
   type x402PaymentPayload as x402PaymentPayloadV1,
   X_PAYMENT_HEADER,
 } from "@faremeter/types/x402";

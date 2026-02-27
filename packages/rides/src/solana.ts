@@ -1,7 +1,7 @@
 import { match } from "arktype";
 
 import {
-  getV1NetworkIds,
+  clusterToCAIP2,
   lookupKnownSPLToken,
   type KnownCluster,
   type KnownSPLToken,
@@ -112,11 +112,13 @@ export function createAdapter(opts: CreateAdapterOptions) {
 
           const wallet = await createLocalWallet(cluster, privateKey);
           res.push({
-            x402Id: getV1NetworkIds(cluster).map((network) => ({
-              scheme: "exact",
-              asset: mint.address,
-              network,
-            })),
+            x402Id: [
+              {
+                scheme: "exact",
+                asset: mint.address,
+                network: clusterToCAIP2(cluster).caip2,
+              },
+            ],
             paymentHandler: exact.createPaymentHandler(
               wallet,
               new PublicKey(mint.address),

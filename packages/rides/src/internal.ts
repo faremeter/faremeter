@@ -16,6 +16,7 @@ import {
   type PayerAdapter,
   type GetBalance,
 } from "./types";
+import { logger } from "./logger";
 
 import * as solana from "./solana";
 import * as evm from "./evm";
@@ -97,8 +98,7 @@ export function createPayer(args?: CreatePayerArgs) {
 
         // XXX - We need to do a better job of understanding decimals here.
         if (balance.amount < BigInt(req.amount)) {
-          // eslint-disable-next-line no-console
-          console.log(
+          logger.info(
             `Not paying with ${balance.name} on ${req.network} using the ${req.scheme} scheme: balance is ${balance.amount} which is less than ${req.amount}`,
           );
 

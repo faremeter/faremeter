@@ -15,6 +15,7 @@ import {
   type KnownAsset,
   type PayerAdapter,
   type GetBalance,
+  type WalletAdapter,
 } from "./types";
 import { logger } from "./logger";
 
@@ -135,13 +136,25 @@ export function createPayer(args?: CreatePayerArgs) {
 
   let _fetch: typeof fetch | undefined;
 
+  /**
+   * Registers a wallet adapter directly, bypassing the plugin system.
+   *
+   * @param adapter - The wallet adapter to register
+   */
+  const addWalletAdapter = (adapter: WalletAdapter) => {
+    _fetch = undefined;
+    paymentHandlers.push(adapter.paymentHandler);
+    for (const id of adapter.x402Id) {
+      balanceLookup.set(idKey(id), adapter.getBalance);
+    }
+  };
+
   return {
+    addWalletAdapter,
     addLocalWallet: async (input: unknown) => {
       if (input === undefined) {
         throw new Error("undefined is not a valid local wallet");
       }
-
-      _fetch = undefined;
 
       const newWallets = [];
 
@@ -160,12 +173,8 @@ export function createPayer(args?: CreatePayerArgs) {
         );
       }
 
-      paymentHandlers.push(...newWallets.map((x) => x.paymentHandler));
-
       for (const wallet of newWallets) {
-        for (const id of wallet.x402Id) {
-          balanceLookup.set(idKey(id), wallet.getBalance);
-        }
+        addWalletAdapter(wallet);
       }
     },
     fetch: async (

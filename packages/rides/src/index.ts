@@ -5,3 +5,4 @@
  * @packageDocumentation
  */
 export { payer, createPayer } from "./internal";
+export type { WalletAdapter } from "./types";

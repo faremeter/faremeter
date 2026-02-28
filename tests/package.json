@@ -6,6 +6,7 @@
   "dependencies": {
     "@faremeter/facilitator": "workspace:^",
     "@faremeter/middleware": "workspace:^",
+    "@faremeter/rides": "workspace:^",
     "@faremeter/test-harness": "workspace:^",
     "@faremeter/types": "workspace:^"
   },

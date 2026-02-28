@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-deprecated -- v1 test harness uses v1 types */
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import type { PaymentHandlerV1 } from "@faremeter/types/client";
 import type { x402PaymentRequirements } from "@faremeter/types/x402";

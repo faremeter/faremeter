@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/wallet-solana-squads",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "description": "Solana Squads Protocol multisig wallet integration for DAO and shared treasury payments",
   "keywords": [
     "faremeter",

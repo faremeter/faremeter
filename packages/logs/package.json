@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/logs",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "description": "A configurable logging abstraction for Faremeter",
   "keywords": [
     "faremeter",

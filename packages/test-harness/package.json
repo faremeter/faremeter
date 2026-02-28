@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/test-harness",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "description": "In-process test harness for x402 protocol testing",
   "keywords": [
     "faremeter",

@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/info",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "description": "Network and asset information lookup utilities for Solana and EVM chains",
   "keywords": [
     "faremeter",

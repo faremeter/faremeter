@@ -160,7 +160,7 @@ export class TestHarness {
    * Create a fetch function for client->middleware calls.
    * This applies client interceptors and routes to the Hono app.
    */
-  private createClientFetch(): typeof fetch {
+  createClientFetch(): typeof fetch {
     const baseFetch: typeof fetch = async (input, init) => {
       const url = getURLFromRequestInfo(input);
       // Route to our Hono app - strip any base URL

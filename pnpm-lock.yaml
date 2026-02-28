@@ -1108,6 +1108,9 @@ importers:
       '@faremeter/middleware':
         specifier: workspace:^
         version: link:../packages/middleware
+      '@faremeter/rides':
+        specifier: workspace:^
+        version: link:../packages/rides
       '@faremeter/test-harness':
         specifier: workspace:^
         version: link:../packages/test-harness

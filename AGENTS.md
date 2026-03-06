@@ -7,10 +7,12 @@ Instructions for AI agents working in this repository.
 At the start of every session, before doing any other work:
 
 1. Read `CONVENTIONS.md` and follow all conventions defined there
-2. Glob for all `SKILL.md` files under `skills/` and load each one
-3. Read `DEV.md` for development environment setup instructions
+2. Read `DEV.md` only if the task involves building, testing, or environment setup
 
-Do not proceed with any user requests until all steps are complete.
+Load skills on demand — do NOT pre-load all skills at session start:
+- `skills/code-review/SKILL.md` — load when performing code or PR reviews
+- `skills/debug-test-harness/SKILL.md` — load when debugging test harness issues
+- `skills/run-examples/SKILL.md` — load when running examples
 
 ## x402 Payment Protocol
 
@@ -51,39 +53,13 @@ See `CONVENTIONS.md` for complete development conventions including:
 
 ## Build Requirements
 
-**CRITICAL:** You MUST build the entire tree with `make` before declaring any task complete.
+**CRITICAL:** Run `make` at the repo root before declaring any task complete. Individual package builds (`make build`, `make test`, etc.) are not acceptable substitutes — only a full `make` verifies the entire monorepo.
 
-When making changes to packages (especially in `packages/`):
-
-1. Individual package builds do NOT guarantee the full tree will build
-2. Type exports and imports may not be available until the full tree is built
-3. Tests may fail if dependent packages are not rebuilt
-4. ALWAYS run `make` at the root to verify the entire monorepo builds
-
-**Never claim a task is complete without running a successful `make` build.**
-
-If `make` fails, you must report the failure to the user and identify the cause.
-Do not work around a failing `make` by running individual targets (e.g.
-`make build`, `make test`) and treating their success as equivalent. A full
-`make` is the only acceptable verification. If the failure is pre-existing and
-unrelated to your changes, say so explicitly and let the user decide how to
-proceed. Never silently skip a failing step or substitute a partial build.
+If `make` fails, report the failure and identify the cause. If the failure is pre-existing and unrelated to your changes, say so explicitly and let the user decide how to proceed.
 
 ## Code Reuse and Refactoring
 
-Do not reimplement functionality that already exists in the codebase. Before writing new code:
-
-1. Search for existing implementations that could serve the same purpose
-2. If similar functionality exists, prefer refactoring it to meet the new requirements
-3. Look for unexported functions in other packages that could be promoted to a shared location for broader use
-
-When you detect that a refactor might be necessary, prompt the user with a question asking which approach to take. Offer specific options such as:
-
-- Refactor the existing implementation
-- Promote an unexported function to a shared package (ask the user which package)
-- Create a new implementation
-
-Allow the user to provide their own answer if none of the options fit.
+Search for existing implementations before writing new code. If similar functionality exists, prefer refactoring over reimplementing. When a refactor might be needed, pause and ask the user which approach to take — offer specific options (refactor existing, promote to shared package, create new) and allow them to provide their own answer.
 
 ## Personality
 

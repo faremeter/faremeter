@@ -17,6 +17,29 @@ Do not proceed with any user requests until all steps are complete.
 For all x402-related operations, use local `@faremeter` packages unless explicitly instructed otherwise.
 **Do not use experimental x402 payment schemes unless explicitly told to do so.**
 
+### x402 Implementation Map
+
+When working on x402 payment flows, use this as your orientation to avoid unnecessary exploration:
+
+**Key interfaces (read these first):**
+- `packages/types/src/x402v2.ts` — current x402 v2 protocol types
+- `packages/types/src/client.ts` — `PaymentHandler` and `PaymentExecer` (client-side interface to implement)
+- `packages/types/src/facilitator.ts` — `FacilitatorHandler` (facilitator-side interface to implement)
+
+**Reference implementations:**
+- `packages/payment-evm/` — EVM client-side handler (canonical example of a `PaymentHandler`)
+- `packages/payment-solana/` — Solana client-side handler
+- `packages/wallet-evm/` — EVM wallet (provides signing for the payment handler)
+- `packages/wallet-solana/` — Solana wallet
+- `packages/facilitator/src/routes.ts` — how multiple `FacilitatorHandler` plugins are composed
+- `apps/facilitator/` — the running facilitator application
+
+**Adding a new payment scheme** — follow the pattern in `packages/payment-evm/`:
+1. Create `packages/payment-{name}/` with `src/index.ts`
+2. Implement `PaymentHandler` (client side) to construct payment headers
+3. Implement `FacilitatorHandler` (facilitator side) to verify receipts and settle payments
+4. Export via a barrel `src/index.ts` matching the existing package structure
+
 ## Additional Conventions
 
 See `CONVENTIONS.md` for complete development conventions including:

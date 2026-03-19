@@ -1,11 +1,17 @@
 import type { Rpc } from "@solana/rpc";
 import type { GetTokenAccountBalanceApi } from "@solana/rpc-api";
-import { address } from "@solana/addresses";
+import { address, type Address } from "@solana/kit";
 import { Base58Address } from "@faremeter/types/solana";
 import {
   findAssociatedTokenPda,
   TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
+
+// XXX - @solana-program/token doesn't export this, and @solana-program/token-2022
+// is 4MB for one constant. Define it here as a kit-native Address.
+export const TOKEN_2022_PROGRAM_ADDRESS = address(
+  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+);
 
 /**
  * Arguments for retrieving an SPL token balance.
@@ -17,6 +23,8 @@ export interface GetTokenBalanceArgs {
   account: Base58Address;
   /** Solana RPC client with token balance API support */
   rpcClient: Rpc<GetTokenAccountBalanceApi>;
+  /** The token program address (defaults to TOKEN_PROGRAM_ADDRESS) */
+  tokenProgram?: Address;
 }
 
 /**
@@ -61,7 +69,7 @@ export function isAccountNotFoundError(e: unknown) {
  * @returns The balance amount and decimals, or null if the account does not exist
  */
 export async function getTokenBalance(args: GetTokenBalanceArgs) {
-  const { asset, account, rpcClient } = args;
+  const { asset, account, rpcClient, tokenProgram } = args;
 
   const owner = address(account);
   const mint = address(asset);
@@ -69,7 +77,7 @@ export async function getTokenBalance(args: GetTokenBalanceArgs) {
   const [ata] = await findAssociatedTokenPda({
     mint,
     owner,
-    tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    tokenProgram: tokenProgram ?? TOKEN_PROGRAM_ADDRESS,
   });
 
   let balanceInfo;

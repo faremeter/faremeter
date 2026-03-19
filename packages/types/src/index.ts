@@ -34,6 +34,24 @@ export * as client from "./client";
  * @description Type definitions for facilitator handlers and requirements
  */
 export * as facilitator from "./facilitator";
+/**
+ * @title MPP Protocol Types
+ * @sidebarTitle Types / MPP
+ * @description Type definitions for MPP (Machine Payments Protocol)
+ */
+export * as mpp from "./mpp";
+/**
+ * @title MPP Converters
+ * @sidebarTitle Types / MPP Converters
+ * @description Conversion utilities between MPP and x402v2 formats
+ */
+export * as mppX402v2 from "./mpp-x402v2";
+/**
+ * @title Base64url Utilities
+ * @sidebarTitle Types / Base64url
+ * @description RFC 4648 base64url encoding/decoding
+ */
+export * as base64url from "./base64url";
 export * from "./validation";
 export * from "./literal";
 /**

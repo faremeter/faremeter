@@ -54,6 +54,16 @@
       "require": "./dist/src/evm.js",
       "import": "./dist/src/evm.js",
       "types": "./dist/src/evm.d.ts"
+    },
+    "./mpp": {
+      "require": "./dist/src/mpp.js",
+      "import": "./dist/src/mpp.js",
+      "types": "./dist/src/mpp.d.ts"
+    },
+    "./mpp-x402v2": {
+      "require": "./dist/src/mpp-x402v2.js",
+      "import": "./dist/src/mpp-x402v2.js",
+      "types": "./dist/src/mpp-x402v2.d.ts"
     }
   },
   "files": [

@@ -11,6 +11,7 @@ import {
   createTransferCheckedInstruction,
   getAssociatedTokenAddressSync,
   getMint,
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
   getBase64EncodedWireTransaction,
@@ -121,6 +122,10 @@ async function extractMetadata(args: {
     paymentMode = PaymentMode.SettlementAccount;
   }
 
+  const tokenProgramId = extra.tokenProgram
+    ? new PublicKey(extra.tokenProgram)
+    : (options?.token?.programId ?? TOKEN_PROGRAM_ID);
+
   return {
     recentBlockhash,
     decimals,
@@ -128,6 +133,7 @@ async function extractMetadata(args: {
     amount,
     payerKey,
     paymentMode,
+    tokenProgramId,
   };
 }
 
@@ -157,8 +163,7 @@ export function createPaymentHandler(
   connection?: Connection,
   options?: CreatePaymentHandlerOptions,
 ): PaymentHandler {
-  const getAssociatedTokenAddressSyncRest =
-    generateGetAssociatedTokenAddressSyncRest(options?.token ?? {});
+  const tokenConfig = options?.token ?? {};
 
   let hasWarnedAboutDeprecation = false;
 
@@ -197,6 +202,7 @@ export function createPaymentHandler(
           amount,
           payerKey,
           paymentMode,
+          tokenProgramId,
         } = await extractMetadata({
           connection,
           mint,
@@ -204,6 +210,12 @@ export function createPaymentHandler(
           wallet,
           options,
         });
+
+        const getAssociatedTokenAddressSyncRest =
+          generateGetAssociatedTokenAddressSyncRest({
+            ...tokenConfig,
+            programId: tokenProgramId,
+          });
 
         const instructions = [
           ComputeBudgetProgram.setComputeUnitLimit({
@@ -236,6 +248,8 @@ export function createPaymentHandler(
                 wallet.publicKey,
                 amount,
                 decimals,
+                undefined,
+                tokenProgramId,
               ),
             );
 
@@ -282,6 +296,8 @@ export function createPaymentHandler(
                 settleATA,
                 settleKeypair.publicKey,
                 mint,
+                tokenProgramId,
+                tokenConfig.associatedTokenProgramId,
               ),
               createTransferCheckedInstruction(
                 sourceAccount,
@@ -290,6 +306,8 @@ export function createPaymentHandler(
                 wallet.publicKey,
                 amount,
                 decimals,
+                undefined,
+                tokenProgramId,
               ),
             );
 

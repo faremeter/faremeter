@@ -324,7 +324,10 @@ export class TestHarness {
       };
     } else {
       let verifyResponse: ResourceContextV2["verifyResponse"];
-      if (this.settleMode === "verify-then-settle") {
+      if (
+        this.settleMode === "verify-then-settle" &&
+        context.protocolVersion !== "mpp"
+      ) {
         const verifyResult = await context.verify();
         if (!verifyResult.success) return verifyResult.errorResponse;
         verifyResponse = verifyResult.facilitatorResponse;

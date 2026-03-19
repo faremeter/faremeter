@@ -63,9 +63,13 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
         await processPaymentRequiredResponse(ctx, response, options);
 
       const headers = new Headers(init.headers);
-      const headerName =
-        detectedVersion === 2 ? V2_PAYMENT_HEADER : X_PAYMENT_HEADER;
-      headers.set(headerName, paymentHeader);
+      if (detectedVersion === "mpp") {
+        headers.set("Authorization", paymentHeader);
+      } else {
+        const headerName =
+          detectedVersion === 2 ? V2_PAYMENT_HEADER : X_PAYMENT_HEADER;
+        headers.set(headerName, paymentHeader);
+      }
 
       const newInit: RequestInit = {
         ...init,

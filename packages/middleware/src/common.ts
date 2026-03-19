@@ -1,4 +1,13 @@
-import { isValidationError } from "@faremeter/types";
+import { isValidationError, base64url } from "@faremeter/types";
+import {
+  mppCredentialToX402Payload,
+  x402SettleToMPPReceipt,
+} from "@faremeter/types/mpp-x402v2";
+import {
+  mppCredential,
+  MPP_PAYMENT_RECEIPT,
+  type mppCredential as mppCredentialType,
+} from "@faremeter/types/mpp";
 import {
   type x402PaymentRequirements as x402PaymentRequirementsV1,
   type x402PaymentPayload as x402PaymentPayloadV1,
@@ -39,6 +48,8 @@ import { normalizeNetworkId } from "@faremeter/info";
 import { type AgedLRUCacheOpts, AgedLRUCache } from "./cache";
 
 import { logger } from "./logger";
+
+const { decodeBase64url, encodeBase64url } = base64url;
 
 /**
  * Build the X-PAYMENT-RESPONSE header value from a settle response.
@@ -179,7 +190,8 @@ function relaxedRequirementsToV2(
  */
 type ParsedPaymentHeader =
   | { version: 1; payload: x402PaymentPayloadV1; rawHeader: string }
-  | { version: 2; payload: x402PaymentPayload; rawHeader: string };
+  | { version: 2; payload: x402PaymentPayload; rawHeader: string }
+  | { version: "mpp"; credential: mppCredentialType; rawHeader: string };
 
 /**
  * Parse a payment header from either v1 (X-PAYMENT) or v2 (PAYMENT-SIGNATURE).
@@ -188,6 +200,24 @@ type ParsedPaymentHeader =
 function parsePaymentHeader(
   getHeader: (key: string) => string | undefined,
 ): ParsedPaymentHeader | undefined {
+  // Check for MPP (Authorization: Payment)
+  const authHeader = getHeader("Authorization");
+  if (authHeader?.toLowerCase().startsWith("payment ")) {
+    const credentialB64 = authHeader.substring("payment ".length);
+    try {
+      const credentialJSON = decodeBase64url(credentialB64);
+      const credentialData = JSON.parse(credentialJSON) as unknown;
+      const credential = mppCredential(credentialData);
+
+      if (!isValidationError(credential)) {
+        return { version: "mpp", credential, rawHeader: authHeader };
+      }
+      logger.debug(`couldn't validate MPP credential: ${credential.summary}`);
+    } catch (error) {
+      logger.debug(`couldn't parse MPP credential: ${error}`);
+    }
+  }
+
   // Try v2 header first
   const v2Header = getHeader(V2_PAYMENT_HEADER);
   if (v2Header) {
@@ -314,6 +344,8 @@ export type SupportedVersionsConfig = {
   x402v1?: boolean;
   /** Support x402 v2 protocol (PAYMENT-REQUIRED header, PAYMENT-SIGNATURE header). Default: false */
   x402v2?: boolean;
+  /** Support MPP protocol (Authorization: Payment header). Default: false */
+  mpp?: boolean;
 };
 
 /**
@@ -327,12 +359,19 @@ export function resolveSupportedVersions(
   const resolved = {
     x402v1: config?.x402v1 ?? true,
     x402v2: config?.x402v2 ?? false,
+    mpp: config?.mpp ?? false,
   };
 
-  if (!resolved.x402v1 && !resolved.x402v2) {
+  if (!resolved.x402v1 && !resolved.x402v2 && !resolved.mpp) {
     throw new Error(
       "Invalid supportedVersions configuration: at least one protocol version must be enabled",
     );
+  }
+
+  // MPP converts credentials to x402v2 format for the facilitator,
+  // so it needs the v2 payment-required response to match against.
+  if (resolved.mpp) {
+    resolved.x402v2 = true;
   }
 
   return resolved;
@@ -401,12 +440,20 @@ export type MiddlewareBodyContextV2<MiddlewareResponse> = {
 };
 
 /**
- * Context provided to the middleware body handler.
- * Use protocolVersion to discriminate between v1 and v2 request types.
+ * Context provided to the middleware body handler for MPP protocol requests.
+ * The verify function is absent because MPP has no separate verify step.
  */
+export type MiddlewareBodyContextMPP<MiddlewareResponse> = {
+  protocolVersion: "mpp";
+  paymentRequirements: x402PaymentRequirements;
+  paymentPayload: x402PaymentPayload;
+  settle: () => Promise<SettleResultV2<MiddlewareResponse>>;
+};
+
 export type MiddlewareBodyContext<MiddlewareResponse> =
   | MiddlewareBodyContextV1<MiddlewareResponse>
-  | MiddlewareBodyContextV2<MiddlewareResponse>;
+  | MiddlewareBodyContextV2<MiddlewareResponse>
+  | MiddlewareBodyContextMPP<MiddlewareResponse>;
 
 /**
  * Arguments for the core middleware request handler.
@@ -525,6 +572,24 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
 
   if (!parsedHeader) {
     return sendPaymentRequired();
+  }
+
+  if (parsedHeader.version === "mpp") {
+    if (!supportedVersions.mpp) {
+      return args.sendJSONResponse(400, {
+        error: "This server does not support MPP protocol",
+      });
+    }
+    if (!v2Response) {
+      throw new Error("v2 response unavailable for MPP request");
+    }
+    return handleMPPRequest(
+      args,
+      parsedHeader.credential,
+      v2Response,
+      sendPaymentRequired,
+      fetchFn,
+    );
   }
 
   if (parsedHeader.version === 2 && !supportedVersions.x402v2) {
@@ -854,4 +919,126 @@ export function createPaymentRequiredResponseCache(
       return response;
     },
   };
+}
+
+/**
+ * Handle MPP payment request.
+ *
+ * Keeps the original MPP credential in scope throughout. Uses MPP fields
+ * directly for validation/logging. Converts to x402v2 only for calling
+ * the facilitator.
+ *
+ * Known limitation: when this function needs to re-challenge (expired
+ * credential, no matching requirements), it calls sendPaymentRequired()
+ * which returns x402 format headers, not an MPP WWW-Authenticate: Payment
+ * challenge. MPP clients will not recognize this as a re-challenge.
+ * Proper MPP challenge generation is deferred.
+ */
+async function handleMPPRequest<MiddlewareResponse>(
+  args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
+  credential: mppCredentialType,
+  paymentRequiredResponse: x402PaymentRequiredResponse,
+  sendPaymentRequired: () => MiddlewareResponse,
+  fetchFn: typeof fetch,
+): Promise<MiddlewareResponse | undefined> {
+  // TODO (deferred): Verify request body digest if present
+  // Per MPP Spec Section 5.1.3: MUST verify digest matches request body
+  // Requires RFC 9530 digest computation implementation.
+
+  // TODO (deferred): Check challenge ID for replay protection
+  // Per MPP Spec Section 11.3: Payment proof MUST be single-use
+  // Requires persistent storage (Redis, database, etc.)
+
+  const challengeId = credential.challenge.id;
+  const method = credential.challenge.method;
+
+  // mppCredentialToX402Payload validates expiry via calculateTimeout,
+  // which throws if the challenge has expired (including sub-second remaining).
+  let x402Payload;
+  try {
+    x402Payload = mppCredentialToX402Payload(credential);
+  } catch (error) {
+    logger.warning("MPP credential conversion failed", {
+      id: challengeId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return sendPaymentRequired();
+  }
+
+  const paymentRequirements = findMatchingPaymentRequirementsV2(
+    paymentRequiredResponse.accepts,
+    x402Payload,
+  );
+
+  if (!paymentRequirements) {
+    logger.warning("couldn't find matching payment requirements for MPP", {
+      id: challengeId,
+      method,
+    });
+    return sendPaymentRequired();
+  }
+
+  const settle = async (): Promise<SettleResultV2<MiddlewareResponse>> => {
+    const settleRequest: x402SettleRequest = {
+      paymentPayload: x402Payload,
+      paymentRequirements,
+    };
+
+    const response = await fetchFn(`${args.facilitatorURL}/settle`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(settleRequest),
+    });
+
+    const settlementResponse = x402SettleResponse(await response.json());
+
+    if (isValidationError(settlementResponse)) {
+      const msg = `error from facilitator: ${settlementResponse.summary}`;
+      logger.error(msg);
+      throw new Error(msg);
+    }
+
+    if (settlementResponse.success) {
+      const receipt = x402SettleToMPPReceipt(settlementResponse, method);
+
+      if (args.setResponseHeader) {
+        args.setResponseHeader(
+          MPP_PAYMENT_RECEIPT,
+          encodeBase64url(JSON.stringify(receipt)),
+        );
+        args.setResponseHeader("Cache-Control", "private");
+      }
+
+      // TODO (deferred): Mark challenge as used (replay protection)
+
+      logger.info("MPP payment settled", {
+        challengeId,
+        source: credential.source,
+        method,
+        transaction: settlementResponse.transaction,
+        network: settlementResponse.network,
+        opaque: credential.challenge.opaque,
+      });
+    } else {
+      logger.warning("MPP payment failed", {
+        challengeId,
+        errorReason: settlementResponse.errorReason,
+      });
+      return { success: false, errorResponse: sendPaymentRequired() };
+    }
+
+    return { success: true, facilitatorResponse: settlementResponse };
+  };
+
+  const bodyContext: MiddlewareBodyContextMPP<MiddlewareResponse> = {
+    protocolVersion: "mpp",
+    paymentRequirements,
+    paymentPayload: x402Payload,
+    settle,
+  };
+
+  return args.body(bodyContext);
 }

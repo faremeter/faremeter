@@ -54,18 +54,17 @@ export async function createMiddleware(
         }
         return c.body(null);
       },
-      body: async ({ verify, settle }) => {
-        if (args.verifyBeforeSettle) {
-          // If configured, try to verify the transaction before running
-          // the next operation.
-          const verifyResult = await verify();
+      body: async (ctx) => {
+        if (
+          args.verifyBeforeSettle &&
+          ctx.protocolVersion !== "mpp" // MPP has no separate verify step
+        ) {
+          const verifyResult = await ctx.verify();
           if (!verifyResult.success) {
             return verifyResult.errorResponse;
           }
         } else {
-          // Otherwise just settle the payment beforehand, like we've
-          // done historically.
-          const settleResult = await settle();
+          const settleResult = await ctx.settle();
           if (!settleResult.success) {
             return settleResult.errorResponse;
           }
@@ -73,10 +72,8 @@ export async function createMiddleware(
 
         await next();
 
-        if (args.verifyBeforeSettle) {
-          // Close out the verification, by actually settling the
-          // payment.
-          const settleResult = await settle();
+        if (args.verifyBeforeSettle && ctx.protocolVersion !== "mpp") {
+          const settleResult = await ctx.settle();
           if (!settleResult.success) {
             // If the settlement fails, we need to explicitly
             // overwrite the downstream result.  See:

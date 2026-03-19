@@ -82,6 +82,7 @@ export {
 } from "./interceptors/delay";
 
 export { createV2ResponseInterceptor } from "./interceptors/v2";
+export { createMPPResponseInterceptor } from "./interceptors/mpp";
 
 export {
   createRequestHook,

@@ -234,6 +234,17 @@ const knownSPLTokens = {
     },
     toUnit: (v: UnitInput) => v.toString(),
   },
+  PYUSD: {
+    cluster: {
+      "mainnet-beta": {
+        address: "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo",
+      },
+      devnet: {
+        address: "CXk2AMBfi3TwaEL2468s6zP8xq9NxTXjp9gjMgzeUynM",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
 } as const satisfies Record<string, SPLTokenInfo>;
 
 export type KnownSPLToken = keyof typeof knownSPLTokens;

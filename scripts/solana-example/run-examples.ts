@@ -7,6 +7,7 @@ async function runPayments() {
   await $`pnpm tsx solana-example/squads-payment.ts`;
   await $`pnpm tsx solana-example/token-payment.ts`;
   await $`pnpm tsx solana-example/solana-exact-payment.ts`;
+  await $`pnpm tsx solana-example/token2022-exact-payment.ts`;
   // XXX - Add the Crossmint and Ledger payment in future.
 }
 

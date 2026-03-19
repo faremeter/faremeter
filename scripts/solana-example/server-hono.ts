@@ -59,6 +59,13 @@ app.get(
         amount: "10000", // 0.01 USDC
         payTo,
       }),
+      // PYUSD Exact Payment (Token-2022)
+      x402Exact({
+        network,
+        asset: "PYUSD",
+        amount: "10000",
+        payTo,
+      }),
     ],
   }),
   (c) => {

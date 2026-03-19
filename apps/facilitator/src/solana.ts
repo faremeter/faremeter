@@ -28,7 +28,13 @@ export async function createHandlers(network: string, keypairPath: string) {
     throw new Error(`Couldn't look up the USDC SPL Token on ${network}`);
   }
 
-  const mint = new PublicKey(usdcInfo.address);
+  const pyusdInfo = lookupKnownSPLToken(network, "PYUSD");
+  if (!pyusdInfo) {
+    throw new Error(`Couldn't look up the PYUSD SPL Token on ${network}`);
+  }
+
+  const usdcMint = new PublicKey(usdcInfo.address);
+  const pyusdMint = new PublicKey(pyusdInfo.address);
 
   // Add Solana handlers
   // Note: x-solana-settlement handlers use legacy v1 types and need to be adapted
@@ -37,10 +43,12 @@ export async function createHandlers(network: string, keypairPath: string) {
     adaptHandlerV1ToV2(createSolanaHandler(network, connection, adminKeypair)),
     // SPL Token (v1 handler - adapted to v2)
     adaptHandlerV1ToV2(
-      createSolanaHandler(network, connection, adminKeypair, mint),
+      createSolanaHandler(network, connection, adminKeypair, usdcMint),
     ),
     // SPL Token with exact scheme (native v2 handler)
-    await createFacilitatorHandlerExact(network, rpc, adminKeypair, mint),
+    await createFacilitatorHandlerExact(network, rpc, adminKeypair, usdcMint),
+    // PYUSD Token-2022 with exact scheme
+    await createFacilitatorHandlerExact(network, rpc, adminKeypair, pyusdMint),
   );
 
   logger.info(`Solana handlers configured for ${network}`);

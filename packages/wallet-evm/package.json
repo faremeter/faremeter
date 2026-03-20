@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/wallet-evm",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "EVM private key wallet adapter for Faremeter payments using viem",
   "keywords": [
     "faremeter",

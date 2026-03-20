@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/payment-solana",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "Solana payment scheme implementations for x402 protocol (SPL token transfers)",
   "keywords": [
     "faremeter",

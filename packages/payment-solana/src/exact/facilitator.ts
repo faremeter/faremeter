@@ -15,7 +15,13 @@ import {
   type KnownCluster,
   type SolanaCAIP2Network,
 } from "@faremeter/info/solana";
-import { fetchMint } from "@solana-program/token";
+import {
+  fetchMint,
+  findAssociatedTokenPda,
+  getTransferCheckedInstruction,
+  getCloseAccountInstruction,
+  TOKEN_PROGRAM_ADDRESS,
+} from "@solana-program/token";
 import {
   address,
   createKeyPairSignerFromBytes,
@@ -44,15 +50,8 @@ import { type } from "arktype";
 import { isValidTransaction } from "./verify";
 import { logger } from "./logger";
 import { x402Scheme, generateMatcher } from "./common";
-
-import {
-  TOKEN_PROGRAM_ADDRESS,
-  findAssociatedTokenPda,
-  getTransferCheckedInstruction,
-  getCloseAccountInstruction,
-} from "@solana-program/token";
-
 import { getAddMemoInstruction } from "@solana-program/memo";
+import { TOKEN_2022_PROGRAM_ADDRESS } from "../splToken";
 import { TransactionStore } from "./cache";
 
 export interface HookBaseArgs {
@@ -88,6 +87,7 @@ export const PaymentRequirementsExtra = type({
   feePayer: "string",
   decimals: "number?",
   recentBlockhash: "string?",
+  "tokenProgram?": "string",
   features: PaymentRequirementsExtraFeatures.optional(),
 });
 
@@ -219,6 +219,11 @@ export const createFacilitatorHandler = async (
 
   const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
 
+  const tokenProgram =
+    mintInfo.programAddress === TOKEN_2022_PROGRAM_ADDRESS
+      ? TOKEN_2022_PROGRAM_ADDRESS
+      : TOKEN_PROGRAM_ADDRESS;
+
   const hookArgs = {
     network,
     rpc,
@@ -259,7 +264,7 @@ export const createFacilitatorHandler = async (
     const [settleATA] = await findAssociatedTokenPda({
       mint: address(mint.toBase58()),
       owner: settleOwner,
-      tokenProgram: TOKEN_PROGRAM_ADDRESS,
+      tokenProgram,
     });
 
     const { value: accountBalance } = await rpc
@@ -286,28 +291,35 @@ export const createFacilitatorHandler = async (
       const [payToATA] = await findAssociatedTokenPda({
         mint: address(mint.toBase58()),
         owner: address(requirements.payTo),
-        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+        tokenProgram,
       });
 
       const closeDestination = paymentPayload.settlementRentDestination
         ? address(paymentPayload.settlementRentDestination)
         : feePayerSigner.address;
 
+      const programAddress = tokenProgram;
       const instructions = [
         getAddMemoInstruction({ memo: crypto.randomUUID() }),
-        getTransferCheckedInstruction({
-          source: settleATA,
-          mint: address(mint.toBase58()),
-          destination: payToATA,
-          authority: settleSigner,
-          amount: BigInt(requirements.amount),
-          decimals: mintInfo.data.decimals,
-        }),
-        getCloseAccountInstruction({
-          account: settleATA,
-          destination: closeDestination,
-          owner: settleSigner,
-        }),
+        getTransferCheckedInstruction(
+          {
+            source: settleATA,
+            mint: address(mint.toBase58()),
+            destination: payToATA,
+            authority: settleSigner,
+            amount: BigInt(requirements.amount),
+            decimals: mintInfo.data.decimals,
+          },
+          { programAddress },
+        ),
+        getCloseAccountInstruction(
+          {
+            account: settleATA,
+            destination: closeDestination,
+            owner: settleSigner,
+          },
+          { programAddress },
+        ),
       ];
       const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
@@ -366,6 +378,7 @@ export const createFacilitatorHandler = async (
         transactionMessage,
         requirements,
         feePayerKeypair.publicKey.toBase58(),
+        tokenProgram,
         maxPriorityFee,
       );
       if (!validResult) {
@@ -456,6 +469,7 @@ export const createFacilitatorHandler = async (
         network: clusterToCAIP2(resolveCluster()).caip2,
         extra: {
           feePayer: feePayerKeypair.publicKey.toString(),
+          tokenProgram,
           features,
         },
       }),
@@ -477,6 +491,7 @@ export const createFacilitatorHandler = async (
           feePayer: feePayerKeypair.publicKey.toString(),
           decimals: mintInfo.data.decimals,
           recentBlockhash,
+          tokenProgram,
           features,
         },
       };

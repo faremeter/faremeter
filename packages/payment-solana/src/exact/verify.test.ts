@@ -19,6 +19,7 @@ import {
   pipe,
   setTransactionMessageFeePayer,
   setTransactionMessageLifetimeUsingBlockhash,
+  type Address,
   type CompilableTransactionMessage,
   type Instruction,
   type KeyPairSigner,
@@ -65,7 +66,9 @@ function buildTxMessage(
   );
 }
 
-async function createFixtures() {
+async function createFixtures({
+  tokenProgram = TOKEN_PROGRAM_ADDRESS,
+}: { tokenProgram?: Address } = {}) {
   const facilitator = await generateKeyPairSigner();
   const sender = await generateKeyPairSigner();
   const receiver = await generateKeyPairSigner();
@@ -74,17 +77,17 @@ async function createFixtures() {
   const [senderATA] = await findAssociatedTokenPda({
     mint: mint.address,
     owner: sender.address,
-    tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    tokenProgram,
   });
   const [receiverATA] = await findAssociatedTokenPda({
     mint: mint.address,
     owner: receiver.address,
-    tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    tokenProgram,
   });
   const [facilitatorATA] = await findAssociatedTokenPda({
     mint: mint.address,
     owner: facilitator.address,
-    tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    tokenProgram,
   });
 
   const amount = 1_000_000n;
@@ -105,16 +108,20 @@ async function createFixtures() {
   const computePriceIx = getSetComputeUnitPriceInstruction({
     microLamports: 1n,
   });
-  const transferIx = getTransferCheckedInstruction({
-    source: senderATA,
-    mint: mint.address,
-    destination: receiverATA,
-    authority: sender.address,
-    amount,
-    decimals,
-  });
+  const transferIx = getTransferCheckedInstruction(
+    {
+      source: senderATA,
+      mint: mint.address,
+      destination: receiverATA,
+      authority: sender.address,
+      amount,
+      decimals,
+    },
+    { programAddress: tokenProgram },
+  );
 
   return {
+    tokenProgram,
     facilitator,
     sender,
     receiver,
@@ -149,6 +156,7 @@ await t.test("isValidTransaction", async (t) => {
       txMsg,
       f.requirements,
       f.facilitator.address,
+      f.tokenProgram,
     );
     t.ok(result);
     t.equal(result && result.payer, f.sender.address);
@@ -167,6 +175,7 @@ await t.test("isValidTransaction", async (t) => {
         txMsg,
         f.requirements,
         f.facilitator.address,
+        f.tokenProgram,
       );
       t.ok(result);
       t.equal(result && result.payer, f.sender.address);
@@ -192,6 +201,7 @@ await t.test("isValidTransaction", async (t) => {
         txMsg,
         f.requirements,
         f.facilitator.address,
+        f.tokenProgram,
       );
       t.ok(result);
       t.equal(result && result.payer, f.sender.address);
@@ -208,7 +218,12 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+        ),
         false,
       );
       t.end();
@@ -225,7 +240,12 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+        ),
         false,
       );
       t.end();
@@ -240,7 +260,12 @@ await t.test("isValidTransaction", async (t) => {
       wrongPayer,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+      await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      ),
       false,
     );
     t.end();
@@ -257,7 +282,12 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     await t.rejects(
-      isValidTransaction(txMsg, badRequirements, f.facilitator.address),
+      isValidTransaction(
+        txMsg,
+        badRequirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      ),
     );
     t.end();
   });
@@ -271,7 +301,12 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+        ),
         false,
       );
       t.end();
@@ -288,6 +323,7 @@ await t.test("isValidTransaction", async (t) => {
       txMsg,
       f.requirements,
       f.facilitator.address,
+      f.tokenProgram,
       100_000,
     );
     t.ok(result);
@@ -314,6 +350,7 @@ await t.test("isValidTransaction", async (t) => {
           txMsg,
           f.requirements,
           f.facilitator.address,
+          f.tokenProgram,
           100,
         ),
         false,
@@ -341,6 +378,7 @@ await t.test("isValidTransaction", async (t) => {
           txMsg,
           f.requirements,
           f.facilitator.address,
+          f.tokenProgram,
           100,
         ),
         false,
@@ -361,7 +399,12 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+      await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      ),
       false,
     );
     t.end();
@@ -387,7 +430,12 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+        ),
         false,
       );
       t.end();
@@ -409,7 +457,12 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+      await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      ),
       false,
     );
     t.end();
@@ -441,7 +494,12 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+      await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      ),
       false,
     );
     t.end();
@@ -468,7 +526,12 @@ await t.test("isValidTransaction", async (t) => {
       f.facilitator,
     );
     t.equal(
-      await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+      await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      ),
       false,
     );
     t.end();
@@ -491,7 +554,12 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+        ),
         false,
       );
       t.end();
@@ -515,7 +583,12 @@ await t.test("isValidTransaction", async (t) => {
         f.facilitator,
       );
       t.equal(
-        await isValidTransaction(txMsg, f.requirements, f.facilitator.address),
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+        ),
         false,
       );
       t.end();

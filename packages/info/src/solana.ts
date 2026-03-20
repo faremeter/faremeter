@@ -245,6 +245,108 @@ const knownSPLTokens = {
     },
     toUnit: (v: UnitInput) => v.toString(),
   },
+  USDT: {
+    cluster: {
+      "mainnet-beta": {
+        address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  USDG: {
+    cluster: {
+      "mainnet-beta": {
+        address: "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
+      },
+      devnet: {
+        address: "4F6PM96JJxngmHnZLBh9n58RH4aTVNWvDs2nuwrT5BP7",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  USD1: {
+    cluster: {
+      "mainnet-beta": {
+        address: "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  USX: {
+    cluster: {
+      "mainnet-beta": {
+        address: "6FrrzDk5mQARGc1TDYoyVnSyRdds1t4PbtohCD6p3tgG",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  CASH: {
+    cluster: {
+      "mainnet-beta": {
+        address: "CASHx9KJUStyftLFWGvEVf59SGeG9sh5FfcnZMVPCASH",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  EURC: {
+    cluster: {
+      "mainnet-beta": {
+        address: "HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr",
+      },
+      devnet: {
+        address: "HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  JupUSD: {
+    cluster: {
+      "mainnet-beta": {
+        address: "JuprjznTrTSp2UFa3ZBUFgwdAmtZCq4MQCwysN55USD",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  USDS: {
+    cluster: {
+      "mainnet-beta": {
+        address: "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  USDtb: {
+    cluster: {
+      "mainnet-beta": {
+        address: "8yXrtJ54jZtE84xEBzTESKuegjcAkAuDrdAhRd8i8n3T",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  USDu: {
+    cluster: {
+      "mainnet-beta": {
+        address: "9ckR7pPPvyPadACDTzLwK2ZAEeUJ3qGSnzPs8bVaHrSy",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  USDGO: {
+    cluster: {
+      "mainnet-beta": {
+        address: "72puLt71H93Z9CzHuBRTwFpL4TG3WZUhnoCC7p8gxigu",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
+  FDUSD: {
+    cluster: {
+      "mainnet-beta": {
+        address: "9zNQRsGLjNKwCUU5Gq5LR8beUCPzQMVMqKAi3SSZh54u",
+      },
+    },
+    toUnit: (v: UnitInput) => v.toString(),
+  },
 } as const satisfies Record<string, SPLTokenInfo>;
 
 export type KnownSPLToken = keyof typeof knownSPLTokens;

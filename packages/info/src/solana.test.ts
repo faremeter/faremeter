@@ -191,8 +191,57 @@ await t.test("basicSPLTokenLookup", async (t) => {
     t.end();
   });
 
+  await t.test("mainnet-only token lookup", (t) => {
+    const info = solana.lookupKnownSPLToken("mainnet-beta", "USDT");
+
+    if (!info) {
+      throw new Error("failed to lookup known SPL token");
+    }
+
+    t.matchOnly(info.address, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB");
+    t.matchOnly(info.cluster, "mainnet-beta");
+    t.matchOnly(info.name, "USDT");
+    t.end();
+  });
+
+  await t.test("mainnet-only token returns undefined on devnet", (t) => {
+    t.matchOnly(solana.lookupKnownSPLToken("devnet", "USDT"), undefined);
+    t.end();
+  });
+
+  await t.test("EURC on devnet uses same address as mainnet", (t) => {
+    const mainnet = solana.lookupKnownSPLToken("mainnet-beta", "EURC");
+    const devnet = solana.lookupKnownSPLToken("devnet", "EURC");
+
+    if (!mainnet || !devnet) {
+      throw new Error("failed to lookup EURC");
+    }
+
+    t.equal(mainnet.address, devnet.address);
+    t.end();
+  });
+
+  await t.test("USDG available on both mainnet and devnet", (t) => {
+    const mainnet = solana.lookupKnownSPLToken("mainnet-beta", "USDG");
+    const devnet = solana.lookupKnownSPLToken("devnet", "USDG");
+
+    if (!mainnet || !devnet) {
+      throw new Error("failed to lookup USDG");
+    }
+
+    t.matchOnly(
+      mainnet.address,
+      "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
+    );
+    t.matchOnly(devnet.address, "4F6PM96JJxngmHnZLBh9n58RH4aTVNWvDs2nuwrT5BP7");
+    t.end();
+  });
+
   await t.test((t) => {
     t.ok(solana.isKnownSPLToken("USDC"));
+    t.ok(solana.isKnownSPLToken("USDT"));
+    t.ok(solana.isKnownSPLToken("EURC"));
+    t.ok(solana.isKnownSPLToken("FDUSD"));
     t.ok(!solana.isKnownSPLToken("notarealtoken" as solana.KnownSPLToken));
     t.end();
   });

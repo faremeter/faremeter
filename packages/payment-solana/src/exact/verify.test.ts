@@ -11,6 +11,7 @@ import {
   getTransferCheckedInstruction,
   TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
+import { TOKEN_2022_PROGRAM_ADDRESS } from "../splToken";
 import {
   address,
   appendTransactionMessageInstructions,
@@ -591,6 +592,28 @@ await t.test("isValidTransaction", async (t) => {
         ),
         false,
       );
+      t.end();
+    },
+  );
+
+  await t.test(
+    "accepts valid transaction with Token-2022 program",
+    async (t) => {
+      const f = await createFixtures({
+        tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+      });
+      const txMsg = buildTxMessage(
+        [f.computeLimitIx, f.computePriceIx, f.transferIx],
+        f.facilitator,
+      );
+      const result = await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      );
+      t.ok(result);
+      t.equal(result && result.payer, f.sender.address);
       t.end();
     },
   );

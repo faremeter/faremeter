@@ -7,10 +7,10 @@ import {
 import {
   findAssociatedTokenPda,
   parseTransferCheckedInstruction,
-  TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
 import {
   address,
+  type Address,
   type CompilableTransactionMessage,
   type Instruction,
 } from "@solana/kit";
@@ -72,6 +72,7 @@ async function verifyTransferInstruction(
   paymentRequirements: x402PaymentRequirements,
   destination: string,
   facilitatorAddress: string,
+  tokenProgram: Address,
 ): Promise<string | false> {
   if (!instruction.data || !instruction.accounts) {
     return false;
@@ -98,7 +99,7 @@ async function verifyTransferInstruction(
   const [facilitatorATA] = await findAssociatedTokenPda({
     mint: address(paymentRequirements.asset),
     owner: address(facilitatorAddress),
-    tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    tokenProgram,
   });
 
   if (transfer.accounts.source.address === facilitatorATA) {
@@ -120,6 +121,7 @@ export async function isValidTransaction(
   transactionMessage: CompilableTransactionMessage,
   paymentRequirements: x402PaymentRequirements,
   facilitatorAddress: string,
+  tokenProgram: Address,
   maxPriorityFee?: number,
 ): Promise<{ payer: string } | false> {
   const extra = PaymentRequirementsExtra(paymentRequirements.extra);
@@ -134,7 +136,7 @@ export async function isValidTransaction(
   const [destination] = await findAssociatedTokenPda({
     mint: address(paymentRequirements.asset),
     owner: address(paymentRequirements.payTo),
-    tokenProgram: TOKEN_PROGRAM_ADDRESS,
+    tokenProgram,
   });
 
   const instructions = transactionMessage.instructions;
@@ -184,6 +186,7 @@ export async function isValidTransaction(
     paymentRequirements,
     destination,
     facilitatorAddress,
+    tokenProgram,
   );
   if (!payer) return false;
   return { payer };

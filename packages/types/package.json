@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/types",
-  "version": "0.18.1",
+  "version": "0.19.0",
   "description": "TypeScript type definitions and runtime validation for x402 protocol and Faremeter ecosystem",
   "keywords": [
     "faremeter",

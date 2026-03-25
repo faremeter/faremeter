@@ -59,6 +59,11 @@
       "require": "./dist/src/pricing.js",
       "import": "./dist/src/pricing.js",
       "types": "./dist/src/pricing.d.ts"
+    },
+    "./x402-handlers": {
+      "require": "./dist/src/x402-handlers.js",
+      "import": "./dist/src/x402-handlers.js",
+      "types": "./dist/src/x402-handlers.d.ts"
     }
   },
   "files": [

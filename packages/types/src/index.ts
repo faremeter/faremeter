@@ -40,6 +40,12 @@ export * as facilitator from "./facilitator";
  * @description Protocol-agnostic pricing and handler capability types
  */
 export * as pricing from "./pricing";
+/**
+ * @title x402 Handler Utilities
+ * @sidebarTitle Types / x402 Handlers
+ * @description Bridges ResourcePricing and FacilitatorHandler to x402 types
+ */
+export * as x402Handlers from "./x402-handlers";
 export * from "./validation";
 export * from "./literal";
 /**

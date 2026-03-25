@@ -6,6 +6,7 @@ import type {
   x402VerifyResponse,
   x402ResourceInfo,
 } from "./x402v2";
+import type { HandlerCapabilities } from "./pricing";
 
 /**
  * Arguments passed to the facilitator's getRequirements method.
@@ -24,6 +25,8 @@ export interface GetRequirementsArgs {
  * payment scheme, allowing multiple handlers to be composed.
  */
 export interface FacilitatorHandler {
+  /** Declares what this handler can settle. Required for in-process usage. */
+  capabilities?: HandlerCapabilities;
   /** Returns the payment schemes this handler supports */
   getSupported?: () => Promise<x402SupportedKind>[];
   /** Filters and enriches payment requirements this handler can process */

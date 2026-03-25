@@ -54,6 +54,11 @@
       "require": "./dist/src/evm.js",
       "import": "./dist/src/evm.js",
       "types": "./dist/src/evm.d.ts"
+    },
+    "./pricing": {
+      "require": "./dist/src/pricing.js",
+      "import": "./dist/src/pricing.js",
+      "types": "./dist/src/pricing.d.ts"
     }
   },
   "files": [

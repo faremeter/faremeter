@@ -34,6 +34,12 @@ export * as client from "./client";
  * @description Type definitions for facilitator handlers and requirements
  */
 export * as facilitator from "./facilitator";
+/**
+ * @title Pricing Types
+ * @sidebarTitle Types / Pricing
+ * @description Protocol-agnostic pricing and handler capability types
+ */
+export * as pricing from "./pricing";
 export * from "./validation";
 export * from "./literal";
 /**

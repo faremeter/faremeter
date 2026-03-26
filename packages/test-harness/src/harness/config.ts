@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- v1 test harness uses v1 types */
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import type { PaymentHandlerV1 } from "@faremeter/types/client";
+import type { ResourcePricing } from "@faremeter/types/pricing";
 import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import type { SupportedVersionsConfig } from "@faremeter/middleware/common";
-import type { Interceptor } from "../interceptors/types";
+import type { Interceptor, HandlerInterceptor } from "../interceptors/types";
 
 /**
  * How the middleware handles payment verification and settlement.
@@ -13,49 +15,45 @@ import type { Interceptor } from "../interceptors/types";
 export type SettleMode = "settle-only" | "verify-then-settle";
 
 /**
- * Configuration for {@link TestHarness}.
+ * Fields shared by both configuration modes.
  */
-export type TestHarnessConfig = {
-  /**
-   * Payment requirements the middleware accepts.
-   * Uses Partial because the facilitator will fill in missing fields.
-   */
-  accepts: Partial<x402PaymentRequirements>[];
-
-  /**
-   * Facilitator handlers to register.
-   * Multiple handlers can be provided for different schemes.
-   */
-  facilitatorHandlers: FacilitatorHandler[];
-
-  /**
-   * Client payment handlers (v1).
-   * Internally adapted to v2 for use with the fetch client.
-   * Multiple handlers can be provided for different schemes.
-   */
+type BaseConfig = {
   clientHandlers: PaymentHandlerV1[];
-
-  /**
-   * Settlement mode for the middleware.
-   * @default "settle-only"
-   */
   settleMode?: SettleMode;
-
-  /**
-   * Protocol versions the middleware should support.
-   * Passed through to middleware without modification.
-   */
   supportedVersions?: SupportedVersionsConfig;
-
-  /**
-   * Interceptors between test code and middleware.
-   * These see all requests from the wrapped fetch to the Hono app.
-   */
   clientInterceptors?: Interceptor[];
+};
 
-  /**
-   * Interceptors between middleware and facilitator.
-   * These see requests from middleware to facilitator endpoints.
-   */
+/**
+ * Configuration for in-process handler testing. Handlers run directly
+ * in the middleware with no facilitator HTTP service.
+ */
+export type InProcessConfig = BaseConfig & {
+  x402Handlers: FacilitatorHandler[];
+  pricing: ResourcePricing[];
+  handlerInterceptors?: HandlerInterceptor[];
+};
+
+/**
+ * Configuration for HTTP facilitator testing. The test harness mounts
+ * facilitator routes and the middleware communicates via HTTP.
+ */
+export type HTTPConfig = BaseConfig & {
+  accepts: Partial<x402PaymentRequirements>[];
+  facilitatorHandlers: FacilitatorHandler[];
   middlewareInterceptors?: Interceptor[];
 };
+
+/**
+ * Configuration for {@link TestHarness}.
+ */
+export type TestHarnessConfig = InProcessConfig | HTTPConfig;
+
+/**
+ * Type guard for in-process handler configuration.
+ */
+export function isInProcessConfig(
+  config: TestHarnessConfig,
+): config is InProcessConfig {
+  return "x402Handlers" in config;
+}

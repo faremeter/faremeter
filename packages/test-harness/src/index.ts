@@ -5,7 +5,13 @@
  * @packageDocumentation
  */
 export { TestHarness } from "./harness/harness";
-export type { TestHarnessConfig, SettleMode } from "./harness/config";
+export type {
+  TestHarnessConfig,
+  InProcessConfig,
+  HTTPConfig,
+  SettleMode,
+} from "./harness/config";
+export { isInProcessConfig } from "./harness/config";
 export type {
   ResourceHandler,
   ResourceContext,
@@ -32,7 +38,12 @@ export {
   type CreateTestPaymentHandlerOpts,
 } from "./scheme/client";
 
-export type { Interceptor, RequestMatcher } from "./interceptors/types";
+export type {
+  Interceptor,
+  RequestMatcher,
+  HandlerInterceptor,
+} from "./interceptors/types";
+export { composeHandlerInterceptors } from "./interceptors/types";
 export { composeInterceptors } from "./interceptors/types";
 
 export { getURLFromRequestInfo } from "./interceptors/utils";

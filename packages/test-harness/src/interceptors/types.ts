@@ -40,3 +40,26 @@ export function composeInterceptors(
  * Used by interceptors to selectively apply behavior to specific requests.
  */
 export type RequestMatcher = (url: string, init?: RequestInit) => boolean;
+
+/**
+ * A function that wraps a `FacilitatorHandler` to intercept handler
+ * method calls. Used for in-process handler testing where there is no HTTP
+ * layer to intercept.
+ */
+export type HandlerInterceptor = (
+  handler: import("@faremeter/types/facilitator").FacilitatorHandler,
+) => import("@faremeter/types/facilitator").FacilitatorHandler;
+
+/**
+ * Compose multiple handler interceptors into a single interceptor.
+ *
+ * Interceptors are applied right-to-left (last interceptor wraps innermost).
+ * This means the first interceptor in the array sees calls first and results
+ * last, matching the semantics of {@link composeInterceptors}.
+ */
+export function composeHandlerInterceptors(
+  ...interceptors: HandlerInterceptor[]
+): HandlerInterceptor {
+  return (handler) =>
+    interceptors.reduceRight((h, interceptor) => interceptor(h), handler);
+}

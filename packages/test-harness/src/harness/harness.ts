@@ -17,14 +17,21 @@ import type {
   MiddlewareBodyContextV1,
 } from "@faremeter/middleware/common";
 import { createHTTPFacilitatorHandler } from "@faremeter/middleware/http-handler";
+import type { FacilitatorHandler } from "@faremeter/types/facilitator";
+import type { x402ResourceInfo } from "@faremeter/types/x402v2";
 import type { PaymentExecer, PaymentExecerV1 } from "@faremeter/types/client";
 import { adaptPaymentHandlerV1ToV2 } from "@faremeter/types/client";
 import { adaptRequirementsV2ToV1 } from "@faremeter/types/x402-adapters";
 import { normalizeNetworkId } from "@faremeter/info";
 import type { Interceptor } from "../interceptors/types";
-import { composeInterceptors } from "../interceptors/types";
+import {
+  composeInterceptors,
+  composeHandlerInterceptors,
+} from "../interceptors/types";
+import type { HandlerInterceptor } from "../interceptors/types";
 import { getURLFromRequestInfo } from "../interceptors/utils";
 import type { TestHarnessConfig, SettleMode } from "./config";
+import { isInProcessConfig } from "./config";
 import type {
   ResourceHandler,
   ResourceContext,
@@ -45,8 +52,12 @@ function isV1Context<T>(
 /**
  * TestHarness provides an in-process test environment for the x402 protocol.
  *
- * It connects client, middleware, and facilitator using function adapters
- * instead of HTTP, allowing full protocol testing without network calls.
+ * Supports two modes:
+ * - **HTTP mode** (`accepts` + `facilitatorHandlers`): mounts facilitator
+ *   routes and the middleware communicates via HTTP. Supports middleware
+ *   interceptors.
+ * - **In-process mode** (`x402Handlers` + `pricing`): handlers run directly
+ *   in the middleware. Supports handler interceptors.
  */
 export class TestHarness {
   /**
@@ -59,6 +70,7 @@ export class TestHarness {
   private resourceHandler: ResourceHandler = defaultResourceHandler;
   private clientInterceptors: Interceptor[] = [];
   private middlewareInterceptors: Interceptor[] = [];
+  private handlerInterceptors: HandlerInterceptor[] = [];
 
   /**
    * Base URL used for internal routing.
@@ -69,14 +81,16 @@ export class TestHarness {
     this.config = config;
     this.settleMode = config.settleMode ?? "settle-only";
     this.clientInterceptors = [...(config.clientInterceptors ?? [])];
-    this.middlewareInterceptors = [...(config.middlewareInterceptors ?? [])];
+
+    if (isInProcessConfig(config)) {
+      this.handlerInterceptors = [...(config.handlerInterceptors ?? [])];
+    } else {
+      this.middlewareInterceptors = [...(config.middlewareInterceptors ?? [])];
+    }
 
     this.app = this.createApp();
   }
 
-  /**
-   * Create the internal Hono app with facilitator and resource routes.
-   */
   private createApp(): Hono {
     const app = new Hono();
 
@@ -86,19 +100,84 @@ export class TestHarness {
       return c.json({ error: err.message }, 500);
     });
 
-    // Mount facilitator routes
+    if (isInProcessConfig(this.config)) {
+      this.mountInProcessRoutes(app);
+    } else {
+      this.mountHTTPRoutes(app);
+    }
+
+    return app;
+  }
+
+  private mountInProcessRoutes(app: Hono): void {
+    const config = this.config;
+    if (!isInProcessConfig(config)) return;
+
+    const supportedVersions = resolveSupportedVersions(
+      config.supportedVersions,
+    );
+
+    app.all("/*", async (c) => {
+      let handlers: FacilitatorHandler[] = config.x402Handlers;
+
+      if (this.handlerInterceptors.length > 0) {
+        const composed = composeHandlerInterceptors(
+          ...this.handlerInterceptors,
+        );
+        handlers = handlers.map((h) => composed(h));
+      }
+
+      const result = await handleMiddlewareRequest<Response>({
+        x402Handlers: handlers,
+        pricing: config.pricing,
+        supportedVersions,
+        resource: c.req.url,
+        getHeader: (key: string) => c.req.header(key),
+        setResponseHeader: (key: string, value: string) => c.header(key, value),
+        sendJSONResponse: (
+          status: 400 | 402,
+          body?: object,
+          headers?: Record<string, string>,
+        ): Response => {
+          c.status(status);
+          if (headers) {
+            for (const [key, value] of Object.entries(headers)) {
+              c.header(key, value);
+            }
+          }
+          if (body) {
+            return c.json(body);
+          }
+          return c.body(null);
+        },
+        body: async (
+          context: MiddlewareBodyContext<Response>,
+        ): Promise<Response | undefined> => {
+          return this.handleBody(c, context);
+        },
+      });
+
+      return result;
+    });
+  }
+
+  private mountHTTPRoutes(app: Hono): void {
+    const config = this.config;
+    if (isInProcessConfig(config)) return;
+
     const facilitatorRoutes = createFacilitatorRoutes({
-      handlers: this.config.facilitatorHandlers,
+      handlers: config.facilitatorHandlers,
     });
     app.route("/facilitator", facilitatorRoutes);
 
-    const flatAccepts = this.config.accepts.flat();
+    const flatAccepts = config.accepts.flat();
     const capabilities = deriveCapabilities(flatAccepts);
     const pricing = acceptsToPricing(flatAccepts);
     const v2Accepts = flatAccepts.map(relaxedRequirementsToV2);
-    const configResourceInfo = deriveResourceInfo(flatAccepts, "");
+    const configResourceInfo: x402ResourceInfo | undefined =
+      flatAccepts.length > 0 ? deriveResourceInfo(flatAccepts, "") : undefined;
     const supportedVersions = resolveSupportedVersions(
-      this.config.supportedVersions,
+      config.supportedVersions,
     );
 
     app.all("/*", async (c) => {
@@ -120,7 +199,7 @@ export class TestHarness {
         getHeader: (key: string) => c.req.header(key),
         setResponseHeader: (key: string, value: string) => c.header(key, value),
         sendJSONResponse: (
-          status: 400 | 402 | 500,
+          status: 400 | 402,
           body?: object,
           headers?: Record<string, string>,
         ): Response => {
@@ -147,11 +226,8 @@ export class TestHarness {
       }
 
       const result = await handleMiddlewareRequest(reqArgs);
-
       return result;
     });
-
-    return app;
   }
 
   /**
@@ -218,7 +294,6 @@ export class TestHarness {
       | undefined;
   }): typeof fetch {
     const clientFetch = this.createClientFetch();
-
     const payerChooser = opts?.payerChooser;
 
     // Adapt v1 handlers to v2 for use with the fetch client
@@ -290,7 +365,21 @@ export class TestHarness {
    * Add an interceptor to the middleware chain (between middleware and facilitator).
    */
   addMiddlewareInterceptor(interceptor: Interceptor): void {
+    if (isInProcessConfig(this.config)) {
+      throw new Error(
+        "Cannot add middleware interceptors to an in-process harness. Use handler interceptors instead.",
+      );
+    }
     this.middlewareInterceptors.push(interceptor);
+  }
+
+  addHandlerInterceptor(interceptor: HandlerInterceptor): void {
+    if (!isInProcessConfig(this.config)) {
+      throw new Error(
+        "Cannot add handler interceptors to an HTTP harness. Use middleware interceptors instead.",
+      );
+    }
+    this.handlerInterceptors.push(interceptor);
   }
 
   /**
@@ -298,9 +387,15 @@ export class TestHarness {
    */
   clearInterceptors(): void {
     this.clientInterceptors = [...(this.config.clientInterceptors ?? [])];
-    this.middlewareInterceptors = [
-      ...(this.config.middlewareInterceptors ?? []),
-    ];
+    if (isInProcessConfig(this.config)) {
+      this.handlerInterceptors = [...(this.config.handlerInterceptors ?? [])];
+      this.middlewareInterceptors = [];
+    } else {
+      this.middlewareInterceptors = [
+        ...(this.config.middlewareInterceptors ?? []),
+      ];
+      this.handlerInterceptors = [];
+    }
   }
 
   /**

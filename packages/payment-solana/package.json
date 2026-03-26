@@ -28,6 +28,11 @@
       "require": "./dist/src/splToken.js",
       "import": "./dist/src/splToken.js",
       "types": "./dist/src/splToken.d.ts"
+    },
+    "./charge": {
+      "require": "./dist/src/charge/index.js",
+      "import": "./dist/src/charge/index.js",
+      "types": "./dist/src/charge/index.d.ts"
     }
   },
   "devDependencies": {

@@ -46,6 +46,12 @@ export * as pricing from "./pricing";
  * @description Bridges ResourcePricing and FacilitatorHandler to x402 types
  */
 export * as x402Handlers from "./x402-handlers";
+/**
+ * @title MPP Types
+ * @sidebarTitle Types / MPP
+ * @description Machine Payments Protocol types, encoding, and handler interfaces
+ */
+export * as mpp from "./mpp";
 export * from "./validation";
 export * from "./literal";
 /**

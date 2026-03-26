@@ -908,6 +908,55 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/wallet-ows:
+    dependencies:
+      '@faremeter/logs':
+        specifier: workspace:^
+        version: link:../logs
+      '@faremeter/types':
+        specifier: workspace:^
+        version: link:../types
+      '@open-wallet-standard/core':
+        specifier: 0.3.9
+        version: 0.3.9
+      '@solana/web3.js':
+        specifier: 'catalog:'
+        version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      viem:
+        specifier: 'catalog:'
+        version: 2.41.2(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.22.4)
+    devDependencies:
+      '@eslint/js':
+        specifier: 'catalog:'
+        version: 9.34.0
+      '@tapjs/asserts':
+        specifier: 'catalog:'
+        version: 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/web':
+        specifier: 'catalog:'
+        version: 0.0.246
+      eslint:
+        specifier: 'catalog:'
+        version: 9.34.0(jiti@2.5.1)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
+      tap:
+        specifier: 'catalog:'
+        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      tsc-esm-fix:
+        specifier: 'catalog:'
+        version: 3.1.2
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.42.0(eslint@9.34.0(jiti@2.5.1))(typescript@5.9.3)
+      typescript-language-server:
+        specifier: 'catalog:'
+        version: 4.4.0
+
   packages/wallet-solana:
     dependencies:
       '@solana/web3.js':
@@ -1689,6 +1738,30 @@ packages:
   '@nuxtjs/opencollective@0.3.2':
     resolution: {integrity: sha512-um0xL3fO7Mf4fDxcqx9KryrB7zgRM5JSlvGN5AGkP6JLM5XEKyjeAiPbNxdXVXQ16isuAhYpvP88NgL2BGd6aA==}
     engines: {node: '>=8.0.0', npm: '>=5.0.0'}
+    hasBin: true
+
+  '@open-wallet-standard/core-darwin-arm64@0.3.9':
+    resolution: {integrity: sha512-6imdPtFAmcBrMTmN5GwWTuMoB0RJsGreAdDHd/gsq5vAnIadaePD7H82pANLWStseqhUsCkXCV66nO3FsBj/CA==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@open-wallet-standard/core-darwin-x64@0.3.9':
+    resolution: {integrity: sha512-pO/f01GrMDmcpVNyr6MifIbwV80VoC8NasqEJ9utVXDP56g74i/s1yEt3evCbhInKndt8iW1jiYOalEkHzI8Aw==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@open-wallet-standard/core-linux-arm64-gnu@0.3.9':
+    resolution: {integrity: sha512-TCezOw7dm20hUDtDq4a+iv73EFi1jDFriIXZFwJTxRyzssorhgpodKyVvmlAiZgzo6wn9pOtBuWsdEkYuFEkoA==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@open-wallet-standard/core-linux-x64-gnu@0.3.9':
+    resolution: {integrity: sha512-9p2C0KOJI23ag9wnJGirrDCZxGYCmNQ0A9fuWPinL31+BQ41baTLYQ915F2AsoiZyleU6KSe50JIe139CP5niQ==}
+    cpu: [x64]
+    os: [linux]
+
+  '@open-wallet-standard/core@0.3.9':
+    resolution: {integrity: sha512-Le5G83gZZXRYp66mnhpG6dQkXobUQoBdpV8tYBIReGh1DO7151VM6UuE5nWI0HCt94lPm/ezl55qn9bygCNEFQ==}
     hasBin: true
 
   '@pkgjs/parseargs@0.11.0':
@@ -5637,6 +5710,25 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
+  '@open-wallet-standard/core-darwin-arm64@0.3.9':
+    optional: true
+
+  '@open-wallet-standard/core-darwin-x64@0.3.9':
+    optional: true
+
+  '@open-wallet-standard/core-linux-arm64-gnu@0.3.9':
+    optional: true
+
+  '@open-wallet-standard/core-linux-x64-gnu@0.3.9':
+    optional: true
+
+  '@open-wallet-standard/core@0.3.9':
+    optionalDependencies:
+      '@open-wallet-standard/core-darwin-arm64': 0.3.9
+      '@open-wallet-standard/core-darwin-x64': 0.3.9
+      '@open-wallet-standard/core-linux-arm64-gnu': 0.3.9
+      '@open-wallet-standard/core-linux-x64-gnu': 0.3.9
+
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
@@ -8473,7 +8565,7 @@ snapshots:
       type-fest: 4.41.0
       widest-line: 5.0.0
       wrap-ansi: 9.0.2
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      ws: 8.19.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       yoga-layout: 3.2.1
     transitivePeerDependencies:
       - bufferutil
@@ -9267,7 +9359,7 @@ snapshots:
       buffer: 6.0.3
       eventemitter3: 5.0.1
       uuid: 8.3.2
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      ws: 8.19.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     optionalDependencies:
       bufferutil: 4.0.9
       utf-8-validate: 5.0.10

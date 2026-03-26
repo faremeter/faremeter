@@ -29,3 +29,36 @@ export type HandlerCapabilities = {
   networks: string[];
   assets: string[];
 };
+
+function lowerIncludes(list: string[], value: string): boolean {
+  const lower = value.toLowerCase();
+  return list.some((item) => item.toLowerCase() === lower);
+}
+
+/**
+ * Returns pricing entries whose network and asset match the given
+ * capabilities. Empty `networks` or `assets` arrays act as wildcards.
+ */
+export function matchPricingToCapabilities(
+  capabilities: HandlerCapabilities,
+  pricing: ResourcePricing[],
+): ResourcePricing[] {
+  return pricing.filter((p) => capabilitiesMatch(capabilities, p));
+}
+
+/**
+ * Returns true when the given network and asset match the capabilities.
+ * Empty `networks` or `assets` arrays act as wildcards.
+ */
+export function capabilitiesMatch(
+  capabilities: HandlerCapabilities,
+  criteria: { network: string; asset: string },
+): boolean {
+  const networkMatch =
+    capabilities.networks.length === 0 ||
+    lowerIncludes(capabilities.networks, criteria.network);
+  const assetMatch =
+    capabilities.assets.length === 0 ||
+    lowerIncludes(capabilities.assets, criteria.asset);
+  return networkMatch && assetMatch;
+}

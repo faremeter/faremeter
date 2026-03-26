@@ -14,7 +14,11 @@ import type {
   x402ResourceInfo,
 } from "./x402v2";
 import type { FacilitatorHandler, GetRequirementsArgs } from "./facilitator";
-import type { ResourcePricing, HandlerCapabilities } from "./pricing";
+import {
+  type ResourcePricing,
+  matchPricingToCapabilities,
+  capabilitiesMatch,
+} from "./pricing";
 
 type Logger = {
   warning: (msg: string, ctx?: Record<string, unknown>) => void;
@@ -23,31 +27,6 @@ type Logger = {
 type ResolveOpts = {
   logger?: Logger;
 };
-
-function lowerIncludes(list: string[], value: string): boolean {
-  const lower = value.toLowerCase();
-  return list.some((item) => item.toLowerCase() === lower);
-}
-
-/**
- * Returns true if the given capabilities match the network and asset.
- * Empty arrays act as wildcards (match everything), supporting the HTTP
- * handler backward-compat path where the handler delegates all routing
- * to the remote facilitator.
- */
-function matchesCapabilities(
-  capabilities: HandlerCapabilities,
-  network: string,
-  asset: string,
-): boolean {
-  const networkMatch =
-    capabilities.networks.length === 0 ||
-    lowerIncludes(capabilities.networks, network);
-  const assetMatch =
-    capabilities.assets.length === 0 ||
-    lowerIncludes(capabilities.assets, asset);
-  return networkMatch && assetMatch;
-}
 
 /**
  * Returns handlers whose capabilities match the given network and asset.
@@ -63,21 +42,8 @@ export function narrowHandlers(
 ): FacilitatorHandler[] {
   return handlers.filter((h) => {
     if (!h.capabilities) return false;
-    return matchesCapabilities(
-      h.capabilities,
-      criteria.network,
-      criteria.asset,
-    );
+    return capabilitiesMatch(h.capabilities, criteria);
   });
-}
-
-function matchPricingToHandler(
-  capabilities: HandlerCapabilities,
-  pricing: ResourcePricing[],
-): ResourcePricing[] {
-  return pricing.filter((p) =>
-    matchesCapabilities(capabilities, p.network, p.asset),
-  );
 }
 
 function pricingToAccepts(
@@ -137,7 +103,7 @@ export async function resolveX402Requirements(
       continue;
     }
 
-    const matched = matchPricingToHandler(handler.capabilities, pricing);
+    const matched = matchPricingToCapabilities(handler.capabilities, pricing);
     if (matched.length === 0) continue;
 
     const accepts = pricingToAccepts(matched, schemes);

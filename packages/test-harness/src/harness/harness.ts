@@ -415,7 +415,23 @@ export class TestHarness {
   ): Promise<Response | undefined> {
     let ctx: ResourceContext;
 
-    if (isV1Context(context)) {
+    if (context.protocolVersion === "mpp") {
+      const settleResult = await context.settle();
+      if (!settleResult.success) return settleResult.errorResponse;
+
+      ctx = {
+        protocolVersion: "mpp" as unknown as 2,
+        resource: c.req.url,
+        request: c.req.raw,
+        paymentRequirements: {} as ResourceContextV2["paymentRequirements"],
+        paymentPayload: {} as ResourceContextV2["paymentPayload"],
+        settleResponse: {
+          success: true,
+          transaction: settleResult.receipt.reference,
+          network: settleResult.receipt.method,
+        },
+      };
+    } else if (isV1Context(context)) {
       let verifyResponse: ResourceContextV1["verifyResponse"];
       if (this.settleMode === "verify-then-settle") {
         const verifyResult = await context.verify();

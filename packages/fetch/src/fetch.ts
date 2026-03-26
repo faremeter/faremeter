@@ -1,8 +1,11 @@
 import { type RequestContext } from "@faremeter/types/client";
 
+import type { MPPPaymentHandler } from "@faremeter/types/mpp";
+
 import {
   type ProcessPaymentRequiredResponseOpts,
   processPaymentRequiredResponse,
+  processPaymentRequiredResponseMPP,
   X_PAYMENT_HEADER,
   V2_PAYMENT_HEADER,
 } from "./internal";
@@ -25,6 +28,8 @@ export class WrappedFetchError extends Error {
  * Configuration options for wrapping a fetch function with x402 payment handling.
  */
 export type WrapOpts = ProcessPaymentRequiredResponseOpts & {
+  /** MPP payment handlers for Authorization: Payment flow. */
+  mppHandlers?: MPPPaymentHandler[];
   /** Optional fetch function for the initial request (phase 1). Defaults to phase2Fetch. */
   phase1Fetch?: typeof fetch;
   /** Number of retry attempts after initial failure. Defaults to 2. */
@@ -55,6 +60,20 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
         return response;
       }
 
+      // Try MPP first (checks WWW-Authenticate header, does not consume body)
+      if (options.mppHandlers && options.mppHandlers.length > 0) {
+        const authorizationHeader = await processPaymentRequiredResponseMPP(
+          response,
+          options.mppHandlers,
+        );
+        if (authorizationHeader) {
+          const headers = new Headers(init.headers);
+          headers.set("Authorization", authorizationHeader);
+          return await phase2Fetch(input, { ...init, headers });
+        }
+      }
+
+      // Fall through to x402
       const ctx: RequestContext = {
         request: input,
       };
@@ -67,12 +86,7 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
         detectedVersion === 2 ? V2_PAYMENT_HEADER : X_PAYMENT_HEADER;
       headers.set(headerName, paymentHeader);
 
-      const newInit: RequestInit = {
-        ...init,
-        headers,
-      };
-
-      const secondResponse = await phase2Fetch(input, newInit);
+      const secondResponse = await phase2Fetch(input, { ...init, headers });
       return secondResponse;
     }
 

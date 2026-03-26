@@ -56,7 +56,7 @@ await t.test("in-process basic payment flow", async (t) => {
 
   await t.test("resource handler receives correct context", async (t) => {
     let capturedResource: string | undefined;
-    let capturedProtocol: number | undefined;
+    let capturedProtocol: number | string | undefined;
 
     const harness = new TestHarness({
       x402Handlers: [createTestFacilitatorHandler({ payTo: "test-receiver" })],

@@ -37,7 +37,7 @@ await t.test(
         clientHandlers: [createTestPaymentHandler()],
       });
       httpHarness.setResourceHandler((ctx) => {
-        httpContext = ctx;
+        httpContext = ctx as ResourceContextX402;
         return { status: 200, body: { mode: "http" } };
       });
 
@@ -50,7 +50,7 @@ await t.test(
         clientHandlers: [createTestPaymentHandler()],
       });
       inProcessHarness.setResourceHandler((ctx) => {
-        inProcessContext = ctx;
+        inProcessContext = ctx as ResourceContextX402;
         return { status: 200, body: { mode: "in-process" } };
       });
 
@@ -105,7 +105,7 @@ await t.test(
         clientHandlers: [createTestPaymentHandler()],
       });
       httpHarness.setResourceHandler((ctx) => {
-        httpContext = ctx;
+        httpContext = ctx as ResourceContextX402;
         return { status: 200, body: { mode: "http" } };
       });
 
@@ -118,7 +118,7 @@ await t.test(
         clientHandlers: [createTestPaymentHandler()],
       });
       inProcessHarness.setResourceHandler((ctx) => {
-        inProcessContext = ctx;
+        inProcessContext = ctx as ResourceContextX402;
         return { status: 200, body: { mode: "in-process" } };
       });
 

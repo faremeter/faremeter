@@ -64,6 +64,11 @@
       "require": "./dist/src/x402-handlers.js",
       "import": "./dist/src/x402-handlers.js",
       "types": "./dist/src/x402-handlers.d.ts"
+    },
+    "./mpp": {
+      "require": "./dist/src/mpp/index.js",
+      "import": "./dist/src/mpp/index.js",
+      "types": "./dist/src/mpp/index.d.ts"
     }
   },
   "files": [

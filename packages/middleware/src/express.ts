@@ -11,7 +11,7 @@ import type { NextFunction, Request, Response } from "express";
 type createMiddlewareArgs = CommonMiddlewareArgs;
 
 /**
- * Creates Express middleware that gates routes behind x402 payment.
+ * Creates Express middleware that gates routes behind x402 and MPP payment.
  *
  * @param args - Configuration including handlers + pricing or facilitator URL
  * @returns An Express middleware function
@@ -26,6 +26,7 @@ export async function createMiddleware(args: createMiddlewareArgs) {
 
     const reqArgs: HandleMiddlewareRequestArgs = {
       x402Handlers: resolved.handlers,
+      mppMethodHandlers: resolved.mppHandlers,
       pricing: resolved.pricing,
       supportedVersions,
       resource,
@@ -43,8 +44,8 @@ export async function createMiddleware(args: createMiddlewareArgs) {
         }
         return res.end();
       },
-      body: async ({ settle }) => {
-        const settleResult = await settle();
+      body: async (context) => {
+        const settleResult = await context.settle();
         if (!settleResult.success) {
           return settleResult.errorResponse;
         }

@@ -9,7 +9,7 @@ import {
 import type { MiddlewareHandler } from "hono";
 
 /**
- * Configuration arguments for creating Hono x402 middleware.
+ * Configuration arguments for creating Hono payment middleware.
  */
 type CreateMiddlewareArgs = {
   /** If true, verifies payment before running the handler, then settles after. */
@@ -17,10 +17,10 @@ type CreateMiddlewareArgs = {
 } & CommonMiddlewareArgs;
 
 /**
- * Creates Hono middleware that gates routes behind x402 payment.
+ * Creates Hono middleware that gates routes behind x402 and MPP payment.
  *
- * The middleware intercepts requests, checks for payment headers, communicates
- * with the facilitator to validate and settle payments, and only allows the
+ * The middleware intercepts requests, checks for payment headers, validates
+ * and settles payments via x402 or MPP protocol, and only allows the
  * request to proceed if payment is successful.
  *
  * @param args - Configuration including handlers + pricing or facilitator URL
@@ -36,6 +36,7 @@ export async function createMiddleware(
   return async (c, next) => {
     const reqArgs: HandleMiddlewareRequestArgs<Response> = {
       x402Handlers: resolved.handlers,
+      mppMethodHandlers: resolved.mppHandlers,
       pricing: resolved.pricing,
       supportedVersions,
       resource: c.req.url,
@@ -53,7 +54,17 @@ export async function createMiddleware(
         }
         return c.body(null);
       },
-      body: async ({ verify, settle }) => {
+      body: async (context) => {
+        if (context.protocolVersion === "mpp") {
+          const settleResult = await context.settle();
+          if (!settleResult.success) {
+            return settleResult.errorResponse;
+          }
+          await next();
+          return;
+        }
+
+        const { verify, settle } = context;
         if (args.verifyBeforeSettle) {
           // If configured, try to verify the transaction before running
           // the next operation.

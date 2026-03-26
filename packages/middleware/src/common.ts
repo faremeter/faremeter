@@ -36,11 +36,32 @@ import {
   settleX402Payment,
   verifyX402Payment,
 } from "@faremeter/types/x402-handlers";
+import type {
+  MPPMethodHandler,
+  mppChallengeParams,
+  mppCredential,
+  mppReceipt,
+} from "@faremeter/types/mpp";
+import {
+  parseAuthorizationPayment,
+  formatWWWAuthenticate,
+  serializeReceipt,
+  PAYMENT_RECEIPT_HEADER,
+  resolveMPPChallenges,
+  settleMPPPayment,
+} from "@faremeter/types/mpp";
 import { normalizeNetworkId } from "@faremeter/info";
 import type { AgedLRUCacheOpts } from "./cache";
 import { createHTTPFacilitatorHandler } from "./http-handler";
 
 import { logger } from "./logger";
+
+function buildMPPChallengeHeaders(
+  challenges: mppChallengeParams[],
+): Record<string, string> {
+  if (challenges.length === 0) return {};
+  return { "WWW-Authenticate": formatWWWAuthenticate(challenges) };
+}
 
 /**
  * Build the X-PAYMENT-RESPONSE header value from a settle response.
@@ -247,6 +268,8 @@ export function resolveSupportedVersions(
 export type CommonMiddlewareArgs = {
   /** x402 handlers for in-process settlement. */
   x402Handlers?: FacilitatorHandler[];
+  /** MPP method handlers for in-process settlement. */
+  mppMethodHandlers?: MPPMethodHandler[];
   /** Protocol-agnostic pricing for in-process handlers. */
   pricing?: ResourcePricing[];
 
@@ -265,20 +288,29 @@ export type CommonMiddlewareArgs = {
  * Validates that CommonMiddlewareArgs has exactly one configuration mode.
  */
 export function validateMiddlewareArgs(args: CommonMiddlewareArgs): void {
-  const hasHandlers = args.x402Handlers !== undefined;
+  const hasX402 = args.x402Handlers !== undefined;
+  const hasMPP = args.mppMethodHandlers !== undefined;
   const hasFacilitator = args.facilitatorURL !== undefined;
+  const hasInProcess = hasX402 || hasMPP;
 
-  if (!hasHandlers && !hasFacilitator) {
-    throw new Error("Either x402Handlers or facilitatorURL must be provided");
+  if (!hasInProcess && !hasFacilitator) {
+    throw new Error(
+      "At least one of x402Handlers, mppMethodHandlers, or facilitatorURL must be provided",
+    );
   }
-  if (hasHandlers && hasFacilitator) {
-    throw new Error("x402Handlers and facilitatorURL are mutually exclusive");
+  if (hasFacilitator && hasInProcess) {
+    throw new Error(
+      "facilitatorURL is mutually exclusive with x402Handlers and mppMethodHandlers",
+    );
   }
-  if (hasHandlers && (!args.pricing || args.pricing.length === 0)) {
-    throw new Error("pricing is required when using x402Handlers");
+  if (hasInProcess && (!args.pricing || args.pricing.length === 0)) {
+    throw new Error("pricing is required when using in-process handlers");
   }
-  if (hasHandlers && args.x402Handlers && args.x402Handlers.length === 0) {
+  if (hasX402 && args.x402Handlers && args.x402Handlers.length === 0) {
     throw new Error("x402Handlers must not be empty");
+  }
+  if (hasMPP && args.mppMethodHandlers && args.mppMethodHandlers.length === 0) {
+    throw new Error("mppMethodHandlers must not be empty");
   }
   if (hasFacilitator && !args.accepts) {
     throw new Error("accepts is required when using facilitatorURL");
@@ -346,6 +378,7 @@ export function acceptsToPricing(
 export type ResolvedConfig = {
   handlers: FacilitatorHandler[];
   pricing: ResourcePricing[];
+  mppHandlers: MPPMethodHandler[];
   resourceInfo?: x402ResourceInfo;
 };
 
@@ -355,8 +388,13 @@ export type ResolvedConfig = {
  * creates an HTTP handler wrapper and converts accepts to pricing.
  */
 export function resolveConfig(args: CommonMiddlewareArgs): ResolvedConfig {
-  if (args.x402Handlers && args.pricing) {
-    return { handlers: args.x402Handlers, pricing: args.pricing };
+  if (args.x402Handlers || args.mppMethodHandlers) {
+    const pricing = args.pricing ?? [];
+    return {
+      handlers: args.x402Handlers ?? [],
+      pricing,
+      mppHandlers: args.mppMethodHandlers ?? [],
+    };
   }
 
   if (args.facilitatorURL && args.accepts) {
@@ -370,6 +408,7 @@ export function resolveConfig(args: CommonMiddlewareArgs): ResolvedConfig {
     return {
       handlers: [createHTTPFacilitatorHandler(args.facilitatorURL, httpOpts)],
       pricing: acceptsToPricing(flatAccepts),
+      mppHandlers: [],
       resourceInfo: deriveResourceInfo(flatAccepts, ""),
     };
   }
@@ -425,13 +464,27 @@ export type MiddlewareBodyContextV2<MiddlewareResponse> = {
   verify: () => Promise<VerifyResultV2<MiddlewareResponse>>;
 };
 
+export type SettleResultMPP<MiddlewareResponse> =
+  | { success: true; receipt: mppReceipt }
+  | { success: false; errorResponse: MiddlewareResponse };
+
+/**
+ * Context provided to the middleware body handler for MPP protocol requests.
+ */
+export type MiddlewareBodyContextMPP<MiddlewareResponse> = {
+  protocolVersion: "mpp";
+  credential: mppCredential;
+  settle: () => Promise<SettleResultMPP<MiddlewareResponse>>;
+};
+
 /**
  * Context provided to the middleware body handler.
- * Use protocolVersion to discriminate between v1 and v2 request types.
+ * Use protocolVersion to discriminate between v1, v2, and mpp request types.
  */
 export type MiddlewareBodyContext<MiddlewareResponse> =
   | MiddlewareBodyContextV1<MiddlewareResponse>
-  | MiddlewareBodyContextV2<MiddlewareResponse>;
+  | MiddlewareBodyContextV2<MiddlewareResponse>
+  | MiddlewareBodyContextMPP<MiddlewareResponse>;
 
 /**
  * Arguments for the core middleware request handler.
@@ -440,7 +493,9 @@ export type MiddlewareBodyContext<MiddlewareResponse> =
  */
 export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = {
   /** x402 handlers for in-process settlement. */
-  x402Handlers: FacilitatorHandler[];
+  x402Handlers?: FacilitatorHandler[];
+  /** MPP method handlers for in-process settlement. */
+  mppMethodHandlers?: MPPMethodHandler[];
   /** Protocol-agnostic pricing entries for the current request. */
   pricing: ResourcePricing[];
   /** The resource URL being accessed. */
@@ -466,26 +521,35 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = {
 };
 
 /**
- * Core middleware request handler that processes x402 payment flows.
+ * Core middleware request handler that processes x402 and MPP payment flows.
  *
- * Delegates to the x402 glue layer for challenge generation, settlement,
- * and verification. The middleware itself is protocol-agnostic -- it
- * formats HTTP responses but never constructs x402 types directly.
+ * Delegates to protocol-specific glue layers for challenge generation,
+ * settlement, and verification. The middleware formats HTTP responses
+ * but never constructs protocol types directly.
  */
 export async function handleMiddlewareRequest<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
 ) {
-  const { supportedVersions, x402Handlers, pricing, resource } = args;
-
-  const enrichedRequirements = await resolveX402Requirements(
-    x402Handlers,
+  const {
+    supportedVersions,
+    x402Handlers = [],
+    mppMethodHandlers = [],
     pricing,
     resource,
-    { logger },
-  );
+  } = args;
 
-  if (enrichedRequirements.length === 0) {
-    logger.warning("no handlers produced payment requirements");
+  const hasX402 = x402Handlers.length > 0;
+  const hasMPP = mppMethodHandlers.length > 0;
+
+  // x402: resolve requirements eagerly (needed for matching and 402 response)
+  let enrichedRequirements: x402PaymentRequirements[] = [];
+  if (hasX402) {
+    enrichedRequirements = await resolveX402Requirements(
+      x402Handlers,
+      pricing,
+      resource,
+      { logger },
+    );
   }
 
   const resourceInfo: x402ResourceInfo = args.resourceInfo ?? { url: resource };
@@ -496,33 +560,80 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     }
   }
 
-  const v2Response: x402PaymentRequiredResponse = {
-    x402Version: 2,
-    resource: resourceInfo,
-    accepts: enrichedRequirements,
-  };
+  let v2Response: x402PaymentRequiredResponse | undefined;
+  let v1Response: x402PaymentRequiredResponseV1 | undefined;
 
-  const v1Response: x402PaymentRequiredResponseV1 | undefined =
-    supportedVersions.x402v1
+  if (hasX402) {
+    v2Response = {
+      x402Version: 2,
+      resource: resourceInfo,
+      accepts: enrichedRequirements,
+    };
+    v1Response = supportedVersions.x402v1
       ? adaptPaymentRequiredResponseV2ToV1(v2Response)
       : undefined;
+  }
+
+  // MPP: check for Authorization: Payment header before x402 headers.
+  // Only intercept when MPP handlers are configured.
+  if (hasMPP) {
+    const authHeader = args.getHeader("Authorization");
+    if (authHeader) {
+      const credential = parseAuthorizationPayment(authHeader);
+      if (credential) {
+        return handleMPPRequest(
+          args,
+          credential,
+          mppMethodHandlers,
+          pricing,
+          resource,
+        );
+      }
+    }
+  }
 
   const parsedHeader = parsePaymentHeader(args.getHeader);
 
-  const sendPaymentRequired = (): MiddlewareResponse => {
-    if (supportedVersions.x402v2) {
-      const v2Headers = {
-        [V2_PAYMENT_REQUIRED_HEADER]: btoa(JSON.stringify(v2Response)),
-      };
-      if (supportedVersions.x402v1 && v1Response) {
-        return args.sendJSONResponse(402, v1Response, v2Headers);
+  // Build the 402 challenge response (lazy for MPP, pre-built for x402)
+  const sendPaymentRequired = async (): Promise<MiddlewareResponse> => {
+    const headers: Record<string, string> = {};
+    let body: PossibleJSONResponse | undefined;
+
+    // x402 challenges
+    if (hasX402 && v2Response) {
+      if (supportedVersions.x402v2) {
+        headers[V2_PAYMENT_REQUIRED_HEADER] = btoa(JSON.stringify(v2Response));
       }
-      return args.sendJSONResponse(402, undefined, v2Headers);
+      if (supportedVersions.x402v1 && v1Response) {
+        body = v1Response;
+      }
     }
-    if (v1Response) {
-      return args.sendJSONResponse(402, v1Response);
+
+    // MPP challenges (resolved lazily)
+    if (hasMPP) {
+      const mppChallenges = await resolveMPPChallenges(
+        mppMethodHandlers,
+        pricing,
+        resource,
+        { logger },
+      );
+      Object.assign(headers, buildMPPChallengeHeaders(mppChallenges));
     }
-    throw new Error("no payment required response available");
+
+    const hasHeaders = Object.keys(headers).length > 0;
+    if (body) {
+      return args.sendJSONResponse(402, body, hasHeaders ? headers : undefined);
+    }
+    if (!hasHeaders) {
+      logger.warning(
+        "returning bare 402: no x402 requirements and no MPP challenges available",
+      );
+    }
+    return args.sendJSONResponse(
+      402,
+      undefined,
+      hasHeaders ? headers : undefined,
+    );
   };
 
   if (!parsedHeader) {
@@ -542,19 +653,28 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
   }
 
   if (parsedHeader.version === 2) {
+    if (!v2Response) {
+      return args.sendJSONResponse(400, {
+        error: "This server does not support x402 protocol",
+      });
+    }
     return handleV2Request(
       args,
+      x402Handlers,
       parsedHeader.payload,
       v2Response,
       sendPaymentRequired,
     );
   }
 
-  if (!v1Response) {
-    throw new Error("v1 response unavailable for v1 request");
+  if (!v1Response || !v2Response) {
+    return args.sendJSONResponse(400, {
+      error: "This server does not support x402 protocol",
+    });
   }
   return handleV1Request(
     args,
+    x402Handlers,
     parsedHeader.payload,
     v1Response,
     v2Response,
@@ -571,10 +691,11 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
  */
 async function handleV1Request<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
+  x402Handlers: FacilitatorHandler[],
   paymentPayload: x402PaymentPayloadV1,
   v1Response: x402PaymentRequiredResponseV1,
   v2Response: x402PaymentRequiredResponse,
-  sendPaymentRequired: () => MiddlewareResponse,
+  sendPaymentRequired: () => Promise<MiddlewareResponse>,
 ): Promise<MiddlewareResponse | undefined> {
   const v1Requirements = findMatchingPaymentRequirements(
     v1Response.accepts,
@@ -586,7 +707,7 @@ async function handleV1Request<MiddlewareResponse>(
       "couldn't find matching payment requirements for v1 payload",
       paymentPayload,
     );
-    return sendPaymentRequired();
+    return await sendPaymentRequired();
   }
 
   // Find the corresponding v2 requirement for the glue layer.
@@ -604,7 +725,7 @@ async function handleV1Request<MiddlewareResponse>(
 
   if (!v2Requirements) {
     logger.error("matched v1 requirement has no corresponding v2 requirement");
-    return sendPaymentRequired();
+    return await sendPaymentRequired();
   }
 
   // Build v2 payment payload from v1 for the glue layer
@@ -617,7 +738,7 @@ async function handleV1Request<MiddlewareResponse>(
 
   const settle = async (): Promise<SettleResultV1<MiddlewareResponse>> => {
     const v2Result = await settleX402Payment(
-      args.x402Handlers,
+      x402Handlers,
       v2Requirements,
       v2PaymentPayload,
     );
@@ -636,7 +757,7 @@ async function handleV1Request<MiddlewareResponse>(
         "failed to settle payment: {errorReason}",
         settlementResponse,
       );
-      return { success: false, errorResponse: sendPaymentRequired() };
+      return { success: false, errorResponse: await sendPaymentRequired() };
     }
 
     return { success: true, facilitatorResponse: settlementResponse };
@@ -644,7 +765,7 @@ async function handleV1Request<MiddlewareResponse>(
 
   const verify = async (): Promise<VerifyResultV1<MiddlewareResponse>> => {
     const v2Result = await verifyX402Payment(
-      args.x402Handlers,
+      x402Handlers,
       v2Requirements,
       v2PaymentPayload,
     );
@@ -656,7 +777,7 @@ async function handleV1Request<MiddlewareResponse>(
         "failed to verify payment: {invalidReason}",
         verifyResponse,
       );
-      return { success: false, errorResponse: sendPaymentRequired() };
+      return { success: false, errorResponse: await sendPaymentRequired() };
     }
 
     return { success: true, facilitatorResponse: verifyResponse };
@@ -676,9 +797,10 @@ async function handleV1Request<MiddlewareResponse>(
  */
 async function handleV2Request<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
+  x402Handlers: FacilitatorHandler[],
   paymentPayload: x402PaymentPayload,
   paymentRequiredResponse: x402PaymentRequiredResponse,
-  sendPaymentRequired: () => MiddlewareResponse,
+  sendPaymentRequired: () => Promise<MiddlewareResponse>,
 ): Promise<MiddlewareResponse | undefined> {
   const paymentRequirements = findMatchingPaymentRequirementsV2(
     paymentRequiredResponse.accepts,
@@ -690,12 +812,12 @@ async function handleV2Request<MiddlewareResponse>(
       "couldn't find matching payment requirements for v2 payload",
       paymentPayload,
     );
-    return sendPaymentRequired();
+    return await sendPaymentRequired();
   }
 
   const settle = async (): Promise<SettleResultV2<MiddlewareResponse>> => {
     const settlementResponse = await settleX402Payment(
-      args.x402Handlers,
+      x402Handlers,
       paymentRequirements,
       paymentPayload,
     );
@@ -712,7 +834,7 @@ async function handleV2Request<MiddlewareResponse>(
         "failed to settle v2 payment: {errorReason}",
         settlementResponse,
       );
-      return { success: false, errorResponse: sendPaymentRequired() };
+      return { success: false, errorResponse: await sendPaymentRequired() };
     }
 
     return { success: true, facilitatorResponse: settlementResponse };
@@ -720,7 +842,7 @@ async function handleV2Request<MiddlewareResponse>(
 
   const verify = async (): Promise<VerifyResultV2<MiddlewareResponse>> => {
     const verifyResponse = await verifyX402Payment(
-      args.x402Handlers,
+      x402Handlers,
       paymentRequirements,
       paymentPayload,
     );
@@ -730,7 +852,7 @@ async function handleV2Request<MiddlewareResponse>(
         "failed to verify v2 payment: {invalidReason}",
         verifyResponse,
       );
-      return { success: false, errorResponse: sendPaymentRequired() };
+      return { success: false, errorResponse: await sendPaymentRequired() };
     }
 
     return { success: true, facilitatorResponse: verifyResponse };
@@ -742,5 +864,60 @@ async function handleV2Request<MiddlewareResponse>(
     paymentPayload,
     settle,
     verify,
+  });
+}
+
+/**
+ * Handle an MPP protocol request.
+ *
+ * The credential carries its challenge, so there is no matching step.
+ * Settlement routes by method through the MPP glue layer.
+ */
+async function handleMPPRequest<MiddlewareResponse>(
+  args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
+  credential: mppCredential,
+  mppHandlers: MPPMethodHandler[],
+  pricing: ResourcePricing[],
+  resource: string,
+): Promise<MiddlewareResponse | undefined> {
+  const sendPaymentRequired = async (): Promise<MiddlewareResponse> => {
+    const mppChallenges = await resolveMPPChallenges(
+      mppHandlers,
+      pricing,
+      resource,
+      { logger },
+    );
+    const headers = buildMPPChallengeHeaders(mppChallenges);
+    if (Object.keys(headers).length === 0) {
+      logger.warning(
+        "returning bare 402: no MPP challenges available for re-challenge",
+      );
+    }
+    return args.sendJSONResponse(402, undefined, headers);
+  };
+
+  const settle = async (): Promise<SettleResultMPP<MiddlewareResponse>> => {
+    try {
+      const receipt = await settleMPPPayment(mppHandlers, credential);
+
+      if (args.setResponseHeader) {
+        args.setResponseHeader(
+          PAYMENT_RECEIPT_HEADER,
+          serializeReceipt(receipt),
+        );
+      }
+
+      return { success: true, receipt };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warning("failed to settle MPP payment", { error: msg });
+      return { success: false, errorResponse: await sendPaymentRequired() };
+    }
+  };
+
+  return await args.body({
+    protocolVersion: "mpp",
+    credential,
+    settle,
   });
 }

@@ -1,8 +1,10 @@
 import {
   handleMiddlewareRequest,
   type CommonMiddlewareArgs,
-  createPaymentRequiredResponseCache,
+  type HandleMiddlewareRequestArgs,
+  validateMiddlewareArgs,
   resolveSupportedVersions,
+  resolveConfig,
 } from "./common";
 import type { NextFunction, Request, Response } from "express";
 
@@ -11,27 +13,22 @@ type createMiddlewareArgs = CommonMiddlewareArgs;
 /**
  * Creates Express middleware that gates routes behind x402 payment.
  *
- * The middleware intercepts requests, checks for payment headers, communicates
- * with the facilitator to validate and settle payments, and only allows the
- * request to proceed if payment is successful.
- *
- * @param args - Configuration including facilitator URL and accepted payment types
+ * @param args - Configuration including handlers + pricing or facilitator URL
  * @returns An Express middleware function
  */
 export async function createMiddleware(args: createMiddlewareArgs) {
-  // Validate configuration at creation time
+  validateMiddlewareArgs(args);
   const supportedVersions = resolveSupportedVersions(args.supportedVersions);
-
-  const { getPaymentRequiredResponse, getPaymentRequiredResponseV2 } =
-    createPaymentRequiredResponseCache(args.cacheConfig);
+  const resolved = resolveConfig(args);
 
   return async (req: Request, res: Response, next: NextFunction) => {
-    return await handleMiddlewareRequest({
-      ...args,
+    const resource = `${req.protocol}://${req.headers.host}${req.path}`;
+
+    const reqArgs: HandleMiddlewareRequestArgs = {
+      x402Handlers: resolved.handlers,
+      pricing: resolved.pricing,
       supportedVersions,
-      resource: `${req.protocol}://${req.headers.host}${req.path}`,
-      getPaymentRequiredResponse,
-      getPaymentRequiredResponseV2,
+      resource,
       getHeader: (key) => req.header(key),
       setResponseHeader: (key, value) => res.setHeader(key, value),
       sendJSONResponse: (status, body, headers) => {
@@ -54,6 +51,12 @@ export async function createMiddleware(args: createMiddlewareArgs) {
 
         next();
       },
-    });
+    };
+
+    if (resolved.resourceInfo) {
+      reqArgs.resourceInfo = { ...resolved.resourceInfo, url: resource };
+    }
+
+    return await handleMiddlewareRequest(reqArgs);
   };
 }

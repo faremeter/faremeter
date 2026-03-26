@@ -5,14 +5,18 @@ import { createFacilitatorRoutes } from "@faremeter/facilitator";
 import { wrap } from "@faremeter/fetch";
 import {
   handleMiddlewareRequest,
-  getPaymentRequiredResponse,
-  getPaymentRequiredResponseV2,
+  type HandleMiddlewareRequestArgs,
   resolveSupportedVersions,
+  deriveCapabilities,
+  acceptsToPricing,
+  relaxedRequirementsToV2,
+  deriveResourceInfo,
 } from "@faremeter/middleware/common";
 import type {
   MiddlewareBodyContext,
   MiddlewareBodyContextV1,
 } from "@faremeter/middleware/common";
+import { createHTTPFacilitatorHandler } from "@faremeter/middleware/http-handler";
 import type { PaymentExecer, PaymentExecerV1 } from "@faremeter/types/client";
 import { adaptPaymentHandlerV1ToV2 } from "@faremeter/types/client";
 import { adaptRequirementsV2ToV1 } from "@faremeter/types/x402-adapters";
@@ -88,28 +92,35 @@ export class TestHarness {
     });
     app.route("/facilitator", facilitatorRoutes);
 
-    // Resource routes are handled dynamically via the middleware
-    // We use a catch-all that applies payment middleware
-    app.all("/*", async (c) => {
-      // Create a fetch for middleware->facilitator calls that:
-      // 1. Applies middleware interceptors
-      // 2. Routes to the Hono app
-      const middlewareFetch = this.createMiddlewareFetch();
+    const flatAccepts = this.config.accepts.flat();
+    const capabilities = deriveCapabilities(flatAccepts);
+    const pricing = acceptsToPricing(flatAccepts);
+    const v2Accepts = flatAccepts.map(relaxedRequirementsToV2);
+    const configResourceInfo = deriveResourceInfo(flatAccepts, "");
+    const supportedVersions = resolveSupportedVersions(
+      this.config.supportedVersions,
+    );
 
-      const result = await handleMiddlewareRequest<Response>({
-        facilitatorURL: `${this.baseUrl}/facilitator`,
-        accepts: this.config.accepts,
-        supportedVersions: resolveSupportedVersions(
-          this.config.supportedVersions,
-        ),
+    app.all("/*", async (c) => {
+      const middlewareFetch = this.createMiddlewareFetch();
+      const httpHandler = createHTTPFacilitatorHandler(
+        `${this.baseUrl}/facilitator`,
+        {
+          fetch: middlewareFetch,
+          capabilities,
+          acceptsOverride: v2Accepts,
+        },
+      );
+
+      const reqArgs: HandleMiddlewareRequestArgs<Response> = {
+        x402Handlers: [httpHandler],
+        pricing,
+        supportedVersions,
         resource: c.req.url,
-        fetch: middlewareFetch,
         getHeader: (key: string) => c.req.header(key),
         setResponseHeader: (key: string, value: string) => c.header(key, value),
-        getPaymentRequiredResponse,
-        getPaymentRequiredResponseV2,
         sendJSONResponse: (
-          status: 400 | 402,
+          status: 400 | 402 | 500,
           body?: object,
           headers?: Record<string, string>,
         ): Response => {
@@ -129,7 +140,13 @@ export class TestHarness {
         ): Promise<Response | undefined> => {
           return this.handleBody(c, context);
         },
-      });
+      };
+
+      if (configResourceInfo) {
+        reqArgs.resourceInfo = { ...configResourceInfo, url: c.req.url };
+      }
+
+      const result = await handleMiddlewareRequest(reqArgs);
 
       return result;
     });

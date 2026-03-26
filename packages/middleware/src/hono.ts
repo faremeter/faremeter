@@ -1,8 +1,10 @@
 import {
   handleMiddlewareRequest,
   type CommonMiddlewareArgs,
-  createPaymentRequiredResponseCache,
+  type HandleMiddlewareRequestArgs,
+  validateMiddlewareArgs,
   resolveSupportedVersions,
+  resolveConfig,
 } from "./common";
 import type { MiddlewareHandler } from "hono";
 
@@ -21,27 +23,24 @@ type CreateMiddlewareArgs = {
  * with the facilitator to validate and settle payments, and only allows the
  * request to proceed if payment is successful.
  *
- * @param args - Configuration including facilitator URL and accepted payment types
+ * @param args - Configuration including handlers + pricing or facilitator URL
  * @returns A Hono middleware handler
  */
 export async function createMiddleware(
   args: CreateMiddlewareArgs,
 ): Promise<MiddlewareHandler> {
-  // Validate configuration at creation time
+  validateMiddlewareArgs(args);
   const supportedVersions = resolveSupportedVersions(args.supportedVersions);
-
-  const { getPaymentRequiredResponse, getPaymentRequiredResponseV2 } =
-    createPaymentRequiredResponseCache(args.cacheConfig);
+  const resolved = resolveConfig(args);
 
   return async (c, next) => {
-    return await handleMiddlewareRequest({
-      ...args,
+    const reqArgs: HandleMiddlewareRequestArgs<Response> = {
+      x402Handlers: resolved.handlers,
+      pricing: resolved.pricing,
       supportedVersions,
       resource: c.req.url,
       getHeader: (key) => c.req.header(key),
       setResponseHeader: (key, value) => c.header(key, value),
-      getPaymentRequiredResponse,
-      getPaymentRequiredResponseV2,
       sendJSONResponse: (status, body, headers) => {
         c.status(status);
         if (headers) {
@@ -89,6 +88,12 @@ export async function createMiddleware(
           }
         }
       },
-    });
+    };
+
+    if (resolved.resourceInfo) {
+      reqArgs.resourceInfo = { ...resolved.resourceInfo, url: c.req.url };
+    }
+
+    return await handleMiddlewareRequest(reqArgs);
   };
 }

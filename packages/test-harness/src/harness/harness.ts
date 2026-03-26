@@ -118,9 +118,9 @@ export class TestHarness {
     );
 
     app.all("/*", async (c) => {
-      let handlers: FacilitatorHandler[] = config.x402Handlers;
+      let handlers: FacilitatorHandler[] = config.x402Handlers ?? [];
 
-      if (this.handlerInterceptors.length > 0) {
+      if (this.handlerInterceptors.length > 0 && handlers.length > 0) {
         const composed = composeHandlerInterceptors(
           ...this.handlerInterceptors,
         );
@@ -128,7 +128,10 @@ export class TestHarness {
       }
 
       const result = await handleMiddlewareRequest<Response>({
-        x402Handlers: handlers,
+        ...(handlers.length > 0 ? { x402Handlers: handlers } : {}),
+        ...(config.mppMethodHandlers
+          ? { mppMethodHandlers: config.mppMethodHandlers }
+          : {}),
         pricing: config.pricing,
         supportedVersions,
         resource: c.req.url,
@@ -303,6 +306,9 @@ export class TestHarness {
 
     return wrap(clientFetch, {
       handlers: v2Handlers,
+      ...(this.config.mppClientHandlers
+        ? { mppHandlers: this.config.mppClientHandlers }
+        : {}),
       ...(payerChooser
         ? {
             payerChooser: async (
@@ -420,16 +426,11 @@ export class TestHarness {
       if (!settleResult.success) return settleResult.errorResponse;
 
       ctx = {
-        protocolVersion: "mpp" as unknown as 2,
+        protocolVersion: "mpp",
         resource: c.req.url,
         request: c.req.raw,
-        paymentRequirements: {} as ResourceContextV2["paymentRequirements"],
-        paymentPayload: {} as ResourceContextV2["paymentPayload"],
-        settleResponse: {
-          success: true,
-          transaction: settleResult.receipt.reference,
-          network: settleResult.receipt.method,
-        },
+        credential: context.credential,
+        receipt: settleResult.receipt,
       };
     } else if (isV1Context(context)) {
       let verifyResponse: ResourceContextV1["verifyResponse"];

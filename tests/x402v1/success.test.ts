@@ -11,6 +11,7 @@ import {
   TEST_NETWORK,
   TEST_ASSET,
 } from "@faremeter/test-harness";
+import type { ResourceContextX402 } from "@faremeter/test-harness";
 
 await t.test("x402 v1 protocol flow components", async (t) => {
   await t.test("facilitator handler fills requirements", async (t) => {
@@ -161,7 +162,8 @@ await t.test("x402 v1 protocol flow components", async (t) => {
     });
 
     let resourceHandlerCalled = false;
-    harness.setResourceHandler((ctx) => {
+    harness.setResourceHandler((_ctx) => {
+      const ctx = _ctx as ResourceContextX402;
       resourceHandlerCalled = true;
       t.ok(ctx.paymentRequirements, "should have payment requirements");
       t.ok(ctx.paymentPayload, "should have payment payload");

@@ -24,6 +24,13 @@ import { isValidationError, throwValidationError } from "@faremeter/types";
 import { adaptRequirementsV1ToV2 } from "@faremeter/types/x402-adapters";
 import { normalizeNetworkId, translateNetworkToLegacy } from "@faremeter/info";
 
+import type { MPPPaymentHandler } from "@faremeter/types/mpp";
+import {
+  parseWWWAuthenticate,
+  serializeCredential,
+  WWW_AUTHENTICATE_HEADER,
+} from "@faremeter/types/mpp";
+
 export { X_PAYMENT_HEADER, V2_PAYMENT_HEADER, V2_PAYMENT_REQUIRED_HEADER };
 
 export type DetectedVersion = 1 | 2;
@@ -182,4 +189,42 @@ export async function processPaymentRequiredResponse(
     paymentHeader,
     detectedVersion,
   };
+}
+
+/**
+ * Attempts to process a 402 response as an MPP challenge.
+ *
+ * Checks for a WWW-Authenticate header with Payment challenges, then
+ * iterates handlers to find one that matches. Returns the Authorization
+ * header value on success, or undefined if no MPP challenges are present
+ * or no handler matches (allowing fallthrough to x402).
+ *
+ * Does not consume the response body.
+ */
+export async function processPaymentRequiredResponseMPP(
+  response: Response,
+  handlers: MPPPaymentHandler[],
+): Promise<string | undefined> {
+  const wwwAuth = response.headers.get(WWW_AUTHENTICATE_HEADER);
+  if (!wwwAuth) return undefined;
+
+  const challenges = parseWWWAuthenticate(wwwAuth);
+  if (challenges.length === 0) return undefined;
+
+  for (const challenge of challenges) {
+    if (challenge.expires !== undefined) {
+      const expiresAtMs = Number(challenge.expires) * 1000;
+      if (expiresAtMs <= Date.now()) continue;
+    }
+
+    for (const handler of handlers) {
+      const execer = await handler(challenge);
+      if (execer) {
+        const credential = await execer.exec();
+        return `Payment ${serializeCredential(credential)}`;
+      }
+    }
+  }
+
+  return undefined;
 }

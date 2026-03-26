@@ -34,6 +34,11 @@
       "require": "./dist/src/common.js",
       "import": "./dist/src/common.js",
       "types": "./dist/src/common.d.ts"
+    },
+    "./http-handler": {
+      "require": "./dist/src/http-handler.js",
+      "import": "./dist/src/http-handler.js",
+      "types": "./dist/src/http-handler.d.ts"
     }
   },
   "files": [

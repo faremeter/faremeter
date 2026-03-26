@@ -4,39 +4,40 @@ import {
   type x402PaymentPayload as x402PaymentPayloadV1,
   type x402VerifyResponse as x402VerifyResponseV1,
   type x402PaymentRequiredResponse as x402PaymentRequiredResponseV1,
-  x402PaymentRequiredResponseLenient,
-  normalizePaymentRequiredResponse,
   x402PaymentHeaderToPayload as x402PaymentHeaderToPayloadV1,
-  x402VerifyRequest as x402VerifyRequestV1,
-  x402VerifyResponseLenient,
-  normalizeVerifyResponse,
-  x402SettleRequest as x402SettleRequestV1,
   x402SettleResponse as x402SettleResponseV1,
-  x402SettleResponseLenient,
-  normalizeSettleResponse,
   X_PAYMENT_HEADER,
   X_PAYMENT_RESPONSE_HEADER,
 } from "@faremeter/types/x402";
 import {
   type x402PaymentRequirements,
   type x402PaymentPayload,
+  type x402PaymentRequiredResponse,
   type x402ResourceInfo,
-  x402PaymentRequiredResponse,
   x402PaymentHeaderToPayload,
-  x402VerifyRequest,
-  x402VerifyResponse,
-  x402SettleRequest,
   x402SettleResponse,
+  x402VerifyResponse,
   V2_PAYMENT_HEADER,
   V2_PAYMENT_REQUIRED_HEADER,
   V2_PAYMENT_RESPONSE_HEADER,
 } from "@faremeter/types/x402v2";
 import {
-  adaptPaymentRequiredResponseV1ToV2,
   adaptPaymentRequiredResponseV2ToV1,
+  adaptSettleResponseV2ToV1,
+  adaptVerifyResponseV2ToV1,
 } from "@faremeter/types/x402-adapters";
-import { normalizeNetworkId } from "@faremeter/info";
-import { type AgedLRUCacheOpts, AgedLRUCache } from "./cache";
+import type { FacilitatorHandler } from "@faremeter/types/facilitator";
+import type {
+  ResourcePricing,
+  HandlerCapabilities,
+} from "@faremeter/types/pricing";
+import {
+  resolveX402Requirements,
+  settleX402Payment,
+  verifyX402Payment,
+} from "@faremeter/types/x402-handlers";
+import type { AgedLRUCacheOpts } from "./cache";
+import { createHTTPFacilitatorHandler } from "./http-handler";
 
 import { logger } from "./logger";
 
@@ -139,26 +140,14 @@ export function findMatchingPaymentRequirementsV2(
   return findMatching(accepts, payload.accepted, "v2", payload);
 }
 
-/**
- * Validates that a facilitator response is successful, throwing if not.
- *
- * @param res - The Response from the facilitator
- */
-export function gateGetPaymentRequiredResponse(res: Response) {
-  if (res.status === 200) {
-    return;
-  }
-
-  const msg = `received a non success response to requirements request from facilitator: ${res.statusText} (${res.status})`;
-
-  logger.error(msg);
-  throw new Error(msg);
-}
-
 export type RelaxedRequirements = Partial<x402PaymentRequirementsV1>;
 export type RelaxedRequirementsV2 = Partial<x402PaymentRequirements>;
 
-function relaxedRequirementsToV2(
+/**
+ * Converts v1 relaxed requirements to v2 format, preserving all fields
+ * including `extra`.
+ */
+export function relaxedRequirementsToV2(
   req: RelaxedRequirements,
 ): RelaxedRequirementsV2 {
   const result: RelaxedRequirementsV2 = {};
@@ -210,98 +199,6 @@ function parsePaymentHeader(
   return undefined;
 }
 
-type getPaymentRequiredResponseArgs = {
-  facilitatorURL: string;
-  accepts: RelaxedRequirements[];
-  resource: string;
-  fetch?: typeof fetch;
-};
-
-/**
- * Fetches v1 payment requirements from the facilitator's /accepts endpoint.
- *
- * @param args - Arguments including facilitator URL and accepted payment types
- * @returns The validated payment required response from the facilitator
- */
-export async function getPaymentRequiredResponse(
-  args: getPaymentRequiredResponseArgs,
-) {
-  const fetchFn = args.fetch ?? fetch;
-  const accepts = args.accepts.map((x) => ({
-    ...x,
-    resource: x.resource ?? args.resource,
-  }));
-
-  const t = await fetchFn(`${args.facilitatorURL}/accepts`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      x402Version: 1,
-      accepts,
-      error: "",
-    }),
-  });
-
-  gateGetPaymentRequiredResponse(t);
-
-  const rawResponse = x402PaymentRequiredResponseLenient(await t.json());
-
-  if (isValidationError(rawResponse)) {
-    throw new Error(
-      `invalid payment requirements from facilitator: ${rawResponse.summary}`,
-    );
-  }
-
-  return normalizePaymentRequiredResponse(rawResponse);
-}
-
-type getPaymentRequiredResponseV2Args = {
-  facilitatorURL: string;
-  accepts: RelaxedRequirementsV2[];
-  resource: x402ResourceInfo;
-  fetch?: typeof fetch;
-};
-
-/**
- * Fetches v2 payment requirements from the facilitator's /accepts endpoint.
- *
- * @param args - Arguments including facilitator URL, resource info, and accepted payment types
- * @returns The validated v2 payment required response from the facilitator
- */
-export async function getPaymentRequiredResponseV2(
-  args: getPaymentRequiredResponseV2Args,
-) {
-  const fetchFn = args.fetch ?? fetch;
-
-  const t = await fetchFn(`${args.facilitatorURL}/accepts`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      x402Version: 2,
-      resource: args.resource,
-      accepts: args.accepts,
-    }),
-  });
-
-  gateGetPaymentRequiredResponse(t);
-
-  const response = x402PaymentRequiredResponse(await t.json());
-
-  if (isValidationError(response)) {
-    throw new Error(
-      `invalid v2 payment requirements from facilitator: ${response.summary}`,
-    );
-  }
-
-  return response;
-}
-
 type PossibleStatusCodes = 400 | 402;
 type PossibleJSONResponse = object;
 
@@ -340,17 +237,139 @@ export function resolveSupportedVersions(
 
 /**
  * Common configuration arguments shared by all middleware implementations.
+ * Supports two mutually exclusive modes: in-process handlers or remote facilitator.
  */
 export type CommonMiddlewareArgs = {
-  /** URL of the facilitator service. */
-  facilitatorURL: string;
-  /** Payment requirements this endpoint accepts. Can be flat or nested arrays. */
-  accepts: (RelaxedRequirements | RelaxedRequirements[])[];
-  /** Optional cache configuration for payment requirements responses. */
-  cacheConfig?: createPaymentRequiredResponseCacheOpts;
+  /** x402 handlers for in-process settlement. */
+  x402Handlers?: FacilitatorHandler[];
+  /** Protocol-agnostic pricing for in-process handlers. */
+  pricing?: ResourcePricing[];
+
+  /** URL of a remote facilitator service (backward compat). */
+  facilitatorURL?: string;
+  /** Payment requirements for the remote facilitator path. */
+  accepts?: (RelaxedRequirements | RelaxedRequirements[])[];
+  /** Cache configuration for remote facilitator responses. */
+  cacheConfig?: AgedLRUCacheOpts & { disable?: boolean };
+
   /** Which x402 protocol versions to support. */
   supportedVersions?: SupportedVersionsConfig;
 };
+
+/**
+ * Validates that CommonMiddlewareArgs has exactly one configuration mode.
+ */
+export function validateMiddlewareArgs(args: CommonMiddlewareArgs): void {
+  const hasHandlers = args.x402Handlers !== undefined;
+  const hasFacilitator = args.facilitatorURL !== undefined;
+
+  if (!hasHandlers && !hasFacilitator) {
+    throw new Error("Either x402Handlers or facilitatorURL must be provided");
+  }
+  if (hasHandlers && hasFacilitator) {
+    throw new Error("x402Handlers and facilitatorURL are mutually exclusive");
+  }
+  if (hasHandlers && (!args.pricing || args.pricing.length === 0)) {
+    throw new Error("pricing is required when using x402Handlers");
+  }
+  if (hasHandlers && args.x402Handlers && args.x402Handlers.length === 0) {
+    throw new Error("x402Handlers must not be empty");
+  }
+  if (hasFacilitator && !args.accepts) {
+    throw new Error("accepts is required when using facilitatorURL");
+  }
+}
+
+/**
+ * Derives `HandlerCapabilities` from relaxed v1 requirements.
+ * Used by framework adapters to construct capabilities for the HTTP wrapper
+ * from the legacy `accepts` configuration.
+ */
+export function deriveCapabilities(
+  accepts: RelaxedRequirements[],
+): HandlerCapabilities {
+  const schemes = new Set<string>();
+  const networks = new Set<string>();
+  const assets = new Set<string>();
+
+  for (const a of accepts) {
+    if (a.scheme !== undefined && a.scheme !== "") schemes.add(a.scheme);
+    if (a.network !== undefined && a.network !== "") networks.add(a.network);
+    if (a.asset !== undefined && a.asset !== "") assets.add(a.asset);
+  }
+
+  return {
+    schemes: [...schemes],
+    networks: [...networks],
+    assets: [...assets],
+  };
+}
+
+/**
+ * Extracts resource info from v1 accepts entries.
+ * Used by framework adapters to build the resource info for the 402 response.
+ */
+export function deriveResourceInfo(
+  accepts: RelaxedRequirements[],
+  resourceURL: string,
+): x402ResourceInfo {
+  const firstAccept = accepts.find((a) => a.resource !== undefined);
+  const info: x402ResourceInfo = {
+    url: firstAccept?.resource ?? resourceURL,
+  };
+  if (firstAccept?.description) info.description = firstAccept.description;
+  if (firstAccept?.mimeType) info.mimeType = firstAccept.mimeType;
+  return info;
+}
+
+export function acceptsToPricing(
+  accepts: RelaxedRequirements[],
+): ResourcePricing[] {
+  return accepts.map((a) => {
+    const p: ResourcePricing = {
+      amount: a.maxAmountRequired ?? "0",
+      asset: a.asset ?? "",
+      recipient: a.payTo ?? "",
+      network: a.network ?? "",
+    };
+    if (a.description) p.description = a.description;
+    return p;
+  });
+}
+
+export type ResolvedConfig = {
+  handlers: FacilitatorHandler[];
+  pricing: ResourcePricing[];
+  resourceInfo?: x402ResourceInfo;
+};
+
+/**
+ * Resolves {@link CommonMiddlewareArgs} into the handlers + pricing tuple
+ * that {@link handleMiddlewareRequest} needs. For the `facilitatorURL` path,
+ * creates an HTTP handler wrapper and converts accepts to pricing.
+ */
+export function resolveConfig(args: CommonMiddlewareArgs): ResolvedConfig {
+  if (args.x402Handlers && args.pricing) {
+    return { handlers: args.x402Handlers, pricing: args.pricing };
+  }
+
+  if (args.facilitatorURL && args.accepts) {
+    const flatAccepts = args.accepts.flat();
+    const capabilities = deriveCapabilities(flatAccepts);
+    const httpOpts: Parameters<typeof createHTTPFacilitatorHandler>[1] = {
+      capabilities,
+      acceptsOverride: flatAccepts.map(relaxedRequirementsToV2),
+      cacheConfig: args.cacheConfig ?? {},
+    };
+    return {
+      handlers: [createHTTPFacilitatorHandler(args.facilitatorURL, httpOpts)],
+      pricing: acceptsToPricing(flatAccepts),
+      resourceInfo: deriveResourceInfo(flatAccepts, ""),
+    };
+  }
+
+  throw new Error("failed to resolve middleware configuration");
+}
 
 export type SettleResultV1<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402SettleResponseV1 }
@@ -413,20 +432,17 @@ export type MiddlewareBodyContext<MiddlewareResponse> =
  * Framework-specific middleware implementations adapt their request/response
  * objects to this interface.
  */
-export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = Omit<
-  CommonMiddlewareArgs,
-  "supportedVersions"
-> & {
+export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = {
+  /** x402 handlers for in-process settlement. */
+  x402Handlers: FacilitatorHandler[];
+  /** Protocol-agnostic pricing entries for the current request. */
+  pricing: ResourcePricing[];
   /** The resource URL being accessed. */
   resource: string;
-  /** Function to retrieve a request header value. */
-  getHeader: (key: string) => string | undefined;
-  /** Function to fetch v1 payment requirements from the facilitator. */
-  getPaymentRequiredResponse: typeof getPaymentRequiredResponse;
-  /** Optional function to fetch v2 payment requirements from the facilitator. */
-  getPaymentRequiredResponseV2?: typeof getPaymentRequiredResponseV2;
   /** Resolved supported versions configuration. */
   supportedVersions: Required<SupportedVersionsConfig>;
+  /** Function to retrieve a request header value. */
+  getHeader: (key: string) => string | undefined;
   /** Function to send a JSON response with optional headers. */
   sendJSONResponse: (
     status: PossibleStatusCodes,
@@ -439,83 +455,63 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = Omit<
   ) => Promise<MiddlewareResponse | undefined>;
   /** Optional function to set a response header. */
   setResponseHeader?: (key: string, value: string) => void;
-  /** Optional custom fetch function for facilitator requests. */
-  fetch?: typeof fetch;
+  /** Optional pre-built resource info for the 402 response. */
+  resourceInfo?: x402ResourceInfo;
 };
 
 /**
  * Core middleware request handler that processes x402 payment flows.
  *
- * This function handles both v1 and v2 protocol versions, validates payment
- * headers, communicates with the facilitator, and delegates to the body
- * handler when payment is valid.
- *
- * @param args - Handler arguments including framework-specific adapters
- * @returns The middleware response, or undefined if the body handler should continue
+ * Delegates to the x402 glue layer for challenge generation, settlement,
+ * and verification. The middleware itself is protocol-agnostic -- it
+ * formats HTTP responses but never constructs x402 types directly.
  */
 export async function handleMiddlewareRequest<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
 ) {
-  const accepts = args.accepts.flat();
-  const fetchFn = args.fetch ?? fetch;
-  const { supportedVersions } = args;
+  const { supportedVersions, x402Handlers, pricing, resource } = args;
 
-  // Fetch requirements in the highest supported version, adapt downward as needed.
-  let v1Response: x402PaymentRequiredResponseV1 | undefined;
-  let v2Response: x402PaymentRequiredResponse | undefined;
+  const enrichedRequirements = await resolveX402Requirements(
+    x402Handlers,
+    pricing,
+    resource,
+    { logger },
+  );
 
-  if (supportedVersions.x402v2 && args.getPaymentRequiredResponseV2) {
-    const firstAccept = accepts.find((a) => a.resource !== undefined);
-    const resourceInfo: x402ResourceInfo = {
-      url: firstAccept?.resource ?? args.resource,
-    };
-    if (firstAccept?.description) {
-      resourceInfo.description = firstAccept.description;
-    }
-    if (firstAccept?.mimeType) {
-      resourceInfo.mimeType = firstAccept.mimeType;
-    }
+  if (enrichedRequirements.length === 0) {
+    logger.warning("no handlers produced payment requirements");
+  }
 
-    v2Response = await args.getPaymentRequiredResponseV2({
-      accepts: accepts.map(relaxedRequirementsToV2),
-      facilitatorURL: args.facilitatorURL,
-      resource: resourceInfo,
-      fetch: fetchFn,
-    });
-    if (supportedVersions.x402v1) {
-      v1Response = adaptPaymentRequiredResponseV2ToV1(v2Response);
-    }
-  } else {
-    v1Response = await args.getPaymentRequiredResponse({
-      accepts,
-      facilitatorURL: args.facilitatorURL,
-      resource: args.resource,
-      fetch: fetchFn,
-    });
-    if (supportedVersions.x402v2) {
-      v2Response = adaptPaymentRequiredResponseV1ToV2(
-        v1Response,
-        args.resource,
-        normalizeNetworkId,
-      );
+  const resourceInfo: x402ResourceInfo = args.resourceInfo ?? { url: resource };
+  if (!args.resourceInfo) {
+    const firstDescription = pricing.find((p) => p.description);
+    if (firstDescription?.description) {
+      resourceInfo.description = firstDescription.description;
     }
   }
+
+  const v2Response: x402PaymentRequiredResponse = {
+    x402Version: 2,
+    resource: resourceInfo,
+    accepts: enrichedRequirements,
+  };
+
+  const v1Response: x402PaymentRequiredResponseV1 | undefined =
+    supportedVersions.x402v1
+      ? adaptPaymentRequiredResponseV2ToV1(v2Response)
+      : undefined;
 
   const parsedHeader = parsePaymentHeader(args.getHeader);
 
   const sendPaymentRequired = (): MiddlewareResponse => {
-    if (supportedVersions.x402v2 && v2Response) {
+    if (supportedVersions.x402v2) {
       const v2Headers = {
         [V2_PAYMENT_REQUIRED_HEADER]: btoa(JSON.stringify(v2Response)),
       };
       if (supportedVersions.x402v1 && v1Response) {
         return args.sendJSONResponse(402, v1Response, v2Headers);
       }
-      return args.sendJSONResponse(
-        402,
-        v2Response.error ? { error: v2Response.error } : undefined,
-        v2Headers,
-      );
+      return args.sendJSONResponse(402, undefined, v2Headers);
     }
     if (v1Response) {
       return args.sendJSONResponse(402, v1Response);
@@ -540,15 +536,11 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
   }
 
   if (parsedHeader.version === 2) {
-    if (!v2Response) {
-      throw new Error("v2 response unavailable for v2 request");
-    }
     return handleV2Request(
       args,
       parsedHeader.payload,
       v2Response,
       sendPaymentRequired,
-      fetchFn,
     );
   }
 
@@ -558,71 +550,77 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
   return handleV1Request(
     args,
     parsedHeader.payload,
-    parsedHeader.rawHeader,
     v1Response,
+    v2Response,
     sendPaymentRequired,
-    fetchFn,
   );
 }
 
 /**
  * Handle v1 protocol request.
+ *
+ * Matches v1 payload against v1 accepts, then uses the corresponding v2
+ * requirement for settlement via the glue layer. Adapts v2 responses
+ * back to v1 for the caller.
  */
 async function handleV1Request<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
   paymentPayload: x402PaymentPayloadV1,
-  paymentHeader: string,
-  paymentRequiredResponse: x402PaymentRequiredResponseV1,
+  v1Response: x402PaymentRequiredResponseV1,
+  v2Response: x402PaymentRequiredResponse,
   sendPaymentRequired: () => MiddlewareResponse,
-  fetchFn: typeof fetch,
 ): Promise<MiddlewareResponse | undefined> {
-  const paymentRequirements = findMatchingPaymentRequirements(
-    paymentRequiredResponse.accepts,
+  const v1Requirements = findMatchingPaymentRequirements(
+    v1Response.accepts,
     paymentPayload,
   );
 
-  if (!paymentRequirements) {
+  if (!v1Requirements) {
     logger.warning(
-      `couldn't find matching payment requirements for v1 payload`,
+      "couldn't find matching payment requirements for v1 payload",
       paymentPayload,
     );
     return sendPaymentRequired();
   }
 
+  // Find the corresponding v2 requirement for the glue layer.
+  // Match by scheme/network/asset since the v1 and v2 accepts are parallel.
+  const v2Requirements = findMatching(
+    v2Response.accepts,
+    {
+      scheme: v1Requirements.scheme,
+      network: v1Requirements.network,
+      asset: v1Requirements.asset,
+    },
+    "v1-to-v2-lookup",
+    paymentPayload,
+  );
+
+  if (!v2Requirements) {
+    logger.error("matched v1 requirement has no corresponding v2 requirement");
+    return sendPaymentRequired();
+  }
+
+  // Build v2 payment payload from v1 for the glue layer
+  const v2PaymentPayload: x402PaymentPayload = {
+    x402Version: 2,
+    accepted: v2Requirements,
+    payload: paymentPayload.payload,
+  };
+
   const settle = async (): Promise<SettleResultV1<MiddlewareResponse>> => {
-    const settleRequest: x402SettleRequestV1 = {
-      paymentHeader,
-      paymentPayload,
-      paymentRequirements,
-    };
+    const v2Result = await settleX402Payment(
+      args.x402Handlers,
+      v2Requirements,
+      v2PaymentPayload,
+    );
 
-    const t = await fetchFn(`${args.facilitatorURL}/settle`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      // x402Version is not part of the v1 spec but older Faremeter
-      // facilitators require it, so include it for backwards compatibility.
-      body: JSON.stringify({ x402Version: 1, ...settleRequest }),
-    });
-    // Parse with lenient type to accept both legacy and spec-compliant field names
-    const rawSettlementResponse = x402SettleResponseLenient(await t.json());
+    const settlementResponse = adaptSettleResponseV2ToV1(v2Result);
 
-    if (isValidationError(rawSettlementResponse)) {
-      const msg = `error getting response from facilitator for settlement: ${rawSettlementResponse.summary}`;
-      logger.error(msg);
-      throw new Error(msg);
-    }
-
-    // Normalize to spec-compliant field names
-    const settlementResponse = normalizeSettleResponse(rawSettlementResponse);
-
-    // Set the X-PAYMENT-RESPONSE header for both success and failure
     if (args.setResponseHeader) {
       args.setResponseHeader(
         X_PAYMENT_RESPONSE_HEADER,
-        buildPaymentResponseHeader(settlementResponse),
+        buildPaymentResponseHeader(v2Result),
       );
     }
 
@@ -638,31 +636,13 @@ async function handleV1Request<MiddlewareResponse>(
   };
 
   const verify = async (): Promise<VerifyResultV1<MiddlewareResponse>> => {
-    const verifyRequest: x402VerifyRequestV1 = {
-      paymentHeader,
-      paymentPayload,
-      paymentRequirements,
-    };
+    const v2Result = await verifyX402Payment(
+      args.x402Handlers,
+      v2Requirements,
+      v2PaymentPayload,
+    );
 
-    const t = await fetchFn(`${args.facilitatorURL}/verify`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      // x402Version is not part of the v1 spec but older Faremeter
-      // facilitators require it, so include it for backwards compatibility.
-      body: JSON.stringify({ x402Version: 1, ...verifyRequest }),
-    });
-    const rawVerifyResponse = x402VerifyResponseLenient(await t.json());
-
-    if (isValidationError(rawVerifyResponse)) {
-      const msg = `error getting response from facilitator for verification: ${rawVerifyResponse.summary}`;
-      logger.error(msg);
-      throw new Error(msg);
-    }
-
-    const verifyResponse = normalizeVerifyResponse(rawVerifyResponse);
+    const verifyResponse = adaptVerifyResponseV2ToV1(v2Result);
 
     if (!verifyResponse.isValid) {
       logger.warning(
@@ -677,7 +657,7 @@ async function handleV1Request<MiddlewareResponse>(
 
   return await args.body({
     protocolVersion: 1,
-    paymentRequirements,
+    paymentRequirements: v1Requirements,
     paymentPayload,
     settle,
     verify,
@@ -692,7 +672,6 @@ async function handleV2Request<MiddlewareResponse>(
   paymentPayload: x402PaymentPayload,
   paymentRequiredResponse: x402PaymentRequiredResponse,
   sendPaymentRequired: () => MiddlewareResponse,
-  fetchFn: typeof fetch,
 ): Promise<MiddlewareResponse | undefined> {
   const paymentRequirements = findMatchingPaymentRequirementsV2(
     paymentRequiredResponse.accepts,
@@ -701,33 +680,18 @@ async function handleV2Request<MiddlewareResponse>(
 
   if (!paymentRequirements) {
     logger.warning(
-      `couldn't find matching payment requirements for v2 payload`,
+      "couldn't find matching payment requirements for v2 payload",
       paymentPayload,
     );
     return sendPaymentRequired();
   }
 
   const settle = async (): Promise<SettleResultV2<MiddlewareResponse>> => {
-    const settleRequest: x402SettleRequest = {
-      paymentPayload,
+    const settlementResponse = await settleX402Payment(
+      args.x402Handlers,
       paymentRequirements,
-    };
-
-    const t = await fetchFn(`${args.facilitatorURL}/settle`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(settleRequest),
-    });
-    const settlementResponse = x402SettleResponse(await t.json());
-
-    if (isValidationError(settlementResponse)) {
-      const msg = `error getting response from facilitator for v2 settlement: ${settlementResponse.summary}`;
-      logger.error(msg);
-      throw new Error(msg);
-    }
+      paymentPayload,
+    );
 
     if (args.setResponseHeader) {
       args.setResponseHeader(
@@ -748,26 +712,11 @@ async function handleV2Request<MiddlewareResponse>(
   };
 
   const verify = async (): Promise<VerifyResultV2<MiddlewareResponse>> => {
-    const verifyRequest: x402VerifyRequest = {
-      paymentPayload,
+    const verifyResponse = await verifyX402Payment(
+      args.x402Handlers,
       paymentRequirements,
-    };
-
-    const t = await fetchFn(`${args.facilitatorURL}/verify`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(verifyRequest),
-    });
-    const verifyResponse = x402VerifyResponse(await t.json());
-
-    if (isValidationError(verifyResponse)) {
-      const msg = `error getting response from facilitator for v2 verification: ${verifyResponse.summary}`;
-      logger.error(msg);
-      throw new Error(msg);
-    }
+      paymentPayload,
+    );
 
     if (!verifyResponse.isValid) {
       logger.warning(
@@ -787,71 +736,4 @@ async function handleV2Request<MiddlewareResponse>(
     settle,
     verify,
   });
-}
-
-/**
- * Configuration options for the payment requirements response cache.
- */
-export type createPaymentRequiredResponseCacheOpts = AgedLRUCacheOpts & {
-  /** If true, disables caching entirely. */
-  disable?: boolean;
-};
-
-/**
- * Creates a cached wrapper around payment requirements fetching functions.
- *
- * The cache reduces load on the facilitator by reusing recent responses
- * for identical requirements.
- *
- * @param opts - Cache configuration options
- * @returns Object containing cached getPaymentRequiredResponse functions
- */
-export function createPaymentRequiredResponseCache(
-  opts: createPaymentRequiredResponseCacheOpts = {},
-) {
-  if (opts.disable) {
-    logger.warning("payment required response cache disabled");
-
-    return {
-      getPaymentRequiredResponse,
-      getPaymentRequiredResponseV2,
-    };
-  }
-
-  const v1Cache = new AgedLRUCache<
-    RelaxedRequirements[],
-    x402PaymentRequiredResponseV1
-  >(opts);
-
-  const v2Cache = new AgedLRUCache<
-    RelaxedRequirementsV2[],
-    x402PaymentRequiredResponse
-  >(opts);
-
-  return {
-    getPaymentRequiredResponse: async (
-      args: getPaymentRequiredResponseArgs,
-    ) => {
-      let response = v1Cache.get(args.accepts);
-
-      if (response === undefined) {
-        response = await getPaymentRequiredResponse(args);
-        v1Cache.put(args.accepts, response);
-      }
-
-      return response;
-    },
-    getPaymentRequiredResponseV2: async (
-      args: getPaymentRequiredResponseV2Args,
-    ) => {
-      let response = v2Cache.get(args.accepts);
-
-      if (response === undefined) {
-        response = await getPaymentRequiredResponseV2(args);
-        v2Cache.put(args.accepts, response);
-      }
-
-      return response;
-    },
-  };
 }

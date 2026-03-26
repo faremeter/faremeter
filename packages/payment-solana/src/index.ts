@@ -10,6 +10,7 @@
  * @description SPL token transfer payment handlers for Solana
  */
 export * as exact from "./exact";
+export * as charge from "./charge";
 /**
  * @title SPL Token Utilities
  * @sidebarTitle Payment Solana / SPL Token

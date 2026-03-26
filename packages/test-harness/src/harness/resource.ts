@@ -10,6 +10,7 @@ import type {
   x402SettleResponse,
   x402VerifyResponse,
 } from "@faremeter/types/x402v2";
+import type { mppCredential, mppReceipt } from "@faremeter/types/mpp";
 
 /**
  * Common fields shared between v1 and v2 resource contexts.
@@ -42,10 +43,25 @@ export type ResourceContextV2 = ResourceContextBase & {
 };
 
 /**
+ * Resource context for MPP protocol.
+ */
+export type ResourceContextMPP = ResourceContextBase & {
+  protocolVersion: "mpp";
+  credential: mppCredential;
+  receipt: mppReceipt;
+};
+
+/**
+ * Resource context for x402 protocols (v1 or v2).
+ * Use when the handler only needs to work with x402 payment fields.
+ */
+export type ResourceContextX402 = ResourceContextV1 | ResourceContextV2;
+
+/**
  * Resource context passed to the resource handler after successful payment.
  * Discriminated union based on protocolVersion.
  */
-export type ResourceContext = ResourceContextV1 | ResourceContextV2;
+export type ResourceContext = ResourceContextX402 | ResourceContextMPP;
 
 export type ResourceResult = {
   status: number;
@@ -75,7 +91,23 @@ export function isResourceContextV2(
   return ctx.protocolVersion === 2;
 }
 
+export function isResourceContextMPP(
+  ctx: ResourceContext,
+): ctx is ResourceContextMPP {
+  return ctx.protocolVersion === "mpp";
+}
+
 export const defaultResourceHandler: ResourceHandler = (ctx) => {
+  if (isResourceContextMPP(ctx)) {
+    return {
+      status: 200,
+      body: {
+        success: true,
+        resource: ctx.resource,
+        reference: ctx.receipt.reference,
+      },
+    };
+  }
   if (isResourceContextV1(ctx)) {
     return {
       status: 200,
@@ -86,7 +118,6 @@ export const defaultResourceHandler: ResourceHandler = (ctx) => {
       },
     };
   }
-  // v2 context
   return {
     status: 200,
     body: {

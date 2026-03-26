@@ -15,14 +15,17 @@ export { isInProcessConfig } from "./harness/config";
 export type {
   ResourceHandler,
   ResourceContext,
+  ResourceContextX402,
   ResourceContextV1,
   ResourceContextV2,
+  ResourceContextMPP,
   ResourceResult,
 } from "./harness/resource";
 export {
   defaultResourceHandler,
   isResourceContextV1,
   isResourceContextV2,
+  isResourceContextMPP,
 } from "./harness/resource";
 export { accepts, acceptsV2 } from "./harness/defaults";
 
@@ -37,6 +40,15 @@ export {
   createTestPaymentHandler,
   type CreateTestPaymentHandlerOpts,
 } from "./scheme/client";
+export {
+  createTestMPPHandler,
+  createTestMPPPaymentHandler,
+  TEST_MPP_METHOD,
+  TEST_MPP_INTENT,
+  TEST_MPP_REALM,
+  type CreateTestMPPHandlerOpts,
+  type CreateTestMPPPaymentHandlerOpts,
+} from "./scheme/mpp";
 
 export type {
   Interceptor,

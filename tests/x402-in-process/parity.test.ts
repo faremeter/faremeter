@@ -9,7 +9,7 @@ import {
   TEST_ASSET,
   TEST_NETWORK,
 } from "@faremeter/test-harness";
-import type { ResourceContext } from "@faremeter/test-harness";
+import type { ResourceContextX402 } from "@faremeter/test-harness";
 import type { ResourcePricing } from "@faremeter/types/pricing";
 
 const pricing: ResourcePricing[] = [
@@ -25,8 +25,8 @@ await t.test(
   "in-process and HTTP modes produce equivalent results",
   async (t) => {
     await t.test("settle-only mode", async (t) => {
-      let httpContext: ResourceContext | undefined;
-      let inProcessContext: ResourceContext | undefined;
+      let httpContext: ResourceContextX402 | undefined;
+      let inProcessContext: ResourceContextX402 | undefined;
 
       const httpHarness = new TestHarness({
         settleMode: "settle-only",
@@ -93,8 +93,8 @@ await t.test(
     });
 
     await t.test("verify-then-settle mode", async (t) => {
-      let httpContext: ResourceContext | undefined;
-      let inProcessContext: ResourceContext | undefined;
+      let httpContext: ResourceContextX402 | undefined;
+      let inProcessContext: ResourceContextX402 | undefined;
 
       const httpHarness = new TestHarness({
         settleMode: "verify-then-settle",

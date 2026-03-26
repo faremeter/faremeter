@@ -7,6 +7,7 @@ import {
   createTestPaymentHandler,
   accepts,
 } from "@faremeter/test-harness";
+import type { ResourceContextX402 } from "@faremeter/test-harness";
 
 await t.test("x402 v1 resource handler errors", async (t) => {
   await t.test("resource handler throws exception", async (t) => {
@@ -165,7 +166,8 @@ await t.test("x402 v1 resource handler errors", async (t) => {
       clientHandlers: [createTestPaymentHandler()],
     });
 
-    harness.setResourceHandler((ctx) => {
+    harness.setResourceHandler((_ctx) => {
+      const ctx = _ctx as ResourceContextX402;
       capturedContext = {
         hasPaymentRequirements: !!ctx.paymentRequirements,
         hasPaymentPayload: !!ctx.paymentPayload,
@@ -213,7 +215,8 @@ await t.test("x402 v1 resource handler errors", async (t) => {
         clientHandlers: [createTestPaymentHandler()],
       });
 
-      harness.setResourceHandler((ctx) => {
+      harness.setResourceHandler((_ctx) => {
+        const ctx = _ctx as ResourceContextX402;
         hasVerifyResponse = !!ctx.verifyResponse;
         return {
           status: 200,

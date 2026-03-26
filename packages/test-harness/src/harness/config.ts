@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-deprecated -- v1 test harness uses v1 types */
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import type { PaymentHandlerV1 } from "@faremeter/types/client";
+import type { MPPMethodHandler, MPPPaymentHandler } from "@faremeter/types/mpp";
 import type { ResourcePricing } from "@faremeter/types/pricing";
 import type { x402PaymentRequirements } from "@faremeter/types/x402";
 import type { SupportedVersionsConfig } from "@faremeter/middleware/common";
@@ -19,6 +20,7 @@ export type SettleMode = "settle-only" | "verify-then-settle";
  */
 type BaseConfig = {
   clientHandlers: PaymentHandlerV1[];
+  mppClientHandlers?: MPPPaymentHandler[];
   settleMode?: SettleMode;
   supportedVersions?: SupportedVersionsConfig;
   clientInterceptors?: Interceptor[];
@@ -29,7 +31,8 @@ type BaseConfig = {
  * in the middleware with no facilitator HTTP service.
  */
 export type InProcessConfig = BaseConfig & {
-  x402Handlers: FacilitatorHandler[];
+  x402Handlers?: FacilitatorHandler[];
+  mppMethodHandlers?: MPPMethodHandler[];
   pricing: ResourcePricing[];
   handlerInterceptors?: HandlerInterceptor[];
 };
@@ -55,5 +58,5 @@ export type TestHarnessConfig = InProcessConfig | HTTPConfig;
 export function isInProcessConfig(
   config: TestHarnessConfig,
 ): config is InProcessConfig {
-  return "x402Handlers" in config;
+  return "x402Handlers" in config || "mppMethodHandlers" in config;
 }

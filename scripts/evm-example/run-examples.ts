@@ -4,6 +4,7 @@ $.verbose = true;
 
 async function runPayments() {
   await $`pnpm tsx evm-example/base-sepolia-payment.ts`;
+  await $`pnpm tsx evm-example/ows-base-sepolia-payment.ts`;
   // XXX - Add the Ledger payment in future.
 }
 

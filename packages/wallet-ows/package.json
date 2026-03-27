@@ -1,0 +1,40 @@
+{
+  "name": "@faremeter/wallet-ows",
+  "version": "0.19.0",
+  "description": "Open Wallet Standard integration for Faremeter payments on Solana and EVM",
+  "keywords": [
+    "faremeter",
+    "typescript",
+    "sdk",
+    "api",
+    "x402",
+    "ai"
+  ],
+  "license": "LGPL-3.0-only",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "packageManager": "pnpm@10.12.1",
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@tapjs/asserts": "catalog:",
+    "@types/web": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "tap": "catalog:",
+    "tsc-esm-fix": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "typescript-language-server": "catalog:"
+  },
+  "dependencies": {
+    "@faremeter/logs": "workspace:^",
+    "@faremeter/types": "workspace:^",
+    "@open-wallet-standard/core": "0.3.9",
+    "@solana/web3.js": "catalog:",
+    "viem": "catalog:"
+  }
+}

@@ -14,6 +14,8 @@ MPP is a settle-only flow; there is no separate verify step as there is with x40
 
 ## x402
 
+Faremeter supports both v1 and v2 of the x402 protocol. The middleware negotiates protocol versions automatically, preferring v2 when both sides support it. Adapters handle translation between versions, so handlers written against either version work transparently.
+
 Faremeter intends to be 100% compatible with the supported schemes and networks (e.g. exact on base-sepolia) provided by Coinbase's [x402](https://github.com/coinbase/x402) implementation. There are some areas where we will initially act as a superset (with a desire to upstream the concepts):
 
 - Our client payment implementations are designed to not require the client be connected to any blockchain network. All information required for payment should come via the facilitator.

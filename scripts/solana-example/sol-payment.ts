@@ -1,3 +1,5 @@
+// XXX - This example uses x-solana-settlement. Prefer the exact
+// payment scheme in solana-exact-payment.ts for new work.
 import "dotenv/config";
 import { logResponse } from "../logger";
 import { Keypair } from "@solana/web3.js";

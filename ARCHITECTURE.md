@@ -38,3 +38,12 @@ The client and the facilitator both need to be aware of the underlying payment m
 Because a client and a facilitator may have many ways to pay and be paid, Faremeter accommodates these different mechanics with plugins, where each type of payment style uses a unique tuple to identify and express the mechanics it supports. To use the x402 terminology the `scheme` and `network` (along with any other information required by the plugin) determine if a given plugin will be used to handle paying and receiving payment.
 
 This model applies to both the Faremeter client libraries (e.g. `@faremeter/fetch`) and the facilitator.
+
+## Facilitator Deployment
+
+The facilitator can be deployed in two ways:
+
+- **As a remote service**: The middleware communicates with a separate facilitator process over HTTP. This is the traditional model, where the resource server only needs a `facilitatorURL` and a description of what payments it accepts.
+- **In-process**: Payment handlers can be passed directly to the middleware, eliminating the need for a separate facilitator service. The middleware calls the handlers locally to resolve requirements, verify, and settle payments.
+
+Both modes use the same `FacilitatorHandler` interface, so handlers written for one mode work in the other. The remote mode wraps a facilitator service behind the same interface using `createHTTPFacilitatorHandler`.

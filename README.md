@@ -32,7 +32,7 @@ Please see our [compatibility document](./COMPATIBILITY.md) for more information
 We've started development, focusing on x402 and MPP while supporting both the Solana and EVM ecosystems. We're currently under active development, producing:
 
 - A pluggable [client library](./packages/fetch)
-- A configurable [middleware](./packages/middleware).
+- A configurable [middleware](./packages/middleware) with support for both remote and in-process payment handlers.
 - Support for various wallet SDKs (Solana, EVM).
 - A payment facilitator and legacy service proxy.
 - EIP-3009 gasless USDC transfers on Base Sepolia for EVM chains.

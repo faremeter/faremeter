@@ -1,5 +1,17 @@
 # Faremeter Compatibility
 
+## MPP (Machine Payments Protocol)
+
+Faremeter supports [MPP](https://mpp.dev) via an adapter layer that translates MPP interactions into x402v2 format. This means existing payment handlers and settlement logic work with MPP out of the box — no separate facilitator path is needed.
+
+MPP is a settle-only flow; there is no separate verify step as there is with x402. Faremeter currently supports the `charge` intent only. Because MPP credentials are translated to x402v2, the supported payment methods are determined by whichever x402 handlers are configured.
+
+### Current Limitations
+
+- Re-challenge on credential failure sends x402 format headers rather than MPP challenge headers.
+- Request body digest verification (MPP Spec Section 5.1.3) is not yet implemented.
+- Challenge replay protection (MPP Spec Section 11.3) is not yet implemented.
+
 ## x402
 
 Faremeter intends to be 100% compatible with the supported schemes and networks (e.g. exact on base-sepolia) provided by Coinbase's [x402](https://github.com/coinbase/x402) implementation. There are some areas where we will initially act as a superset (with a desire to upstream the concepts):

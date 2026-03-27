@@ -22,19 +22,21 @@ To get started with the tooling, take a look at the [quickstart guide](./QUICKST
 
 Faremeter aims to be compatible with the emerging industry standards:
 
+- MPP (Machine Payments Protocol) - https://mpp.dev
 - Coinbase's x402 - https://github.com/coinbase/x402
 - Cloudflare's Pay-Per-Crawl - https://www.cloudflare.com/paypercrawl-signup/
 - L402 - https://www.l402.org
 
 Please see our [compatibility document](./COMPATIBILITY.md) for more information.
 
-We've started development, primarily focusing on x402 and supporting both the Solana and EVM ecosystems. We're currently under active development, producing:
+We've started development, focusing on x402 and MPP while supporting both the Solana and EVM ecosystems. We're currently under active development, producing:
 
 - A pluggable [client library](./packages/fetch)
 - A configurable [middleware](./packages/middleware).
 - Support for various wallet SDKs (Solana, EVM).
 - A payment facilitator and legacy service proxy.
 - EIP-3009 gasless USDC transfers on Base Sepolia for EVM chains.
+- An [MPP](https://mpp.dev) protocol adapter built on x402v2.
 
 ## Sponsorship
 

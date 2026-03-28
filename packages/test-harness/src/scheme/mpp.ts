@@ -71,7 +71,7 @@ export function createTestMPPHandler(
       assets: [],
     },
     getSupportedIntents: () => intents,
-    getChallenge: async (intent, pricing, resourceURL) => {
+    getChallenge: async (intent, pricing, resourceURL, challengeOpts?) => {
       opts.onChallenge?.(intent, pricing, resourceURL);
 
       const requestBody = {
@@ -88,6 +88,9 @@ export function createTestMPPHandler(
         method,
         intent,
         request: requestEncoded,
+        ...(challengeOpts?.digest !== undefined
+          ? { digest: challengeOpts.digest }
+          : {}),
       };
 
       const id = await generateTestChallengeID(paramsWithoutID);

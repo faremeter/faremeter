@@ -201,9 +201,14 @@ export async function processPaymentRequiredResponse(
  *
  * Does not consume the response body.
  */
+export type ProcessMPPOpts = {
+  bodyDigest?: string;
+};
+
 export async function processPaymentRequiredResponseMPP(
   response: Response,
   handlers: MPPPaymentHandler[],
+  opts?: ProcessMPPOpts,
 ): Promise<string | undefined> {
   const wwwAuth = response.headers.get(WWW_AUTHENTICATE_HEADER);
   if (!wwwAuth) return undefined;
@@ -215,6 +220,14 @@ export async function processPaymentRequiredResponseMPP(
     if (challenge.expires !== undefined) {
       const expiresAtMs = Number(challenge.expires) * 1000;
       if (expiresAtMs <= Date.now()) continue;
+    }
+
+    if (challenge.digest !== undefined) {
+      if (
+        opts?.bodyDigest === undefined ||
+        challenge.digest !== opts.bodyDigest
+      )
+        continue;
     }
 
     for (const handler of handlers) {

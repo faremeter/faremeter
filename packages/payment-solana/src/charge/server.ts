@@ -1,5 +1,6 @@
 import type {
   MPPMethodHandler,
+  ChallengeOpts,
   mppChallengeParams,
   mppCredential,
   mppReceipt,
@@ -172,6 +173,7 @@ export async function createMPPSolanaChargeHandler(
     intent: string,
     pricing: ResourcePricing,
     _resourceURL: string,
+    opts?: ChallengeOpts,
   ): Promise<mppChallengeParams> => {
     const latestBlockhash = await rpc.getLatestBlockhash().send();
 
@@ -201,6 +203,7 @@ export async function createMPPSolanaChargeHandler(
       intent,
       request: requestEncoded,
       expires: String(Math.floor(expiresAt / 1000)),
+      ...(opts?.digest !== undefined ? { digest: opts.digest } : {}),
     };
 
     const id = await generateChallengeID(secretKey, paramsWithoutID);

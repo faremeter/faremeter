@@ -31,6 +31,17 @@ export async function createMiddleware(args: createMiddlewareArgs) {
       supportedVersions,
       resource,
       getHeader: (key) => req.header(key),
+      // XXX - Body digest requires raw request bytes. When Express uses
+      // body-parser, req.body is a parsed object and re-serialization
+      // will not match the original bytes. Use express.raw() middleware
+      // for endpoints that need digest binding.
+      getBody: async () => {
+        if (!req.body) return null;
+        if (Buffer.isBuffer(req.body)) return new Uint8Array(req.body).buffer;
+        if (typeof req.body === "string")
+          return new TextEncoder().encode(req.body).buffer;
+        return null;
+      },
       setResponseHeader: (key, value) => res.setHeader(key, value),
       sendJSONResponse: (status, body, headers) => {
         res.status(status);

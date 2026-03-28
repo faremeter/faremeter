@@ -21,6 +21,143 @@ pnpm install @faremeter/fetch
 
 <!-- TSDOC_START -->
 
+## Functions
+
+- [chooseFirstAvailable](#choosefirstavailable)
+- [processPaymentRequiredResponse](#processpaymentrequiredresponse)
+- [wrap](#wrap)
+- [responseFeeder](#responsefeeder)
+
+### chooseFirstAvailable
+
+Default payer chooser that selects the first available payment execer.
+
+| Function               | Type                                                 |
+| ---------------------- | ---------------------------------------------------- |
+| `chooseFirstAvailable` | `(possiblePayers: PaymentExecer[]) => PaymentExecer` |
+
+Parameters:
+
+- `possiblePayers`: - Array of payment execers that can handle the requirements
+
+Returns:
+
+The first execer in the array
+
+### processPaymentRequiredResponse
+
+Process a 402 Payment Required response, auto-detecting v1 or v2 protocol.
+
+| Function                         | Type                                                                                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `processPaymentRequiredResponse` | `(ctx: RequestContext, response: Response, options: ProcessPaymentRequiredResponseOpts) => Promise<ProcessPaymentRequiredResponseResult>` |
+
+Parameters:
+
+- `ctx`: - Request context
+- `response`: - The 402 Response object (must not have been consumed)
+- `options`: - Processing options including payment handlers
+
+Returns:
+
+Payment information including header and detected version
+
+### wrap
+
+Wraps a fetch function with automatic x402 payment handling.
+
+When a 402 Payment Required response is received, the wrapper automatically
+processes the payment requirements, executes payment via the configured handlers,
+and retries the request with the payment header attached.
+
+| Function | Type                                                                                                                                                                                     |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrap`   | `(phase2Fetch: (input: RequestInfo or URL, init?: RequestInit or undefined) => Promise<Response>, options: WrapOpts) => (input: RequestInfo or URL, init?: RequestInit) => Promise<...>` |
+
+Parameters:
+
+- `phase2Fetch`: - The fetch function to use for the paid request (phase 2)
+- `options`: - Configuration including payment handlers and retry settings
+
+Returns:
+
+A wrapped fetch function with the same signature as native fetch
+
+### responseFeeder
+
+Creates a mock fetch that returns responses from a queue in order.
+
+Each call to the returned fetch function shifts the next response from the array.
+Responses can be either Response objects or fetch functions for dynamic behavior.
+
+| Function         | Type                                                                                                                                                                                               |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `responseFeeder` | `(responses: (Response or ((input: RequestInfo or URL, init?: RequestInit or undefined) => Promise<Response>))[]) => (input: RequestInfo or URL, init?: RequestInit or undefined) => Promise<...>` |
+
+Parameters:
+
+- `responses`: - Array of responses or fetch functions to return in order
+
+Returns:
+
+A fetch function that serves responses from the queue
+
+## WrappedFetchError
+
+Error thrown when payment fails after exhausting all retry attempts.
+Contains the final 402 response for inspection.
+
+## Types
+
+- [DetectedVersion](#detectedversion)
+- [ProcessPaymentRequiredResponseOpts](#processpaymentrequiredresponseopts)
+- [ProcessPaymentRequiredResponseResult](#processpaymentrequiredresponseresult)
+- [WrapOpts](#wrapopts)
+- [MockFetchType](#mockfetchtype)
+- [MockResponse](#mockresponse)
+
+### DetectedVersion
+
+| Type              | Type     |
+| ----------------- | -------- |
+| `DetectedVersion` | `1 or 2` |
+
+### ProcessPaymentRequiredResponseOpts
+
+Options for processing a 402 Payment Required response.
+
+| Type                                 | Type                                                                                                                                                                                                                                                                              |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ProcessPaymentRequiredResponseOpts` | `{ /** Payment handlers that produce execers for payment requirements. */ handlers: PaymentHandler[]; /** Optional function to select among multiple possible payers. Defaults to chooseFirstAvailable. */ payerChooser?: (execer: PaymentExecer[]) => Promise<PaymentExecer>; }` |
+
+### ProcessPaymentRequiredResponseResult
+
+Result of processing a 402 Payment Required response.
+
+| Type                                   | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ProcessPaymentRequiredResponseResult` | `{ /** The selected payment execer. */ payer: PaymentExecer; /** The result from executing the payment. */ payerResult: { payload: object }; /** The payment payload in the detected protocol version format. */ paymentPayload: x402PaymentPayload or x402PaymentPayloadV1; /** Base64-encoded payment header ready to attach to the retry request. */ paymentHeader: string; /** The detected protocol version (1 or 2). */ detectedVersion: DetectedVersion; }` |
+
+### WrapOpts
+
+Configuration options for wrapping a fetch function with x402 payment handling.
+
+| Type       | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WrapOpts` | `ProcessPaymentRequiredResponseOpts and { /** Optional fetch function for the initial request (phase 1). Defaults to phase2Fetch. */ phase1Fetch?: typeof fetch; /** Number of retry attempts after initial failure. Defaults to 2. */ retryCount?: number; /** Initial delay between retries in milliseconds. Doubles after each attempt. Defaults to 100. */ initialRetryDelay?: number; /** If true, returns the 402 response instead of throwing on payment failure. */ returnPaymentFailure?: boolean; }` |
+
+### MockFetchType
+
+| Type            | Type           |
+| --------------- | -------------- |
+| `MockFetchType` | `typeof fetch` |
+
+### MockResponse
+
+| Type           | Type       |
+| -------------- | ---------- |
+| `MockResponse` | `Response` |
+
 <!-- TSDOC_END -->
 
 ## Examples

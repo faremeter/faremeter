@@ -14,6 +14,7 @@ import {
   type CompilableTransactionMessage,
   type Instruction,
 } from "@solana/kit";
+import { MEMO_PROGRAM_ADDRESS } from "@solana-program/memo";
 import { PaymentRequirementsExtra } from "./facilitator";
 import { logger } from "./logger";
 
@@ -23,6 +24,21 @@ const LIGHTHOUSE_PROGRAM_ADDRESS = address(
 
 function isLighthouseInstruction(instruction: Instruction) {
   return instruction.programAddress === LIGHTHOUSE_PROGRAM_ADDRESS;
+}
+
+function isMemoInstruction(instruction: Instruction) {
+  return instruction.programAddress === MEMO_PROGRAM_ADDRESS;
+}
+
+function isAllowedTrailingInstruction(instruction: Instruction) {
+  return isLighthouseInstruction(instruction) || isMemoInstruction(instruction);
+}
+
+function getMemoData(instruction: Instruction): string | undefined {
+  if (!isMemoInstruction(instruction) || !instruction.data) {
+    return undefined;
+  }
+  return new TextDecoder().decode(new Uint8Array(instruction.data));
 }
 
 function verifyComputeUnitLimitInstruction(instruction: Instruction): {
@@ -141,7 +157,7 @@ export async function isValidTransaction(
 
   const instructions = transactionMessage.instructions;
 
-  if (instructions.length < 3 || instructions.length > 5) {
+  if (instructions.length < 3 || instructions.length > 6) {
     return false;
   }
 
@@ -174,11 +190,31 @@ export async function isValidTransaction(
     }
   }
 
-  if (!rest.every(isLighthouseInstruction)) {
-    logger.error(
-      "Dropping transaction with non-Lighthouse trailing instructions",
-    );
+  if (!rest.every(isAllowedTrailingInstruction)) {
+    logger.error("Dropping transaction with unexpected trailing instructions");
     return false;
+  }
+
+  const memoInstructions = rest.filter(isMemoInstruction);
+
+  if (extra.memo !== undefined) {
+    if (memoInstructions.length !== 1) {
+      logger.error(
+        "Expected exactly one Memo instruction when extra.memo is set",
+      );
+      return false;
+    }
+
+    const memoIx = memoInstructions[0];
+    if (!memoIx) {
+      return false;
+    }
+
+    const memoData = getMemoData(memoIx);
+    if (memoData !== extra.memo) {
+      logger.error("Memo instruction data does not match extra.memo");
+      return false;
+    }
   }
 
   const payer = await verifyTransferInstruction(

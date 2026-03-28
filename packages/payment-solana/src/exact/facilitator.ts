@@ -85,6 +85,7 @@ export const PaymentRequirementsExtra = type({
   feePayer: "string",
   decimals: "number?",
   recentBlockhash: "string?",
+  "memo?": "string",
   "tokenProgram?": "string",
   features: PaymentRequirementsExtraFeatures.optional(),
 });
@@ -479,6 +480,12 @@ export const createFacilitatorHandler = async (
     const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
       .blockhash;
     return req.filter(isMatchingRequirement).map((x) => {
+      const incomingExtra = PaymentRequirementsExtra(x.extra);
+      const memo =
+        !isValidationError(incomingExtra) && incomingExtra.memo !== undefined
+          ? { memo: incomingExtra.memo }
+          : {};
+
       return {
         ...x,
         asset: mint.toBase58(),
@@ -486,6 +493,7 @@ export const createFacilitatorHandler = async (
           feePayer: feePayerKeypair.publicKey.toString(),
           decimals: mintInfo.data.decimals,
           recentBlockhash,
+          ...memo,
           tokenProgram,
           features,
         },

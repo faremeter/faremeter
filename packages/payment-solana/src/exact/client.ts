@@ -29,6 +29,7 @@ import {
 } from "@solana/web3.js";
 import { PaymentRequirementsExtra } from "./facilitator";
 import { generateMatcher } from "./common";
+import { createMemoInstruction, generateMemoNonce } from "./memo";
 import { logger } from "./logger";
 
 export type Wallet = {
@@ -126,6 +127,8 @@ async function extractMetadata(args: {
     ? new PublicKey(extra.tokenProgram)
     : (options?.token?.programId ?? TOKEN_PROGRAM_ID);
 
+  const memo = extra.memo;
+
   return {
     recentBlockhash,
     decimals,
@@ -134,6 +137,7 @@ async function extractMetadata(args: {
     payerKey,
     paymentMode,
     tokenProgramId,
+    memo,
   };
 }
 
@@ -203,6 +207,7 @@ export function createPaymentHandler(
           payerKey,
           paymentMode,
           tokenProgramId,
+          memo,
         } = await extractMetadata({
           connection,
           mint,
@@ -251,6 +256,7 @@ export function createPaymentHandler(
                 undefined,
                 tokenProgramId,
               ),
+              createMemoInstruction(memo ?? generateMemoNonce()),
             );
 
             let tx: VersionedTransaction;

@@ -1,65 +1,31 @@
-## Functions
+# @faremeter/logs
 
-- [configureApp](#configureapp)
-- [getLogger](#getlogger)
+A configurable logging abstraction with pluggable backends.
 
-### configureApp
+## Installation
 
-Initializes the global logging system.
-
-Call this once at application startup to configure the log level and backend.
-If no backend is specified, logtape is used when available, otherwise falls
-back to console output.
-
-| Function       | Type                                         |
-| -------------- | -------------------------------------------- |
-| `configureApp` | `(args?: ConfigureAppArgs) => Promise<void>` |
-
-Parameters:
-
-- `args`: - Configuration options for level and backend.
-
-Examples:
-
-```typescript
-await configureApp({ level: "debug" });
+```bash
+pnpm install @faremeter/logs
 ```
 
-### getLogger
+## Features
 
-Creates a logger for a specific subsystem.
+- Unified logging interface across all packages
+- Pluggable backends (console, logtape)
+- Hierarchical logger naming
+- Runtime backend swapping
 
-The returned logger automatically adapts if the backend changes after
-creation (e.g., when {@link configureApp} is called later).
+## API Reference
 
-| Function    | Type                                                |
-| ----------- | --------------------------------------------------- |
-| `getLogger` | `(subsystem: readonly string[]) => Promise<Logger>` |
+<!-- TSDOC_START -->
 
-Parameters:
+<!-- TSDOC_END -->
 
-- `subsystem`: - Hierarchical category path for the logger.
+## Related Packages
 
-Returns:
+- [@faremeter/middleware](https://www.npmjs.com/package/@faremeter/middleware) - Server middleware
+- [@faremeter/facilitator](https://www.npmjs.com/package/@faremeter/facilitator) - Facilitator server
 
-A logger instance scoped to the subsystem.
+## License
 
-Examples:
-
-```typescript
-const logger = await getLogger(["faremeter", "client"]);
-logger.info("Client initialized", { version: "1.0.0" });
-```
-
-## Interfaces
-
-- [ConfigureAppArgs](#configureappargs)
-
-### ConfigureAppArgs
-
-Configuration options for initializing the logging system.
-
-| Property  | Type                                                                           | Description                                                   |
-| --------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| `level`   | `"trace" or "debug" or "info" or "warning" or "error" or "fatal" or undefined` | Minimum log level to emit. Defaults to `"info"`.              |
-| `backend` | `LoggingBackend<BaseConfigArgs> or undefined`                                  | Backend implementation to use. Auto-detected if not provided. |
+LGPL-3.0-only

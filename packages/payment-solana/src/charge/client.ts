@@ -16,6 +16,7 @@ import {
   ComputeBudgetProgram,
   Connection,
   PublicKey,
+  SystemProgram,
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
@@ -110,6 +111,98 @@ export function createMPPSolanaChargeClient(
             undefined,
             tokenProgramId,
           ),
+        ];
+
+        const payerKey = feePayerKey
+          ? new PublicKey(feePayerKey)
+          : wallet.publicKey;
+
+        let tx: VersionedTransaction;
+        if (wallet.buildTransaction) {
+          tx = await wallet.buildTransaction(instructions, recentBlockhash);
+        } else {
+          const message = new TransactionMessage({
+            instructions,
+            payerKey,
+            recentBlockhash,
+          }).compileToV0Message();
+
+          tx = new VersionedTransaction(message);
+        }
+
+        if (wallet.partiallySignTransaction) {
+          tx = await wallet.partiallySignTransaction(tx);
+        }
+
+        const wireBytes = tx.serialize();
+        const base64Transaction = btoa(
+          String.fromCharCode.apply(null, [...wireBytes]),
+        );
+
+        return {
+          challenge,
+          payload: {
+            type: "transaction",
+            transaction: base64Transaction,
+          },
+        };
+      },
+    };
+  };
+}
+
+export type CreateMPPSolanaNativeChargeClientArgs = {
+  wallet: Wallet;
+  connection?: Connection;
+};
+
+export function createMPPSolanaNativeChargeClient(
+  args: CreateMPPSolanaNativeChargeClientArgs,
+): MPPPaymentHandler {
+  const { wallet, connection } = args;
+
+  return async (
+    challenge: mppChallengeParams,
+  ): Promise<MPPPaymentExecer | null> => {
+    if (challenge.method !== "solana") return null;
+    if (challenge.intent !== "charge") return null;
+
+    let requestBody: unknown;
+    try {
+      requestBody = JSON.parse(decodeBase64URL(challenge.request));
+    } catch {
+      return null;
+    }
+
+    const request = mppChargeRequest(requestBody);
+    if (isValidationError(request)) return null;
+    if (request.currency !== "sol") return null;
+
+    return {
+      challenge,
+      exec: async (): Promise<mppCredential> => {
+        const md = request.methodDetails;
+        const amount = BigInt(request.amount);
+        const recipientKey = new PublicKey(request.recipient);
+        const feePayerKey = md?.feePayer === true ? md.feePayerKey : undefined;
+
+        let recentBlockhash: string;
+        if (md?.recentBlockhash) {
+          recentBlockhash = md.recentBlockhash;
+        } else if (connection) {
+          recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        } else {
+          throw new Error("no blockhash available");
+        }
+
+        const instructions = [
+          ComputeBudgetProgram.setComputeUnitLimit({ units: 200_000 }),
+          ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1 }),
+          SystemProgram.transfer({
+            fromPubkey: wallet.publicKey,
+            toPubkey: recipientKey,
+            lamports: amount,
+          }),
         ];
 
         const payerKey = feePayerKey

@@ -11,6 +11,7 @@ import {
   getTransferCheckedInstruction,
   TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
+import { MEMO_PROGRAM_ADDRESS } from "@solana-program/memo";
 import { TOKEN_2022_PROGRAM_ADDRESS } from "../splToken";
 import {
   address,
@@ -146,6 +147,13 @@ function makeLighthouseIx(data?: number[]): Instruction {
   };
 }
 
+function makeMemoIx(memo: string): Instruction {
+  return {
+    programAddress: MEMO_PROGRAM_ADDRESS,
+    data: new TextEncoder().encode(memo),
+  };
+}
+
 await t.test("isValidTransaction", async (t) => {
   await t.test("accepts valid 3-instruction transaction", async (t) => {
     const f = await createFixtures();
@@ -232,10 +240,10 @@ await t.test("isValidTransaction", async (t) => {
   );
 
   await t.test(
-    "rejects transaction with more than 5 instructions",
+    "rejects transaction with more than 6 instructions",
     async (t) => {
       const f = await createFixtures();
-      const extras = Array.from({ length: 3 }, (_, i) => makeLighthouseIx([i]));
+      const extras = Array.from({ length: 4 }, (_, i) => makeLighthouseIx([i]));
       const txMsg = buildTxMessage(
         [f.computeLimitIx, f.computePriceIx, f.transferIx, ...extras],
         f.facilitator,
@@ -614,6 +622,160 @@ await t.test("isValidTransaction", async (t) => {
       );
       t.ok(result);
       t.equal(result && result.payer, f.sender.address);
+      t.end();
+    },
+  );
+
+  await t.test("accepts transaction with memo instruction", async (t) => {
+    const f = await createFixtures();
+    const txMsg = buildTxMessage(
+      [
+        f.computeLimitIx,
+        f.computePriceIx,
+        f.transferIx,
+        makeMemoIx("some-random-nonce"),
+      ],
+      f.facilitator,
+    );
+    const result = await isValidTransaction(
+      txMsg,
+      f.requirements,
+      f.facilitator.address,
+      f.tokenProgram,
+    );
+    t.ok(result);
+    t.equal(result && result.payer, f.sender.address);
+    t.end();
+  });
+
+  await t.test(
+    "accepts transaction with lighthouse and memo instructions",
+    async (t) => {
+      const f = await createFixtures();
+      const txMsg = buildTxMessage(
+        [
+          f.computeLimitIx,
+          f.computePriceIx,
+          f.transferIx,
+          makeLighthouseIx(),
+          makeMemoIx("nonce-123"),
+        ],
+        f.facilitator,
+      );
+      const result = await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      );
+      t.ok(result);
+      t.equal(result && result.payer, f.sender.address);
+      t.end();
+    },
+  );
+
+  await t.test("validates memo matches extra.memo when set", async (t) => {
+    const f = await createFixtures();
+    const requirements = {
+      ...f.requirements,
+      extra: { ...f.requirements.extra, memo: "invoice-456" },
+    };
+    const txMsg = buildTxMessage(
+      [
+        f.computeLimitIx,
+        f.computePriceIx,
+        f.transferIx,
+        makeMemoIx("invoice-456"),
+      ],
+      f.facilitator,
+    );
+    const result = await isValidTransaction(
+      txMsg,
+      requirements,
+      f.facilitator.address,
+      f.tokenProgram,
+    );
+    t.ok(result);
+    t.equal(result && result.payer, f.sender.address);
+    t.end();
+  });
+
+  await t.test("rejects memo mismatch when extra.memo is set", async (t) => {
+    const f = await createFixtures();
+    const requirements = {
+      ...f.requirements,
+      extra: { ...f.requirements.extra, memo: "invoice-456" },
+    };
+    const txMsg = buildTxMessage(
+      [
+        f.computeLimitIx,
+        f.computePriceIx,
+        f.transferIx,
+        makeMemoIx("wrong-memo"),
+      ],
+      f.facilitator,
+    );
+    t.equal(
+      await isValidTransaction(
+        txMsg,
+        requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      ),
+      false,
+    );
+    t.end();
+  });
+
+  await t.test("rejects missing memo when extra.memo is set", async (t) => {
+    const f = await createFixtures();
+    const requirements = {
+      ...f.requirements,
+      extra: { ...f.requirements.extra, memo: "invoice-456" },
+    };
+    const txMsg = buildTxMessage(
+      [f.computeLimitIx, f.computePriceIx, f.transferIx],
+      f.facilitator,
+    );
+    t.equal(
+      await isValidTransaction(
+        txMsg,
+        requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      ),
+      false,
+    );
+    t.end();
+  });
+
+  await t.test(
+    "rejects multiple memo instructions when extra.memo is set",
+    async (t) => {
+      const f = await createFixtures();
+      const requirements = {
+        ...f.requirements,
+        extra: { ...f.requirements.extra, memo: "invoice-456" },
+      };
+      const txMsg = buildTxMessage(
+        [
+          f.computeLimitIx,
+          f.computePriceIx,
+          f.transferIx,
+          makeMemoIx("invoice-456"),
+          makeMemoIx("invoice-456"),
+        ],
+        f.facilitator,
+      );
+      t.equal(
+        await isValidTransaction(
+          txMsg,
+          requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+        ),
+        false,
+      );
       t.end();
     },
   );

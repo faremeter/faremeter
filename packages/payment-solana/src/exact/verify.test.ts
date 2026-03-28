@@ -759,6 +759,37 @@ await t.test("isValidTransaction", async (t) => {
   });
 
   await t.test(
+    "rejects transaction where facilitator appears in trailing instruction accounts",
+    async (t) => {
+      const f = await createFixtures();
+      const badMemoIx: Instruction = {
+        programAddress: MEMO_PROGRAM_ADDRESS,
+        data: new TextEncoder().encode("nonce"),
+        accounts: [
+          {
+            address: f.facilitator.address,
+            role: 0,
+          },
+        ],
+      };
+      const txMsg = buildTxMessage(
+        [f.computeLimitIx, f.computePriceIx, f.transferIx, badMemoIx],
+        f.facilitator,
+      );
+      t.equal(
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+        ),
+        false,
+      );
+      t.end();
+    },
+  );
+
+  await t.test(
     "rejects transaction with multiple memo instructions",
     async (t) => {
       const f = await createFixtures();

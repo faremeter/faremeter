@@ -199,6 +199,19 @@ export async function isValidTransaction(
     return false;
   }
 
+  const facilitator = address(facilitatorAddress);
+  for (const ix of instructions) {
+    if (!ix.accounts) continue;
+    for (const account of ix.accounts) {
+      if (account.address === facilitator) {
+        logger.error(
+          "Dropping transaction where the facilitator appears in instruction accounts",
+        );
+        return false;
+      }
+    }
+  }
+
   const memoInstructions = rest.filter(isMemoInstruction);
 
   if (memoInstructions.length !== 1) {

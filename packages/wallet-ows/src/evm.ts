@@ -58,7 +58,7 @@ export function createOWSEvmWallet(
         // callers omit it since EIP-712 considers it implicit. Derive
         // it from the domain fields that are actually present.
         const domainTypes: { name: string; type: string }[] = [];
-        const domain = params.domain as Record<string, unknown>;
+        const domain = params.domain;
         if (domain.name !== undefined)
           domainTypes.push({ name: "name", type: "string" });
         if (domain.version !== undefined)
@@ -82,7 +82,7 @@ export function createOWSEvmWallet(
             primaryType: params.primaryType,
             message: params.message,
           },
-          (_key, value) =>
+          (_key, value: unknown) =>
             typeof value === "bigint" ? value.toString() : value,
         );
 

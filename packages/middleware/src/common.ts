@@ -36,6 +36,7 @@ import {
   settleX402Payment,
   verifyX402Payment,
 } from "@faremeter/types/x402-handlers";
+import { normalizeNetworkId } from "@faremeter/info";
 import type { AgedLRUCacheOpts } from "./cache";
 import { createHTTPFacilitatorHandler } from "./http-handler";
 
@@ -88,16 +89,19 @@ function findMatching<R extends MatchCriteria>(
   label: string,
   payload: Record<string, unknown>,
 ): R | undefined {
+  const normalizedNetwork = normalizeNetworkId(criteria.network);
   const possible =
     criteria.asset !== undefined
       ? accepts.filter(
           (x) =>
-            x.network === criteria.network &&
+            normalizeNetworkId(x.network) === normalizedNetwork &&
             x.scheme === criteria.scheme &&
             x.asset === criteria.asset,
         )
       : accepts.filter(
-          (x) => x.network === criteria.network && x.scheme === criteria.scheme,
+          (x) =>
+            normalizeNetworkId(x.network) === normalizedNetwork &&
+            x.scheme === criteria.scheme,
         );
 
   if (possible.length > 1) {
@@ -152,7 +156,8 @@ export function relaxedRequirementsToV2(
 ): RelaxedRequirementsV2 {
   const result: RelaxedRequirementsV2 = {};
   if (req.scheme !== undefined) result.scheme = req.scheme;
-  if (req.network !== undefined) result.network = req.network;
+  if (req.network !== undefined)
+    result.network = normalizeNetworkId(req.network);
   if (req.maxAmountRequired !== undefined)
     result.amount = req.maxAmountRequired;
   if (req.asset !== undefined) result.asset = req.asset;
@@ -294,7 +299,8 @@ export function deriveCapabilities(
 
   for (const a of accepts) {
     if (a.scheme !== undefined && a.scheme !== "") schemes.add(a.scheme);
-    if (a.network !== undefined && a.network !== "") networks.add(a.network);
+    if (a.network !== undefined && a.network !== "")
+      networks.add(normalizeNetworkId(a.network));
     if (a.asset !== undefined && a.asset !== "") assets.add(a.asset);
   }
 
@@ -606,6 +612,7 @@ async function handleV1Request<MiddlewareResponse>(
     x402Version: 2,
     accepted: v2Requirements,
     payload: paymentPayload.payload,
+    resource: v2Response.resource,
   };
 
   const settle = async (): Promise<SettleResultV1<MiddlewareResponse>> => {

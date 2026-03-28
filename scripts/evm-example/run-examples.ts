@@ -31,7 +31,7 @@ async function runUsingResourceServer(resourceServer: ProcessPromise) {
 
 const facilitator = $`cd ${import.meta.dirname}/../../apps/facilitator && pnpm tsx src`;
 await spinner("Sleeping, waiting for facilitator to start...", async () =>
-  sleep(2000),
+  sleep(5000),
 );
 
 let ret = 0;

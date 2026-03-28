@@ -79,6 +79,10 @@ function verifyComputeUnitPriceInstruction(instruction: Instruction): {
   }
 }
 
+// The upstream spec caps the per-CU price (<=5 lamports/CU), but that still
+// allows an attacker to inflate the CU limit to the Solana maximum and drain
+// the facilitator's SOL.  A total-fee cap closes that vector because the
+// facilitator is the one paying the priority fee.
 function calculatePriorityFee(units: number, microLamports: bigint): number {
   return (units * Number(microLamports)) / 1_000_000;
 }

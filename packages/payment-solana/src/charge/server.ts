@@ -20,10 +20,12 @@ import {
 import { fetchMint } from "@solana-program/token";
 import {
   address,
+  type CompilableTransactionMessage,
   decompileTransactionMessage,
   getBase64Encoder,
   getCompiledTransactionMessageDecoder,
   type Rpc,
+  type Signature,
   type SolanaRpcApi,
   type Transaction,
 } from "@solana/kit";
@@ -87,7 +89,7 @@ async function verifyChallengeID(
 export type CreateMPPSolanaChargeHandlerArgs = {
   network: string | SolanaCAIP2Network;
   rpc: Rpc<SolanaRpcApi>;
-  feePayerKeypair: Keypair;
+  feePayerKeypair?: Keypair;
   mint: PublicKey;
   replayStore: ReplayStore;
   realm: string;
@@ -144,6 +146,59 @@ const sendTransaction = async (
   return { success: false, error: "Transaction confirmation timeout" };
 };
 
+const fetchConfirmedTransaction = async (
+  rpc: Rpc<SolanaRpcApi>,
+  signature: string,
+  maxRetries: number,
+  retryDelayMs: number,
+): Promise<CompilableTransactionMessage | null> => {
+  for (let i = 0; i < maxRetries; i++) {
+    const result = await rpc
+      .getTransaction(signature as Signature, {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 0,
+        encoding: "base64",
+      })
+      .send();
+
+    if (result !== null) {
+      if (result.meta?.err) {
+        throw new Error(
+          `on-chain transaction failed: ${JSON.stringify(result.meta.err)}`,
+        );
+      }
+
+      const txData = result.transaction;
+      const txB64 = Array.isArray(txData) ? txData[0] : txData;
+      if (typeof txB64 !== "string") {
+        throw new Error("unexpected transaction encoding in RPC response");
+      }
+      const txBytes = getBase64Encoder().encode(txB64);
+      const decodedTx = getTransactionDecoder().decode(txBytes);
+      const compiledMessage = getCompiledTransactionMessageDecoder().decode(
+        decodedTx.messageBytes,
+      );
+      return decompileTransactionMessage(compiledMessage);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+  }
+
+  return null;
+};
+
+const decodeWireTransaction = (base64Transaction: string) => {
+  const txBytes = getBase64Encoder().encode(base64Transaction);
+  const decodedTx = getTransactionDecoder().decode(txBytes);
+  const compiledMessage = getCompiledTransactionMessageDecoder().decode(
+    decodedTx.messageBytes,
+  );
+  return {
+    transactionMessage: decompileTransactionMessage(compiledMessage),
+    decodedTx,
+  };
+};
+
 export async function createMPPSolanaChargeHandler(
   args: CreateMPPSolanaChargeHandlerArgs,
 ): Promise<MPPMethodHandler> {
@@ -162,15 +217,18 @@ export async function createMPPSolanaChargeHandler(
 
   const solanaNetwork = lookupX402Network(network);
   const mintAddress = mint.toBase58();
-  const feePayerAddress = feePayerKeypair.publicKey.toBase58();
+  const hasFeePayerKeypair = feePayerKeypair !== undefined;
+  const feePayerAddress = feePayerKeypair?.publicKey.toBase58();
 
   const mintInfo = await fetchMint(rpc, address(mintAddress));
   const tokenProgram = mintInfo.programAddress;
 
-  const feePayerSigner = await (async () => {
-    const { createKeyPairSignerFromBytes } = await import("@solana/kit");
-    return createKeyPairSignerFromBytes(feePayerKeypair.secretKey);
-  })();
+  const feePayerSigner = hasFeePayerKeypair
+    ? await (async () => {
+        const { createKeyPairSignerFromBytes } = await import("@solana/kit");
+        return createKeyPairSignerFromBytes(feePayerKeypair.secretKey);
+      })()
+    : null;
 
   const getChallenge = async (
     intent: string,
@@ -178,21 +236,25 @@ export async function createMPPSolanaChargeHandler(
     _resourceURL: string,
     opts?: ChallengeOpts,
   ): Promise<mppChallengeParams> => {
-    const latestBlockhash = await rpc.getLatestBlockhash().send();
+    const methodDetails: mppChargeRequest["methodDetails"] = {
+      network: caip2ToCluster(solanaNetwork.caip2) ?? solanaNetwork.caip2,
+      decimals: mintInfo.data.decimals,
+      tokenProgram: tokenProgram as string,
+    };
+
+    if (hasFeePayerKeypair && feePayerAddress) {
+      const latestBlockhash = await rpc.getLatestBlockhash().send();
+      methodDetails.feePayer = true;
+      methodDetails.feePayerKey = feePayerAddress;
+      methodDetails.recentBlockhash = latestBlockhash.value.blockhash as string;
+    }
 
     const requestBody: mppChargeRequest = {
       amount: pricing.amount,
       currency: mintAddress,
       recipient: pricing.recipient,
       ...(pricing.description ? { description: pricing.description } : {}),
-      methodDetails: {
-        network: caip2ToCluster(solanaNetwork.caip2) ?? solanaNetwork.caip2,
-        decimals: mintInfo.data.decimals,
-        tokenProgram: tokenProgram as string,
-        feePayer: true,
-        feePayerKey: feePayerAddress,
-        recentBlockhash: latestBlockhash.value.blockhash as string,
-      },
+      methodDetails,
     };
 
     const requestEncoded = encodeBase64URL(canonicalizeSortedJSON(requestBody));
@@ -258,27 +320,63 @@ export async function createMPPSolanaChargeHandler(
       );
     }
 
-    if (validatedPayload.type !== "transaction") {
-      throw new Error("only pull mode (type=transaction) is supported");
+    const verifyArgs = {
+      request,
+      feePayerAddress: feePayerAddress ?? "",
+      tokenProgram,
+      maxPriorityFee,
+    };
+
+    if (validatedPayload.type === "signature") {
+      if (request.methodDetails?.feePayer) {
+        throw new Error("push mode is not allowed with fee sponsorship");
+      }
+
+      const transactionMessage = await fetchConfirmedTransaction(
+        rpc,
+        validatedPayload.signature,
+        maxRetries,
+        retryDelayMs,
+      );
+
+      if (!transactionMessage) {
+        throw new Error("could not fetch confirmed transaction");
+      }
+
+      const verifyResult = await verifyChargeTransaction({
+        transactionMessage,
+        ...verifyArgs,
+      });
+
+      if ("error" in verifyResult) {
+        throw new Error(
+          `transaction verification failed: ${verifyResult.error}`,
+        );
+      }
+
+      return {
+        status: "success",
+        method: "solana",
+        timestamp: new Date().toISOString(),
+        reference: validatedPayload.signature,
+      };
     }
 
-    const txBytes = getBase64Encoder().encode(validatedPayload.transaction);
-    const decodedTx = getTransactionDecoder().decode(txBytes);
-    const compiledMessage = getCompiledTransactionMessageDecoder().decode(
-      decodedTx.messageBytes,
+    const { transactionMessage, decodedTx } = decodeWireTransaction(
+      validatedPayload.transaction,
     );
-    const transactionMessage = decompileTransactionMessage(compiledMessage);
 
     const verifyResult = await verifyChargeTransaction({
       transactionMessage,
-      request,
-      feePayerAddress,
-      tokenProgram,
-      maxPriorityFee,
+      ...verifyArgs,
     });
 
     if ("error" in verifyResult) {
       throw new Error(`transaction verification failed: ${verifyResult.error}`);
+    }
+
+    if (!feePayerSigner) {
+      throw new Error("pull mode requires a fee payer keypair");
     }
 
     const signedTransaction = await partiallySignTransaction(
@@ -322,7 +420,7 @@ const SOL_DECIMALS = Math.log10(LAMPORTS_PER_SOL);
 export type CreateMPPSolanaNativeChargeHandlerArgs = {
   network: string | SolanaCAIP2Network;
   rpc: Rpc<SolanaRpcApi>;
-  feePayerKeypair: Keypair;
+  feePayerKeypair?: Keypair;
   replayStore: ReplayStore;
   realm: string;
   secretKey: Uint8Array;
@@ -347,12 +445,15 @@ export async function createMPPSolanaNativeChargeHandler(
   } = args;
 
   const solanaNetwork = lookupX402Network(network);
-  const feePayerAddress = feePayerKeypair.publicKey.toBase58();
+  const hasFeePayerKeypair = feePayerKeypair !== undefined;
+  const feePayerAddress = feePayerKeypair?.publicKey.toBase58();
 
-  const feePayerSigner = await (async () => {
-    const { createKeyPairSignerFromBytes } = await import("@solana/kit");
-    return createKeyPairSignerFromBytes(feePayerKeypair.secretKey);
-  })();
+  const feePayerSigner = hasFeePayerKeypair
+    ? await (async () => {
+        const { createKeyPairSignerFromBytes } = await import("@solana/kit");
+        return createKeyPairSignerFromBytes(feePayerKeypair.secretKey);
+      })()
+    : null;
 
   const getChallenge = async (
     intent: string,
@@ -360,20 +461,24 @@ export async function createMPPSolanaNativeChargeHandler(
     _resourceURL: string,
     opts?: ChallengeOpts,
   ): Promise<mppChallengeParams> => {
-    const latestBlockhash = await rpc.getLatestBlockhash().send();
+    const methodDetails: mppChargeRequest["methodDetails"] = {
+      network: caip2ToCluster(solanaNetwork.caip2) ?? solanaNetwork.caip2,
+      decimals: SOL_DECIMALS,
+    };
+
+    if (hasFeePayerKeypair && feePayerAddress) {
+      const latestBlockhash = await rpc.getLatestBlockhash().send();
+      methodDetails.feePayer = true;
+      methodDetails.feePayerKey = feePayerAddress;
+      methodDetails.recentBlockhash = latestBlockhash.value.blockhash as string;
+    }
 
     const requestBody: mppChargeRequest = {
       amount: pricing.amount,
       currency: "sol",
       recipient: pricing.recipient,
       ...(pricing.description ? { description: pricing.description } : {}),
-      methodDetails: {
-        network: caip2ToCluster(solanaNetwork.caip2) ?? solanaNetwork.caip2,
-        decimals: SOL_DECIMALS,
-        feePayer: true,
-        feePayerKey: feePayerAddress,
-        recentBlockhash: latestBlockhash.value.blockhash as string,
-      },
+      methodDetails,
     };
 
     const requestEncoded = encodeBase64URL(canonicalizeSortedJSON(requestBody));
@@ -439,26 +544,62 @@ export async function createMPPSolanaNativeChargeHandler(
       );
     }
 
-    if (validatedPayload.type !== "transaction") {
-      throw new Error("only pull mode (type=transaction) is supported");
+    const verifyArgs = {
+      request,
+      feePayerAddress: feePayerAddress ?? "",
+      maxPriorityFee,
+    };
+
+    if (validatedPayload.type === "signature") {
+      if (request.methodDetails?.feePayer) {
+        throw new Error("push mode is not allowed with fee sponsorship");
+      }
+
+      const transactionMessage = await fetchConfirmedTransaction(
+        rpc,
+        validatedPayload.signature,
+        maxRetries,
+        retryDelayMs,
+      );
+
+      if (!transactionMessage) {
+        throw new Error("could not fetch confirmed transaction");
+      }
+
+      const verifyResult = await verifyNativeChargeTransaction({
+        transactionMessage,
+        ...verifyArgs,
+      });
+
+      if ("error" in verifyResult) {
+        throw new Error(
+          `transaction verification failed: ${verifyResult.error}`,
+        );
+      }
+
+      return {
+        status: "success",
+        method: "solana",
+        timestamp: new Date().toISOString(),
+        reference: validatedPayload.signature,
+      };
     }
 
-    const txBytes = getBase64Encoder().encode(validatedPayload.transaction);
-    const decodedTx = getTransactionDecoder().decode(txBytes);
-    const compiledMessage = getCompiledTransactionMessageDecoder().decode(
-      decodedTx.messageBytes,
+    const { transactionMessage, decodedTx } = decodeWireTransaction(
+      validatedPayload.transaction,
     );
-    const transactionMessage = decompileTransactionMessage(compiledMessage);
 
     const verifyResult = await verifyNativeChargeTransaction({
       transactionMessage,
-      request,
-      feePayerAddress,
-      maxPriorityFee,
+      ...verifyArgs,
     });
 
     if ("error" in verifyResult) {
       throw new Error(`transaction verification failed: ${verifyResult.error}`);
+    }
+
+    if (!feePayerSigner) {
+      throw new Error("pull mode requires a fee payer keypair");
     }
 
     const signedTransaction = await partiallySignTransaction(

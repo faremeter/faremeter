@@ -11,6 +11,7 @@ catalog:
   "@logtape/logtape": 1.0.4
   "@solana-program/compute-budget": 0.8.0
   "@solana-program/memo": 0.10.0
+  "@solana-program/system": 0.7.0
   "@solana-program/token": 0.5.1
   "@solana/addresses": 5.0.0
   "@solana/errors": 5.0.0

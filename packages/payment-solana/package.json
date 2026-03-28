@@ -53,6 +53,7 @@
     "@faremeter/types": "workspace:^",
     "@solana-program/compute-budget": "catalog:",
     "@solana-program/memo": "catalog:",
+    "@solana-program/system": "catalog:",
     "@solana-program/token": "catalog:",
     "@solana/addresses": "catalog:",
     "@solana/kit": "catalog:",

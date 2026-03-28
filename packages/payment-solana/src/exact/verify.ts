@@ -201,14 +201,12 @@ export async function isValidTransaction(
 
   const memoInstructions = rest.filter(isMemoInstruction);
 
-  if (extra.memo !== undefined) {
-    if (memoInstructions.length !== 1) {
-      logger.error(
-        "Expected exactly one Memo instruction when extra.memo is set",
-      );
-      return false;
-    }
+  if (memoInstructions.length !== 1) {
+    logger.error("Expected exactly one Memo instruction");
+    return false;
+  }
 
+  if (extra.memo !== undefined) {
     const memoIx = memoInstructions[0];
     if (!memoIx) {
       return false;

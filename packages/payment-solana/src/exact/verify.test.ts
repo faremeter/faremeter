@@ -155,10 +155,10 @@ function makeMemoIx(memo: string): Instruction {
 }
 
 await t.test("isValidTransaction", async (t) => {
-  await t.test("accepts valid 3-instruction transaction", async (t) => {
+  await t.test("accepts valid 4-instruction transaction", async (t) => {
     const f = await createFixtures();
     const txMsg = buildTxMessage(
-      [f.computeLimitIx, f.computePriceIx, f.transferIx],
+      [f.computeLimitIx, f.computePriceIx, f.transferIx, makeMemoIx("nonce")],
       f.facilitator,
     );
     const result = await isValidTransaction(
@@ -173,11 +173,17 @@ await t.test("isValidTransaction", async (t) => {
   });
 
   await t.test(
-    "accepts valid 4-instruction transaction with one lighthouse ix",
+    "accepts valid 5-instruction transaction with one lighthouse ix",
     async (t) => {
       const f = await createFixtures();
       const txMsg = buildTxMessage(
-        [f.computeLimitIx, f.computePriceIx, f.transferIx, makeLighthouseIx()],
+        [
+          f.computeLimitIx,
+          f.computePriceIx,
+          f.transferIx,
+          makeLighthouseIx(),
+          makeMemoIx("nonce"),
+        ],
         f.facilitator,
       );
       const result = await isValidTransaction(
@@ -193,7 +199,7 @@ await t.test("isValidTransaction", async (t) => {
   );
 
   await t.test(
-    "accepts valid 5-instruction transaction with two lighthouse ixs",
+    "accepts valid 6-instruction transaction with two lighthouse ixs",
     async (t) => {
       const f = await createFixtures();
       const txMsg = buildTxMessage(
@@ -203,6 +209,7 @@ await t.test("isValidTransaction", async (t) => {
           f.transferIx,
           makeLighthouseIx([1]),
           makeLighthouseIx([2]),
+          makeMemoIx("nonce"),
         ],
         f.facilitator,
       );
@@ -260,6 +267,24 @@ await t.test("isValidTransaction", async (t) => {
       t.end();
     },
   );
+
+  await t.test("rejects transaction without memo instruction", async (t) => {
+    const f = await createFixtures();
+    const txMsg = buildTxMessage(
+      [f.computeLimitIx, f.computePriceIx, f.transferIx],
+      f.facilitator,
+    );
+    t.equal(
+      await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+      ),
+      false,
+    );
+    t.end();
+  });
 
   await t.test("rejects transaction with wrong fee payer", async (t) => {
     const f = await createFixtures();
@@ -325,7 +350,7 @@ await t.test("isValidTransaction", async (t) => {
   await t.test("accepts transaction within priority fee limit", async (t) => {
     const f = await createFixtures();
     const txMsg = buildTxMessage(
-      [f.computeLimitIx, f.computePriceIx, f.transferIx],
+      [f.computeLimitIx, f.computePriceIx, f.transferIx, makeMemoIx("nonce")],
       f.facilitator,
     );
     const result = await isValidTransaction(
@@ -351,7 +376,7 @@ await t.test("isValidTransaction", async (t) => {
         microLamports: 10_000_000n,
       });
       const txMsg = buildTxMessage(
-        [highLimitIx, highPriceIx, f.transferIx],
+        [highLimitIx, highPriceIx, f.transferIx, makeMemoIx("nonce")],
         f.facilitator,
       );
       t.equal(
@@ -379,7 +404,13 @@ await t.test("isValidTransaction", async (t) => {
         microLamports: 10_000_000n,
       });
       const txMsg = buildTxMessage(
-        [highLimitIx, highPriceIx, f.transferIx, makeLighthouseIx()],
+        [
+          highLimitIx,
+          highPriceIx,
+          f.transferIx,
+          makeLighthouseIx(),
+          makeMemoIx("nonce"),
+        ],
         f.facilitator,
       );
       t.equal(
@@ -462,7 +493,7 @@ await t.test("isValidTransaction", async (t) => {
       decimals: f.decimals,
     });
     const txMsg = buildTxMessage(
-      [f.computeLimitIx, f.computePriceIx, wrongAmountIx],
+      [f.computeLimitIx, f.computePriceIx, wrongAmountIx, makeMemoIx("nonce")],
       f.facilitator,
     );
     t.equal(
@@ -499,7 +530,7 @@ await t.test("isValidTransaction", async (t) => {
       decimals: f.decimals,
     });
     const txMsg = buildTxMessage(
-      [f.computeLimitIx, f.computePriceIx, wrongMintIx],
+      [f.computeLimitIx, f.computePriceIx, wrongMintIx, makeMemoIx("nonce")],
       f.facilitator,
     );
     t.equal(
@@ -531,7 +562,7 @@ await t.test("isValidTransaction", async (t) => {
       decimals: f.decimals,
     });
     const txMsg = buildTxMessage(
-      [f.computeLimitIx, f.computePriceIx, wrongDestIx],
+      [f.computeLimitIx, f.computePriceIx, wrongDestIx, makeMemoIx("nonce")],
       f.facilitator,
     );
     t.equal(
@@ -559,7 +590,7 @@ await t.test("isValidTransaction", async (t) => {
         decimals: f.decimals,
       });
       const txMsg = buildTxMessage(
-        [f.computeLimitIx, f.computePriceIx, badIx],
+        [f.computeLimitIx, f.computePriceIx, badIx, makeMemoIx("nonce")],
         f.facilitator,
       );
       t.equal(
@@ -588,7 +619,7 @@ await t.test("isValidTransaction", async (t) => {
         decimals: f.decimals,
       });
       const txMsg = buildTxMessage(
-        [f.computeLimitIx, f.computePriceIx, badIx],
+        [f.computeLimitIx, f.computePriceIx, badIx, makeMemoIx("nonce")],
         f.facilitator,
       );
       t.equal(
@@ -611,7 +642,7 @@ await t.test("isValidTransaction", async (t) => {
         tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
       });
       const txMsg = buildTxMessage(
-        [f.computeLimitIx, f.computePriceIx, f.transferIx],
+        [f.computeLimitIx, f.computePriceIx, f.transferIx, makeMemoIx("nonce")],
         f.facilitator,
       );
       const result = await isValidTransaction(
@@ -726,6 +757,33 @@ await t.test("isValidTransaction", async (t) => {
     );
     t.end();
   });
+
+  await t.test(
+    "rejects transaction with multiple memo instructions",
+    async (t) => {
+      const f = await createFixtures();
+      const txMsg = buildTxMessage(
+        [
+          f.computeLimitIx,
+          f.computePriceIx,
+          f.transferIx,
+          makeMemoIx("nonce-1"),
+          makeMemoIx("nonce-2"),
+        ],
+        f.facilitator,
+      );
+      t.equal(
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+        ),
+        false,
+      );
+      t.end();
+    },
+  );
 
   await t.test("rejects missing memo when extra.memo is set", async (t) => {
     const f = await createFixtures();

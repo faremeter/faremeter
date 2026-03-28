@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Generate TSDOC-based README documentation for all packages.
+# Resolves public API sources via bin/tsdoc-sources and guards
+# against empty output for packages with TSDOC markers.
+set -euo pipefail
+
+root=$(cd "$(dirname "$0")/.." && pwd)
+
+for pkg in "$root"/packages/*; do
+  name=$(basename "$pkg")
+
+  (
+    cd "$pkg"
+    sources=$("$root/bin/tsdoc-sources")
+    pnpm tsdoc --src="$sources" --dest=README.md --types --noemoji
+
+    tsdoc_section=$(sed -n '/TSDOC_START/,/TSDOC_END/p' README.md)
+    if [[ -n "$tsdoc_section" ]] && ! echo "$tsdoc_section" | grep -q '^##'; then
+      echo "ERROR: tsdoc produced empty output for packages/$name" >&2
+      exit 1
+    fi
+  )
+done

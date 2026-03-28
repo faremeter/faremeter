@@ -46,6 +46,7 @@ import {
   parseAuthorizationPayment,
   formatWWWAuthenticate,
   serializeReceipt,
+  computeBodyDigest,
   PAYMENT_RECEIPT_HEADER,
   resolveMPPChallenges,
   settleMPPPayment,
@@ -518,6 +519,8 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = {
   setResponseHeader?: (key: string, value: string) => void;
   /** Optional pre-built resource info for the 402 response. */
   resourceInfo?: x402ResourceInfo;
+  /** Optional accessor for the request body (for RFC 9530 digest). */
+  getBody?: () => Promise<ArrayBuffer | null>;
 };
 
 /**
@@ -574,6 +577,15 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
       : undefined;
   }
 
+  // MPP: compute body digest for challenge binding (RFC 9530).
+  let mppDigest: string | undefined;
+  if (hasMPP && args.getBody) {
+    const body = await args.getBody();
+    if (body !== null && body.byteLength > 0) {
+      mppDigest = await computeBodyDigest(body);
+    }
+  }
+
   // MPP: check for Authorization: Payment header before x402 headers.
   // Only intercept when MPP handlers are configured.
   if (hasMPP) {
@@ -587,6 +599,7 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
           mppMethodHandlers,
           pricing,
           resource,
+          mppDigest,
         );
       }
     }
@@ -611,11 +624,15 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
 
     // MPP challenges (resolved lazily)
     if (hasMPP) {
+      const resolveOpts: Parameters<typeof resolveMPPChallenges>[3] = {
+        logger,
+      };
+      if (mppDigest !== undefined) resolveOpts.digest = mppDigest;
       const mppChallenges = await resolveMPPChallenges(
         mppMethodHandlers,
         pricing,
         resource,
-        { logger },
+        resolveOpts,
       );
       Object.assign(headers, buildMPPChallengeHeaders(mppChallenges));
     }
@@ -879,13 +896,18 @@ async function handleMPPRequest<MiddlewareResponse>(
   mppHandlers: MPPMethodHandler[],
   pricing: ResourcePricing[],
   resource: string,
+  digest?: string,
 ): Promise<MiddlewareResponse | undefined> {
   const sendPaymentRequired = async (): Promise<MiddlewareResponse> => {
+    const resolveOpts: Parameters<typeof resolveMPPChallenges>[3] = {
+      logger,
+    };
+    if (digest !== undefined) resolveOpts.digest = digest;
     const mppChallenges = await resolveMPPChallenges(
       mppHandlers,
       pricing,
       resource,
-      { logger },
+      resolveOpts,
     );
     const headers = buildMPPChallengeHeaders(mppChallenges);
     if (Object.keys(headers).length === 0) {
@@ -895,6 +917,16 @@ async function handleMPPRequest<MiddlewareResponse>(
     }
     return args.sendJSONResponse(402, undefined, headers);
   };
+
+  // Per spec Section 5.1.3: reject credential if digests don't match.
+  // Both directions: credential has digest but server doesn't (or vice versa),
+  // and digest values differ.
+  if (credential.challenge.digest !== undefined || digest !== undefined) {
+    if (credential.challenge.digest !== digest) {
+      logger.warning("MPP credential digest does not match request body");
+      return sendPaymentRequired();
+    }
+  }
 
   const settle = async (): Promise<SettleResultMPP<MiddlewareResponse>> => {
     try {

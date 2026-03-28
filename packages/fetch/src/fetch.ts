@@ -1,6 +1,7 @@
 import { type RequestContext } from "@faremeter/types/client";
 
 import type { MPPPaymentHandler } from "@faremeter/types/mpp";
+import { computeBodyDigest } from "@faremeter/types/mpp";
 
 import {
   type ProcessPaymentRequiredResponseOpts,
@@ -62,9 +63,28 @@ export function wrap(phase2Fetch: typeof fetch, options: WrapOpts) {
 
       // Try MPP first (checks WWW-Authenticate header, does not consume body)
       if (options.mppHandlers && options.mppHandlers.length > 0) {
+        const mppOpts: { bodyDigest?: string } = {};
+        if (init.body !== null && init.body !== undefined) {
+          let bodyBuffer: ArrayBuffer | null = null;
+          if (typeof init.body === "string") {
+            bodyBuffer = new TextEncoder().encode(init.body).buffer;
+          } else if (init.body instanceof ArrayBuffer) {
+            bodyBuffer = init.body;
+          } else if (ArrayBuffer.isView(init.body)) {
+            const view = init.body;
+            bodyBuffer = view.buffer.slice(
+              view.byteOffset,
+              view.byteOffset + view.byteLength,
+            );
+          }
+          if (bodyBuffer !== null && bodyBuffer.byteLength > 0) {
+            mppOpts.bodyDigest = await computeBodyDigest(bodyBuffer);
+          }
+        }
         const authorizationHeader = await processPaymentRequiredResponseMPP(
           response,
           options.mppHandlers,
+          mppOpts,
         );
         if (authorizationHeader) {
           const headers = new Headers(init.headers);

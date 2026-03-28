@@ -9,6 +9,10 @@ import { matchPricingToCapabilities } from "../pricing";
  * for transferring value (e.g. "solana"). A method handler supports one
  * or more intents (e.g. "charge").
  */
+export type ChallengeOpts = {
+  digest?: string;
+};
+
 export interface MPPMethodHandler {
   method: string;
   capabilities: HandlerCapabilities;
@@ -17,6 +21,7 @@ export interface MPPMethodHandler {
     intent: string,
     pricing: ResourcePricing,
     resourceURL: string,
+    opts?: ChallengeOpts,
   ): Promise<mppChallengeParams>;
   handleSettle(credential: mppCredential): Promise<mppReceipt | null>;
 }
@@ -45,6 +50,7 @@ type Logger = {
 
 type ResolveOpts = {
   logger?: Logger;
+  digest?: string;
 };
 
 /**
@@ -82,7 +88,14 @@ export async function resolveMPPChallenges(
 
     for (const p of matched) {
       for (const intent of intents) {
-        const challenge = await handler.getChallenge(intent, p, resourceURL);
+        const challengeOpts: ChallengeOpts = {};
+        if (opts?.digest !== undefined) challengeOpts.digest = opts.digest;
+        const challenge = await handler.getChallenge(
+          intent,
+          p,
+          resourceURL,
+          challengeOpts,
+        );
         results.push(challenge);
       }
     }

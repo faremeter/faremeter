@@ -158,6 +158,16 @@ export function serializeReceipt(receipt: MppReceipt): string {
   return encodeBase64URL(canonicalizeSortedJSON(receipt));
 }
 
+/**
+ * Computes an RFC 9530 content digest for a request body.
+ * Format: `sha-256=:base64value:`
+ */
+export async function computeBodyDigest(body: ArrayBuffer): Promise<string> {
+  const hash = await crypto.subtle.digest("SHA-256", body);
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(hash)));
+  return `sha-256=:${base64}:`;
+}
+
 export function parseReceipt(header: string): MppReceipt | undefined {
   let decoded: string;
   try {

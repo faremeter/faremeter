@@ -41,6 +41,14 @@ export async function createMiddleware(
       supportedVersions,
       resource: c.req.url,
       getHeader: (key) => c.req.header(key),
+      getBody: async () => {
+        if (c.req.method === "GET" || c.req.method === "HEAD") return null;
+        try {
+          return await c.req.raw.clone().arrayBuffer();
+        } catch {
+          return null;
+        }
+      },
       setResponseHeader: (key, value) => c.header(key, value),
       sendJSONResponse: (status, body, headers) => {
         c.status(status);

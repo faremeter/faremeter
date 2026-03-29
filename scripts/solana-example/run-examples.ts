@@ -2,7 +2,7 @@ import { spinner, echo, $, sleep, type ProcessPromise } from "zx";
 
 $.verbose = true;
 
-async function runPayments() {
+async function runX402Payments() {
   await $`pnpm tsx solana-example/sol-payment.ts`;
   await $`pnpm tsx solana-example/squads-payment.ts`;
   await $`pnpm tsx solana-example/token-payment.ts`;
@@ -12,7 +12,16 @@ async function runPayments() {
   // XXX - Add the Crossmint and Ledger payment in future.
 }
 
-async function runUsingResourceServer(resourceServer: ProcessPromise) {
+async function runMPPPayments() {
+  await $`pnpm tsx solana-example/mpp-token-payment.ts`;
+  await $`pnpm tsx solana-example/mpp-sol-payment.ts`;
+  await $`pnpm tsx solana-example/solana-exact-payment.ts`;
+}
+
+async function runUsingResourceServer(
+  resourceServer: ProcessPromise,
+  payments: () => Promise<void>,
+) {
   await spinner("Sleeping, waiting for resource server to start...", async () =>
     sleep(500),
   );
@@ -20,7 +29,7 @@ async function runUsingResourceServer(resourceServer: ProcessPromise) {
   let success = true;
 
   try {
-    await runPayments();
+    await payments();
   } catch (e) {
     echo("error running payments: ", e);
     success = false;
@@ -41,11 +50,24 @@ await spinner("Sleeping, waiting for facilitator to start...", async () =>
 let ret = 0;
 
 if (
-  !(await runUsingResourceServer($`pnpm tsx solana-example/server-hono.ts`))
+  !(await runUsingResourceServer(
+    $`pnpm tsx solana-example/server-hono.ts`,
+    runX402Payments,
+  ))
 ) {
   ret = 1;
 } else if (
-  !(await runUsingResourceServer($`pnpm tsx solana-example/server-express.ts`))
+  !(await runUsingResourceServer(
+    $`pnpm tsx solana-example/server-express.ts`,
+    runX402Payments,
+  ))
+) {
+  ret = 1;
+} else if (
+  !(await runUsingResourceServer(
+    $`pnpm tsx solana-example/server-mpp-hono.ts`,
+    runMPPPayments,
+  ))
 ) {
   ret = 1;
 }

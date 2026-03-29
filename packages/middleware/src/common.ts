@@ -376,6 +376,37 @@ export function acceptsToPricing(
   });
 }
 
+export type CreateRemoteX402HandlersArgs = {
+  facilitatorURL: string;
+  accepts: (RelaxedRequirements | RelaxedRequirements[])[];
+  cacheConfig?: AgedLRUCacheOpts & { disable?: boolean };
+};
+
+/**
+ * Creates x402 facilitator handlers backed by a remote HTTP facilitator.
+ *
+ * This is the composable equivalent of the `facilitatorURL` + `accepts`
+ * shorthand on {@link CommonMiddlewareArgs}. Use it when you need to
+ * combine a remote x402 facilitator with in-process MPP handlers in the
+ * same middleware.
+ *
+ * @returns An array of {@link FacilitatorHandler} suitable for
+ * `createMiddleware({ x402Handlers: ... })`.
+ */
+export function createRemoteX402Handlers(
+  args: CreateRemoteX402HandlersArgs,
+): FacilitatorHandler[] {
+  const flatAccepts = args.accepts.flat();
+  const capabilities = deriveCapabilities(flatAccepts);
+  return [
+    createHTTPFacilitatorHandler(args.facilitatorURL, {
+      capabilities,
+      acceptsOverride: flatAccepts.map(relaxedRequirementsToV2),
+      cacheConfig: args.cacheConfig ?? {},
+    }),
+  ];
+}
+
 export type ResolvedConfig = {
   handlers: FacilitatorHandler[];
   pricing: ResourcePricing[];

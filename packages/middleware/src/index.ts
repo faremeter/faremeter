@@ -22,6 +22,8 @@ export * as hono from "./hono";
  * @description Framework-agnostic middleware utilities and types
  */
 export * as common from "./common";
+export { createHTTPFacilitatorHandler } from "./http-handler";
+export { createRemoteX402Handlers } from "./common";
 /**
  * @title Middleware Cache
  * @sidebarTitle Middleware / Cache

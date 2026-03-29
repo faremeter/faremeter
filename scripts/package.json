@@ -28,6 +28,7 @@
     "@faremeter/x-solana-settlement": "catalog:",
     "@hono/node-server": "catalog:",
     "@solana/spl-token": "catalog:",
+    "@solana/kit": "catalog:",
     "@solana/web3.js": "catalog:",
     "@sqds/multisig": "^2.1.4",
     "bs58": "catalog:",

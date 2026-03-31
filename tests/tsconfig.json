@@ -6,7 +6,7 @@
   "include": [
     "x402v1/*.ts",
     "x402v2/*.ts",
-    "x402-interop/*.ts",
+    "interop/*.ts",
     "x402-in-process/*.ts",
     "mpp/*.ts",
     "rides/*.ts"

@@ -24,7 +24,8 @@
     "@tapjs/tsx": "catalog:",
     "tap": "catalog:",
     "tsc-esm-fix": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "zx": "catalog:"
   },
   "dependencies": {
     "@scalar/json-magic": "catalog:",

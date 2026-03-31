@@ -1,0 +1,40 @@
+{
+  "name": "@faremeter/gateway-nginx",
+  "version": "0.19.0",
+  "description": "Nginx and Lua configuration generator from OpenAPI specs with x-faremeter extensions",
+  "license": "LGPL-3.0-only",
+  "type": "module",
+  "bin": {
+    "gateway-nginx": "dist/src/cli.js"
+  },
+  "main": "dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/src/index.js",
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "packageManager": "pnpm@10.12.1",
+  "devDependencies": {
+    "@tapjs/tsx": "catalog:",
+    "tap": "catalog:",
+    "tsc-esm-fix": "catalog:",
+    "typescript": "catalog:",
+    "zx": "catalog:"
+  },
+  "dependencies": {
+    "@faremeter/logs": "workspace:^",
+    "@faremeter/middleware-openapi": "workspace:^"
+  },
+  "tap": {
+    "plugin": [
+      "!@tapjs/typescript",
+      "@tapjs/tsx"
+    ]
+  }
+}

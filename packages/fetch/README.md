@@ -25,6 +25,7 @@ pnpm install @faremeter/fetch
 
 - [chooseFirstAvailable](#choosefirstavailable)
 - [processPaymentRequiredResponse](#processpaymentrequiredresponse)
+- [processPaymentRequiredResponseMPP](#processpaymentrequiredresponsempp)
 - [wrap](#wrap)
 - [responseFeeder](#responsefeeder)
 
@@ -61,6 +62,12 @@ Parameters:
 Returns:
 
 Payment information including header and detected version
+
+### processPaymentRequiredResponseMPP
+
+| Function                            | Type                                                                                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `processPaymentRequiredResponseMPP` | `(response: Response, handlers: MPPPaymentHandler[], opts?: ProcessMPPOpts or undefined) => Promise<string or undefined>` |
 
 ### wrap
 
@@ -112,6 +119,7 @@ Contains the final 402 response for inspection.
 - [DetectedVersion](#detectedversion)
 - [ProcessPaymentRequiredResponseOpts](#processpaymentrequiredresponseopts)
 - [ProcessPaymentRequiredResponseResult](#processpaymentrequiredresponseresult)
+- [ProcessMPPOpts](#processmppopts)
 - [WrapOpts](#wrapopts)
 - [MockFetchType](#mockfetchtype)
 - [MockResponse](#mockresponse)
@@ -138,13 +146,28 @@ Result of processing a 402 Payment Required response.
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `ProcessPaymentRequiredResponseResult` | `{ /** The selected payment execer. */ payer: PaymentExecer; /** The result from executing the payment. */ payerResult: { payload: object }; /** The payment payload in the detected protocol version format. */ paymentPayload: x402PaymentPayload or x402PaymentPayloadV1; /** Base64-encoded payment header ready to attach to the retry request. */ paymentHeader: string; /** The detected protocol version (1 or 2). */ detectedVersion: DetectedVersion; }` |
 
+### ProcessMPPOpts
+
+Attempts to process a 402 response as an MPP challenge.
+
+Checks for a WWW-Authenticate header with Payment challenges, then
+iterates handlers to find one that matches. Returns the Authorization
+header value on success, or undefined if no MPP challenges are present
+or no handler matches (allowing fallthrough to x402).
+
+Does not consume the response body.
+
+| Type             | Type                       |
+| ---------------- | -------------------------- |
+| `ProcessMPPOpts` | `{ bodyDigest?: string; }` |
+
 ### WrapOpts
 
 Configuration options for wrapping a fetch function with x402 payment handling.
 
-| Type       | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `WrapOpts` | `ProcessPaymentRequiredResponseOpts and { /** Optional fetch function for the initial request (phase 1). Defaults to phase2Fetch. */ phase1Fetch?: typeof fetch; /** Number of retry attempts after initial failure. Defaults to 2. */ retryCount?: number; /** Initial delay between retries in milliseconds. Doubles after each attempt. Defaults to 100. */ initialRetryDelay?: number; /** If true, returns the 402 response instead of throwing on payment failure. */ returnPaymentFailure?: boolean; }` |
+| Type       | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WrapOpts` | `ProcessPaymentRequiredResponseOpts and { /** MPP payment handlers for Authorization: Payment flow. */ mppHandlers?: MPPPaymentHandler[]; /** Optional fetch function for the initial request (phase 1). Defaults to phase2Fetch. */ phase1Fetch?: typeof fetch; /** Number of retry attempts after initial failure. Defaults to 2. */ retryCount?: number; /** Initial delay between retries in milliseconds. Doubles after each attempt. Defaults to 100. */ initialRetryDelay?: number; /** If true, returns the 402 response instead of throwing on payment failure. */ returnPaymentFailure?: boolean; }` |
 
 ### MockFetchType
 

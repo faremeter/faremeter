@@ -41,10 +41,13 @@ pnpm install @faremeter/test-harness
 - [getURLFromRequestInfo](#geturlfromrequestinfo)
 - [isResourceContextV1](#isresourcecontextv1)
 - [isResourceContextV2](#isresourcecontextv2)
+- [isResourceContextMPP](#isresourcecontextmpp)
 - [defaultResourceHandler](#defaultresourcehandler)
 - [generateTestId](#generatetestid)
 - [createTestFacilitatorHandler](#createtestfacilitatorhandler)
 - [createTestPaymentHandler](#createtestpaymenthandler)
+- [createTestMPPHandler](#createtestmpphandler)
+- [createTestMPPPaymentHandler](#createtestmpppaymenthandler)
 - [matchFacilitatorAccepts](#matchfacilitatoraccepts)
 - [matchFacilitatorVerify](#matchfacilitatorverify)
 - [matchFacilitatorSettle](#matchfacilitatorsettle)
@@ -351,6 +354,12 @@ Type guard to check if context is v2.
 | --------------------- | ---------------------------------------------------- |
 | `isResourceContextV2` | `(ctx: ResourceContext) => ctx is ResourceContextV2` |
 
+### isResourceContextMPP
+
+| Function               | Type                                                  |
+| ---------------------- | ----------------------------------------------------- |
+| `isResourceContextMPP` | `(ctx: ResourceContext) => ctx is ResourceContextMPP` |
+
 ### defaultResourceHandler
 
 | Function                 | Type              |
@@ -390,6 +399,18 @@ operations, making it suitable for testing the x402 protocol flow.
 | Function                   | Type                                                        |
 | -------------------------- | ----------------------------------------------------------- |
 | `createTestPaymentHandler` | `(opts?: CreateTestPaymentHandlerOpts) => PaymentHandlerV1` |
+
+### createTestMPPHandler
+
+| Function               | Type                                                    |
+| ---------------------- | ------------------------------------------------------- |
+| `createTestMPPHandler` | `(opts?: CreateTestMPPHandlerOpts) => MPPMethodHandler` |
+
+### createTestMPPPaymentHandler
+
+| Function                      | Type                                                            |
+| ----------------------------- | --------------------------------------------------------------- |
+| `createTestMPPPaymentHandler` | `(opts?: CreateTestMPPPaymentHandlerOpts) => MPPPaymentHandler` |
 
 ### matchFacilitatorAccepts
 
@@ -1051,6 +1072,10 @@ Useful for testing /supported endpoint behavior.
 - [TEST_SCHEME](#test_scheme)
 - [TEST_NETWORK](#test_network)
 - [TEST_ASSET](#test_asset)
+- [TEST_MPP_METHOD](#test_mpp_method)
+- [TEST_MPP_INTENT](#test_mpp_intent)
+- [TEST_MPP_REALM](#test_mpp_realm)
+- [TEST_MPP_SECRET](#test_mpp_secret)
 
 ### TEST_SCHEME
 
@@ -1069,6 +1094,30 @@ Useful for testing /supported endpoint behavior.
 | Constant     | Type     |
 | ------------ | -------- |
 | `TEST_ASSET` | `"TEST"` |
+
+### TEST_MPP_METHOD
+
+| Constant          | Type            |
+| ----------------- | --------------- |
+| `TEST_MPP_METHOD` | `"test-solana"` |
+
+### TEST_MPP_INTENT
+
+| Constant          | Type       |
+| ----------------- | ---------- |
+| `TEST_MPP_INTENT` | `"charge"` |
+
+### TEST_MPP_REALM
+
+| Constant         | Type           |
+| ---------------- | -------------- |
+| `TEST_MPP_REALM` | `"test-realm"` |
+
+### TEST_MPP_SECRET
+
+| Constant          | Type                      |
+| ----------------- | ------------------------- |
+| `TEST_MPP_SECRET` | `Uint8Array<ArrayBuffer>` |
 
 ## TestHarness
 
@@ -1173,12 +1222,16 @@ Reset harness state (interceptors, resource handler).
 - [TestHarnessConfig](#testharnessconfig)
 - [ResourceContextV1](#resourcecontextv1)
 - [ResourceContextV2](#resourcecontextv2)
+- [ResourceContextMPP](#resourcecontextmpp)
+- [ResourceContextX402](#resourcecontextx402)
 - [ResourceContext](#resourcecontext)
 - [ResourceResult](#resourceresult)
 - [ResourceHandler](#resourcehandler)
 - [TestPaymentPayload](#testpaymentpayload)
 - [CreateTestFacilitatorHandlerOpts](#createtestfacilitatorhandleropts)
 - [CreateTestPaymentHandlerOpts](#createtestpaymenthandleropts)
+- [CreateTestMPPHandlerOpts](#createtestmpphandleropts)
+- [CreateTestMPPPaymentHandlerOpts](#createtestmpppaymenthandleropts)
 - [LogEvent](#logevent)
 - [CreateSimpleFacilitatorHandlerOpts](#createsimplefacilitatorhandleropts)
 
@@ -1229,9 +1282,9 @@ How the middleware handles payment verification and settlement.
 Configuration for in-process handler testing. Handlers run directly
 in the middleware with no facilitator HTTP service.
 
-| Type              | Type                                                                                                                             |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `InProcessConfig` | `BaseConfig and { x402Handlers: FacilitatorHandler[]; pricing: ResourcePricing[]; handlerInterceptors?: HandlerInterceptor[]; }` |
+| Type              | Type                                                                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `InProcessConfig` | `BaseConfig and { x402Handlers?: FacilitatorHandler[]; mppMethodHandlers?: MPPMethodHandler[]; pricing: ResourcePricing[]; handlerInterceptors?: HandlerInterceptor[]; }` |
 
 ### HTTPConfig
 
@@ -1266,14 +1319,31 @@ Resource context for v2 protocol.
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ResourceContextV2` | `ResourceContextBase and { protocolVersion: 2; paymentRequirements: x402PaymentRequirements; paymentPayload: x402PaymentPayload; settleResponse: x402SettleResponse; verifyResponse?: x402VerifyResponse or undefined; }` |
 
+### ResourceContextMPP
+
+Resource context for MPP protocol.
+
+| Type                 | Type                                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------------------- |
+| `ResourceContextMPP` | `ResourceContextBase and { protocolVersion: "mpp"; credential: mppCredential; receipt: mppReceipt; }` |
+
+### ResourceContextX402
+
+Resource context for x402 protocols (v1 or v2).
+Use when the handler only needs to work with x402 payment fields.
+
+| Type                  | Type                                     |
+| --------------------- | ---------------------------------------- |
+| `ResourceContextX402` | `ResourceContextV1 or ResourceContextV2` |
+
 ### ResourceContext
 
 Resource context passed to the resource handler after successful payment.
 Discriminated union based on protocolVersion.
 
-| Type              | Type                                     |
-| ----------------- | ---------------------------------------- |
-| `ResourceContext` | `ResourceContextV1 or ResourceContextV2` |
+| Type              | Type                                        |
+| ----------------- | ------------------------------------------- |
+| `ResourceContext` | `ResourceContextX402 or ResourceContextMPP` |
 
 ### ResourceResult
 
@@ -1310,6 +1380,18 @@ Options for creating a test payment handler.
 | Type                           | Type                                                                                                                                                                                                                                                                                                                                                          |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `CreateTestPaymentHandlerOpts` | `{ /** Optional callback when requirements are matched. */ onMatch?: (requirements: x402PaymentRequirements) => void; /** Optional callback when payment is executed. */ onExec?: ( requirements: x402PaymentRequirements, payload: TestPaymentPayload, ) => void; /** Custom metadata to include in test payloads. */ metadata?: Record<string, unknown>; }` |
+
+### CreateTestMPPHandlerOpts
+
+| Type                       | Type                                                                                                                                                                                                 |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CreateTestMPPHandlerOpts` | `{ method?: string; realm?: string; intents?: string[]; onChallenge?: ( intent: string, pricing: ResourcePricing, resourceURL: string, ) => void; onSettle?: (credential: mppCredential) => void; }` |
+
+### CreateTestMPPPaymentHandlerOpts
+
+| Type                              | Type                                                                                                                                         |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CreateTestMPPPaymentHandlerOpts` | `{ method?: string; intent?: string; onMatch?: (challenge: mppChallengeParams) => void; onExec?: (challenge: mppChallengeParams) => void; }` |
 
 ### LogEvent
 

@@ -57,6 +57,8 @@ pnpm install @faremeter/types
 - [adaptPaymentHandlerV2ToV1](#adaptpaymenthandlerv2tov1)
 - [isAddress](#isaddress)
 - [isPrivateKey](#isprivatekey)
+- [matchPricingToCapabilities](#matchpricingtocapabilities)
+- [capabilitiesMatch](#capabilitiesmatch)
 - [narrowHandlers](#narrowhandlers)
 - [resolveX402Requirements](#resolvex402requirements)
 - [settleX402Payment](#settlex402payment)
@@ -447,6 +449,24 @@ Parameters:
 Returns:
 
 True if the value matches the private key format
+
+### matchPricingToCapabilities
+
+Returns pricing entries whose network and asset match the given
+capabilities. Empty `networks` or `assets` arrays act as wildcards.
+
+| Function                     | Type                                                                                   |
+| ---------------------------- | -------------------------------------------------------------------------------------- |
+| `matchPricingToCapabilities` | `(capabilities: HandlerCapabilities, pricing: ResourcePricing[]) => ResourcePricing[]` |
+
+### capabilitiesMatch
+
+Returns true when the given network and asset match the capabilities.
+Empty `networks` or `assets` arrays act as wildcards.
+
+| Function            | Type                                                                                            |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `capabilitiesMatch` | `(capabilities: HandlerCapabilities, criteria: { network: string; asset: string; }) => boolean` |
 
 ### narrowHandlers
 

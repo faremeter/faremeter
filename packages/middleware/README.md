@@ -22,6 +22,7 @@ pnpm install @faremeter/middleware
 
 ## Functions
 
+- [createHTTPFacilitatorHandler](#createhttpfacilitatorhandler)
 - [findMatchingPaymentRequirements](#findmatchingpaymentrequirements)
 - [findMatchingPaymentRequirementsV2](#findmatchingpaymentrequirementsv2)
 - [relaxedRequirementsToV2](#relaxedrequirementstov2)
@@ -30,10 +31,30 @@ pnpm install @faremeter/middleware
 - [deriveCapabilities](#derivecapabilities)
 - [deriveResourceInfo](#deriveresourceinfo)
 - [acceptsToPricing](#acceptstopricing)
+- [createRemoteX402Handlers](#createremotex402handlers)
 - [resolveConfig](#resolveconfig)
 - [handleMiddlewareRequest](#handlemiddlewarerequest)
 - [createMiddleware](#createmiddleware)
 - [createMiddleware](#createmiddleware)
+
+### createHTTPFacilitatorHandler
+
+Creates a {@link FacilitatorHandler } that delegates to a remote facilitator
+via HTTP.
+
+The glue layer constructs valid `x402PaymentRequirements` from
+`ResourcePricing` using `capabilities.schemes`, then passes them to
+`getRequirements`. This handler POSTs those to the facilitator's
+`/accepts` endpoint for enrichment.
+
+Cache key stability: caching assumes that identical `accepts` arrays
+produce identical facilitator responses. If the facilitator returns
+time-dependent values (e.g. `recentBlockhash`), use a short `maxAge`
+or disable caching.
+
+| Function                       | Type                                                                                     |
+| ------------------------------ | ---------------------------------------------------------------------------------------- |
+| `createHTTPFacilitatorHandler` | `(facilitatorURL: string, opts: CreateHTTPFacilitatorHandlerOpts) => FacilitatorHandler` |
 
 ### findMatchingPaymentRequirements
 
@@ -121,6 +142,24 @@ Used by framework adapters to build the resource info for the 402 response.
 | ------------------ | ------------------------------------------------------------- |
 | `acceptsToPricing` | `(accepts: x402PaymentRequirementsV1[]) => ResourcePricing[]` |
 
+### createRemoteX402Handlers
+
+Creates x402 facilitator handlers backed by a remote HTTP facilitator.
+
+This is the composable equivalent of the `facilitatorURL` + `accepts`
+shorthand on {@link CommonMiddlewareArgs}. Use it when you need to
+combine a remote x402 facilitator with in-process MPP handlers in the
+same middleware.
+
+| Function                   | Type                                                           |
+| -------------------------- | -------------------------------------------------------------- |
+| `createRemoteX402Handlers` | `(args: CreateRemoteX402HandlersArgs) => FacilitatorHandler[]` |
+
+Returns:
+
+An array of {@link FacilitatorHandler } suitable for
+`createMiddleware({ x402Handlers: ... })`.
+
 ### resolveConfig
 
 Resolves {@link CommonMiddlewareArgs} into the handlers + pricing tuple
@@ -133,11 +172,11 @@ creates an HTTP handler wrapper and converts accepts to pricing.
 
 ### handleMiddlewareRequest
 
-Core middleware request handler that processes x402 payment flows.
+Core middleware request handler that processes x402 and MPP payment flows.
 
-Delegates to the x402 glue layer for challenge generation, settlement,
-and verification. The middleware itself is protocol-agnostic -- it
-formats HTTP responses but never constructs x402 types directly.
+Delegates to protocol-specific glue layers for challenge generation,
+settlement, and verification. The middleware formats HTTP responses
+but never constructs protocol types directly.
 
 | Function                  | Type                                                                                                                      |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -145,7 +184,7 @@ formats HTTP responses but never constructs x402 types directly.
 
 ### createMiddleware
 
-Creates Express middleware that gates routes behind x402 payment.
+Creates Express middleware that gates routes behind x402 and MPP payment.
 
 | Function           | Type                                                                                                                                                                         |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -161,10 +200,10 @@ An Express middleware function
 
 ### createMiddleware
 
-Creates Hono middleware that gates routes behind x402 payment.
+Creates Hono middleware that gates routes behind x402 and MPP payment.
 
-The middleware intercepts requests, checks for payment headers, communicates
-with the facilitator to validate and settle payments, and only allows the
+The middleware intercepts requests, checks for payment headers, validates
+and settles payments via x402 or MPP protocol, and only allows the
 request to proceed if payment is successful.
 
 | Function           | Type                                                         |
@@ -210,6 +249,7 @@ capacity (least recently used entries are removed first).
 - [RelaxedRequirementsV2](#relaxedrequirementsv2)
 - [SupportedVersionsConfig](#supportedversionsconfig)
 - [CommonMiddlewareArgs](#commonmiddlewareargs)
+- [CreateRemoteX402HandlersArgs](#createremotex402handlersargs)
 - [ResolvedConfig](#resolvedconfig)
 - [SettleResultV1](#settleresultv1)
 - [SettleResultV2](#settleresultv2)
@@ -219,6 +259,8 @@ capacity (least recently used entries are removed first).
 - [VerifyResult](#verifyresult)
 - [MiddlewareBodyContextV1](#middlewarebodycontextv1)
 - [MiddlewareBodyContextV2](#middlewarebodycontextv2)
+- [SettleResultMPP](#settleresultmpp)
+- [MiddlewareBodyContextMPP](#middlewarebodycontextmpp)
 - [MiddlewareBodyContext](#middlewarebodycontext)
 - [HandleMiddlewareRequestArgs](#handlemiddlewarerequestargs)
 
@@ -256,15 +298,21 @@ At least one version must be enabled.
 Common configuration arguments shared by all middleware implementations.
 Supports two mutually exclusive modes: in-process handlers or remote facilitator.
 
-| Type                   | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CommonMiddlewareArgs` | `{ /** x402 handlers for in-process settlement. */ x402Handlers?: FacilitatorHandler[]; /** Protocol-agnostic pricing for in-process handlers. */ pricing?: ResourcePricing[];  /** URL of a remote facilitator service (backward compat). */ facilitatorURL?: string; /** Payment requirements for the remote facilitator path. */ accepts?: (RelaxedRequirements or RelaxedRequirements[])[]; /** Cache configuration for remote facilitator responses. */ cacheConfig?: AgedLRUCacheOpts and { disable?: boolean };  /** Which x402 protocol versions to support. */ supportedVersions?: SupportedVersionsConfig; }` |
+| Type                   | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CommonMiddlewareArgs` | `{ /** x402 handlers for in-process settlement. */ x402Handlers?: FacilitatorHandler[]; /** MPP method handlers for in-process settlement. */ mppMethodHandlers?: MPPMethodHandler[]; /** Protocol-agnostic pricing for in-process handlers. */ pricing?: ResourcePricing[];  /** URL of a remote facilitator service (backward compat). */ facilitatorURL?: string; /** Payment requirements for the remote facilitator path. */ accepts?: (RelaxedRequirements or RelaxedRequirements[])[]; /** Cache configuration for remote facilitator responses. */ cacheConfig?: AgedLRUCacheOpts and { disable?: boolean };  /** Which x402 protocol versions to support. */ supportedVersions?: SupportedVersionsConfig; }` |
+
+### CreateRemoteX402HandlersArgs
+
+| Type                           | Type                                                                                                                                               |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CreateRemoteX402HandlersArgs` | `{ facilitatorURL: string; accepts: (RelaxedRequirements or RelaxedRequirements[])[]; cacheConfig?: AgedLRUCacheOpts and { disable?: boolean }; }` |
 
 ### ResolvedConfig
 
-| Type             | Type                                                                                               |
-| ---------------- | -------------------------------------------------------------------------------------------------- |
-| `ResolvedConfig` | `{ handlers: FacilitatorHandler[]; pricing: ResourcePricing[]; resourceInfo?: x402ResourceInfo; }` |
+| Type             | Type                                                                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `ResolvedConfig` | `{ handlers: FacilitatorHandler[]; pricing: ResourcePricing[]; mppHandlers: MPPMethodHandler[]; resourceInfo?: x402ResourceInfo; }` |
 
 ### SettleResultV1
 
@@ -320,14 +368,28 @@ Contains payment information and functions to verify or settle the payment.
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `MiddlewareBodyContextV2` | `{ protocolVersion: 2; paymentRequirements: x402PaymentRequirements; paymentPayload: x402PaymentPayload; settle: () => Promise<SettleResultV2<MiddlewareResponse>>; verify: () => Promise<VerifyResultV2<MiddlewareResponse>>; }` |
 
+### SettleResultMPP
+
+| Type              | Type |
+| ----------------- | ---- | ------------------------------------------------------------------------------------------------ |
+| `SettleResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse }` |
+
+### MiddlewareBodyContextMPP
+
+Context provided to the middleware body handler for MPP protocol requests.
+
+| Type                       | Type                                                                                                                 |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `MiddlewareBodyContextMPP` | `{ protocolVersion: "mpp"; credential: mppCredential; settle: () => Promise<SettleResultMPP<MiddlewareResponse>>; }` |
+
 ### MiddlewareBodyContext
 
 Context provided to the middleware body handler.
-Use protocolVersion to discriminate between v1 and v2 request types.
+Use protocolVersion to discriminate between v1, v2, and mpp request types.
 
 | Type                    | Type |
-| ----------------------- | ---- | ------------------------------------------------------------------------------------------- |
-| `MiddlewareBodyContext` | `    | MiddlewareBodyContextV1<MiddlewareResponse> or MiddlewareBodyContextV2<MiddlewareResponse>` |
+| ----------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MiddlewareBodyContext` | `    | MiddlewareBodyContextV1<MiddlewareResponse> or MiddlewareBodyContextV2<MiddlewareResponse> or MiddlewareBodyContextMPP<MiddlewareResponse>` |
 
 ### HandleMiddlewareRequestArgs
 
@@ -335,9 +397,9 @@ Arguments for the core middleware request handler.
 Framework-specific middleware implementations adapt their request/response
 objects to this interface.
 
-| Type                          | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `HandleMiddlewareRequestArgs` | `{ /** x402 handlers for in-process settlement. */ x402Handlers: FacilitatorHandler[]; /** Protocol-agnostic pricing entries for the current request. */ pricing: ResourcePricing[]; /** The resource URL being accessed. */ resource: string; /** Resolved supported versions configuration. */ supportedVersions: Required<SupportedVersionsConfig>; /** Function to retrieve a request header value. */ getHeader: (key: string) => string or undefined; /** Function to send a JSON response with optional headers. */ sendJSONResponse: ( status: PossibleStatusCodes, body?: PossibleJSONResponse, headers?: Record<string, string>, ) => MiddlewareResponse; /** Handler function called when a valid payment is received. */ body: ( context: MiddlewareBodyContext<MiddlewareResponse>, ) => Promise<MiddlewareResponse or undefined>; /** Optional function to set a response header. */ setResponseHeader?: (key: string, value: string) => void; /** Optional pre-built resource info for the 402 response. */ resourceInfo?: x402ResourceInfo; }` |
+| Type                          | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HandleMiddlewareRequestArgs` | `{ /** x402 handlers for in-process settlement. */ x402Handlers?: FacilitatorHandler[]; /** MPP method handlers for in-process settlement. */ mppMethodHandlers?: MPPMethodHandler[]; /** Protocol-agnostic pricing entries for the current request. */ pricing: ResourcePricing[]; /** The resource URL being accessed. */ resource: string; /** Resolved supported versions configuration. */ supportedVersions: Required<SupportedVersionsConfig>; /** Function to retrieve a request header value. */ getHeader: (key: string) => string or undefined; /** Function to send a JSON response with optional headers. */ sendJSONResponse: ( status: PossibleStatusCodes, body?: PossibleJSONResponse, headers?: Record<string, string>, ) => MiddlewareResponse; /** Handler function called when a valid payment is received. */ body: ( context: MiddlewareBodyContext<MiddlewareResponse>, ) => Promise<MiddlewareResponse or undefined>; /** Optional function to set a response header. */ setResponseHeader?: (key: string, value: string) => void; /** Optional pre-built resource info for the 402 response. */ resourceInfo?: x402ResourceInfo; /** Optional accessor for the request body (for RFC 9530 digest). */ getBody?: () => Promise<ArrayBuffer or null>; }` |
 
 <!-- TSDOC_END -->
 

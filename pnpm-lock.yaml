@@ -1198,6 +1198,9 @@ importers:
       '@faremeter/middleware':
         specifier: workspace:^
         version: link:../packages/middleware
+      '@faremeter/middleware-openapi':
+        specifier: workspace:^
+        version: link:../packages/middleware-openapi
       '@faremeter/payment-evm':
         specifier: workspace:^
         version: link:../packages/payment-evm
@@ -1207,6 +1210,12 @@ importers:
       '@faremeter/rides':
         specifier: workspace:^
         version: link:../packages/rides
+      '@faremeter/sidecar':
+        specifier: workspace:*
+        version: link:../apps/sidecar
+      '@faremeter/test-harness':
+        specifier: workspace:^
+        version: link:../packages/test-harness
       '@faremeter/types':
         specifier: workspace:^
         version: link:../packages/types

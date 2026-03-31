@@ -24,7 +24,6 @@ pnpm install @faremeter/middleware-openapi
 
 - [buildContext](#buildcontext)
 - [withResponse](#withresponse)
-- [createPricingEvaluator](#createpricingevaluator)
 - [createGatewayHandler](#creategatewayhandler)
 - [loadSpec](#loadspec)
 - [extractSpec](#extractspec)
@@ -44,19 +43,6 @@ Augment an evaluation context with HTTP response data for capture phase.
 | Function       | Type                                                                                                                               |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `withResponse` | `(ctx: EvalContext, response: { body: Record<string, unknown>; headers: Record<string, string>; status: number; }) => EvalContext` |
-
-### createPricingEvaluator
-
-Evaluates pricing rules from an OpenAPI spec against request/response context.
-
-| Function                 | Type                                                                                                          |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `createPricingEvaluator` | `(spec: FaremeterSpec, opts?: { onError?: EvalErrorHandler or undefined; } or undefined) => PricingEvaluator` |
-
-Parameters:
-
-- `spec`: - Parsed faremeter spec with assets, operations, and rates
-- `opts`: - Optional configuration including error handler
 
 ### createGatewayHandler
 
@@ -105,6 +91,34 @@ Parameters:
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `responseContext` | `Type<{ operationKey: string; method: string; path: string; headers: Record<string, string>; query: Record<string, string>; body: Record<string, unknown> or null; response: { ...; }; }, {}>` |
 
+## PricingEvaluator
+
+Evaluates pricing rules from an OpenAPI spec against request/response context.
+
+### Methods
+
+- [authorize](#authorize)
+- [capture](#capture)
+- [getAssets](#getassets)
+
+#### authorize
+
+| Method      | Type                                                      |
+| ----------- | --------------------------------------------------------- |
+| `authorize` | `(operationKey: string, ctx: EvalContext) => PriceResult` |
+
+#### capture
+
+| Method    | Type                                                      |
+| --------- | --------------------------------------------------------- |
+| `capture` | `(operationKey: string, ctx: EvalContext) => PriceResult` |
+
+#### getAssets
+
+| Method      | Type                          |
+| ----------- | ----------------------------- |
+| `getAssets` | `() => Record<string, Asset>` |
+
 ## Types
 
 - [Asset](#asset)
@@ -116,7 +130,6 @@ Parameters:
 - [PriceResult](#priceresult)
 - [EvalError](#evalerror)
 - [EvalErrorHandler](#evalerrorhandler)
-- [PricingEvaluator](#pricingevaluator)
 - [GatewayHandlerConfig](#gatewayhandlerconfig)
 - [RequestContext](#requestcontext)
 - [ResponseContext](#responsecontext)
@@ -176,12 +189,6 @@ Parameters:
 | Type               | Type                       |
 | ------------------ | -------------------------- |
 | `EvalErrorHandler` | `(err: EvalError) => void` |
-
-### PricingEvaluator
-
-| Type               | Type                                                                                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PricingEvaluator` | `{ authorize(operationKey: string, ctx: EvalContext): PriceResult; capture(operationKey: string, ctx: EvalContext): PriceResult; getAssets(): FaremeterSpec["assets"]; }` |
 
 ### GatewayHandlerConfig
 

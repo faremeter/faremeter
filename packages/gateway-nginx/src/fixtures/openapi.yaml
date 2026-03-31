@@ -1,0 +1,125 @@
+openapi: "3.0.0"
+info:
+  title: Golden File Test Spec
+  version: "1.0.0"
+
+x-faremeter-assets:
+  USDC:
+    chain: solana
+    token: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+    decimals: 6
+    recipient: TestRecipient
+
+x-faremeter-pricing:
+  rates:
+    input-tokens: 3
+    output-tokens: 15
+
+paths:
+  /v1/chat/completions:
+    post:
+      summary: Two-phase chat completion (JSON response)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "500"
+            capture: "$.response.body.usage.total_tokens"
+          - match: '$[?@.request.body.model == "gpt-4"]'
+            authorize: "1000"
+            capture: "$.response.body.usage.prompt_tokens"
+      responses:
+        "200":
+          description: Chat completion
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/chat/stream:
+    post:
+      summary: Two-phase streaming completion (SSE response)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "500"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "200":
+          description: Streaming completion
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /v1/images/generations:
+    post:
+      summary: One-phase image generation (no authorize)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            capture: "$.response.body.usage.count"
+      responses:
+        "200":
+          description: Image generation
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/data:
+    x-faremeter-pricing:
+      rates:
+        requests: 1
+    get:
+      summary: Read data (path-level rate override)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "1"
+            capture: "$.response.body.count"
+      responses:
+        "200":
+          description: Data list
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Write data (operation-level rate override)
+      x-faremeter-pricing:
+        rates:
+          requests: 10
+        rules:
+          - match: "$"
+            authorize: "10"
+            capture: "$.response.body.count"
+      responses:
+        "200":
+          description: Data created
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/{provider}/completions:
+    post:
+      summary: Parameterized path route
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "500"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "200":
+          description: Provider completion
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /health:
+    get:
+      summary: Unpaid health check (no x-faremeter-pricing)
+      responses:
+        "200":
+          description: Health status

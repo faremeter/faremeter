@@ -18,6 +18,10 @@ async function runMPPPayments() {
   await $`pnpm tsx solana-example/solana-exact-payment.ts`;
 }
 
+async function runDynamicPricingPayments() {
+  await $`pnpm tsx solana-example/dynamic-pricing-payment.ts`;
+}
+
 async function runUsingResourceServer(
   resourceServer: ProcessPromise,
   payments: () => Promise<void>,
@@ -67,6 +71,13 @@ if (
   !(await runUsingResourceServer(
     $`pnpm tsx solana-example/server-mpp-hono.ts`,
     runMPPPayments,
+  ))
+) {
+  ret = 1;
+} else if (
+  !(await runUsingResourceServer(
+    $`pnpm tsx solana-example/server-dynamic-pricing-hono.ts`,
+    runDynamicPricingPayments,
   ))
 ) {
   ret = 1;

@@ -28,6 +28,7 @@
     "zx": "catalog:"
   },
   "dependencies": {
+    "@faremeter/logs": "workspace:^",
     "@scalar/json-magic": "catalog:",
     "@scalar/openapi-parser": "catalog:"
   },

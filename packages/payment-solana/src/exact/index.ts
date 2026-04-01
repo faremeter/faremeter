@@ -1,2 +1,2 @@
-export { createPaymentHandler, type Wallet } from "./client";
+export { createPaymentHandler } from "./client";
 export { createFacilitatorHandler } from "./facilitator";

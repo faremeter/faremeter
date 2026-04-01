@@ -176,6 +176,26 @@ NOTE: To pay using Crossmint, you must have your `CROSSMINT_WALLET` address and 
 
 NOTE: Your payer keypair must be funded with SPL Token-based `USDC` for this demo to work.
 
+#### Exact SPL Token Payment (USDC)
+
+```
+(cd scripts && pnpm tsx solana-example/solana-exact-payment.ts)
+```
+
+#### Exact Token-2022 Payment (PYUSD)
+
+```
+(cd scripts && pnpm tsx solana-example/token2022-exact-payment.ts)
+```
+
+NOTE: Your payer keypair must be funded with PYUSD on devnet.
+
+#### Exact Payment via Open Wallet Standard
+
+```
+(cd scripts && pnpm tsx solana-example/ows-exact-payment.ts)
+```
+
 ### EVM Payments
 
 #### USDC Payment on Base Sepolia

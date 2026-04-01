@@ -11,7 +11,7 @@ import { exact } from "@faremeter/payment-solana";
 import { type WalletAdapter } from "./types";
 import { getTokenBalance } from "@faremeter/payment-solana/splToken";
 import { isValidationError } from "@faremeter/types";
-import { PublicKey, Keypair, clusterApiUrl, Connection } from "@solana/web3.js";
+import { PublicKey, Keypair, clusterApiUrl } from "@solana/web3.js";
 import { createSolanaRpc } from "@solana/kit";
 import { readLocalFile } from "./common";
 
@@ -105,11 +105,6 @@ export function createAdapter(opts: CreateAdapterOptions) {
         const rpcClient = createSolanaRpc(rpcURL);
 
         for (const mint of mints) {
-          const connection = new Connection(
-            clusterApiUrl(cluster),
-            "confirmed",
-          );
-
           const wallet = await createLocalWallet(cluster, privateKey);
           res.push({
             x402Id: [
@@ -122,7 +117,7 @@ export function createAdapter(opts: CreateAdapterOptions) {
             paymentHandler: exact.createPaymentHandler(
               wallet,
               new PublicKey(mint.address),
-              connection,
+              { rpc: rpcClient },
             ),
             getBalance: async () => {
               let balance = await getTokenBalance({

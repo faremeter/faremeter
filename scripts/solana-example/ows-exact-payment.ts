@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { logger, logResponse } from "../logger";
-import { Connection, Keypair, PublicKey, clusterApiUrl } from "@solana/web3.js";
+import { clusterApiUrl, Keypair, PublicKey } from "@solana/web3.js";
+import { createSolanaRpc } from "@solana/kit";
 import { bytesToHex } from "viem";
 import { createOWSSolanaWallet } from "@faremeter/wallet-ows";
 import {
@@ -57,12 +58,12 @@ logger.info(
   `OWS wallet "${WALLET_NAME}" address: ${wallet.publicKey.toBase58()}`,
 );
 
-const connection = new Connection(clusterApiUrl(network));
+const rpc = createSolanaRpc(clusterApiUrl(network));
 const mint = new PublicKey(usdcInfo.address);
 
 try {
   const fetchWithPayer = wrapFetch(fetch, {
-    handlers: [createPaymentHandler(wallet, mint, connection)],
+    handlers: [createPaymentHandler(wallet, mint, { rpc })],
   });
 
   const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

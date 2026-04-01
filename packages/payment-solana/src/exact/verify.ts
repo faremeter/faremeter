@@ -79,10 +79,6 @@ function verifyComputeUnitPriceInstruction(instruction: Instruction): {
   }
 }
 
-// The upstream spec caps the per-CU price (<=5 lamports/CU), but that still
-// allows an attacker to inflate the CU limit to the Solana maximum and drain
-// the facilitator's SOL.  A total-fee cap closes that vector because the
-// facilitator is the one paying the priority fee.
 function calculatePriorityFee(units: number, microLamports: bigint): number {
   return (units * Number(microLamports)) / 1_000_000;
 }
@@ -199,27 +195,16 @@ export async function isValidTransaction(
     return false;
   }
 
-  const facilitator = address(facilitatorAddress);
-  for (const ix of instructions) {
-    if (!ix.accounts) continue;
-    for (const account of ix.accounts) {
-      if (account.address === facilitator) {
-        logger.error(
-          "Dropping transaction where the facilitator appears in instruction accounts",
-        );
-        return false;
-      }
-    }
-  }
-
   const memoInstructions = rest.filter(isMemoInstruction);
 
-  if (memoInstructions.length !== 1) {
-    logger.error("Expected exactly one Memo instruction");
-    return false;
-  }
-
   if (extra.memo !== undefined) {
+    if (memoInstructions.length !== 1) {
+      logger.error(
+        "Expected exactly one Memo instruction when extra.memo is set",
+      );
+      return false;
+    }
+
     const memoIx = memoInstructions[0];
     if (!memoIx) {
       return false;

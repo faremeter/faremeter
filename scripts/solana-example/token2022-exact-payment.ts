@@ -1,12 +1,12 @@
 import "dotenv/config";
 import { logResponse } from "../logger";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { clusterApiUrl, Keypair, PublicKey } from "@solana/web3.js";
+import { createSolanaRpc } from "@solana/kit";
 import { createLocalWallet } from "@faremeter/wallet-solana";
 import { lookupKnownSPLToken } from "@faremeter/info/solana";
 import { createPaymentHandler } from "@faremeter/payment-solana/exact";
 import { wrap as wrapFetch } from "@faremeter/fetch";
 import fs from "fs";
-import { clusterApiUrl } from "@solana/web3.js";
 
 const { PAYER_KEYPAIR_PATH } = process.env;
 
@@ -25,12 +25,11 @@ const keypair = Keypair.fromSecretKey(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
 );
 
-const connection = new Connection(clusterApiUrl(network));
-
+const rpc = createSolanaRpc(clusterApiUrl(network));
 const mint = new PublicKey(pyusdInfo.address);
 const wallet = await createLocalWallet(network, keypair);
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [createPaymentHandler(wallet, mint, connection)],
+  handlers: [createPaymentHandler(wallet, mint, { rpc })],
 });
 
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

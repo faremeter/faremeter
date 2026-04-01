@@ -23,5 +23,10 @@
       "!@tapjs/typescript",
       "@tapjs/tsx"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "bn.js": "^5.2.3"
+    }
   }
 }

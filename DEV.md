@@ -7,6 +7,7 @@
 - bash (v4 or newer)
 - GNU make
 - opsh
+- openresty (optional, for gateway-nginx Lua tests)
 
 Note: A recent version of `opsh` is included in the repository. You can set your `PATH` to include `bin` to use that version, rather than install it directly.
 
@@ -44,6 +45,15 @@ For example:
 make packages/test-harness
 make packages/middleware
 make packages/types
+make packages/middleware-openapi
+make packages/gateway-nginx
+```
+
+Build apps:
+
+```
+make apps/sidecar
+make apps/facilitator
 ```
 
 ## Testing

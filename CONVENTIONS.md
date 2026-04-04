@@ -784,6 +784,16 @@ Payment schemes separate client and server concerns:
 
 Use `exports` in `package.json` for multiple entry points. This allows consumers to import specific submodules (e.g., `@faremeter/middleware/hono` or `@faremeter/middleware/express`) rather than the entire package.
 
+### Code Generation Packages
+
+Some packages generate output in other languages (e.g., `gateway-nginx` generates nginx config and Lua). These packages follow additional conventions:
+
+- **Static templates** (e.g., `.lua` files) live alongside their TypeScript generators in the same directory. The generator reads the template at build time via a helper like `readLua()` and injects it into generated output.
+- **Multi-file output**: A single generator function may produce multiple output files (e.g., nginx.conf + Lua module files). Return these as a structured result, not side effects.
+- **Golden file tests**: For generated output, compare against checked-in golden files. Regenerate with a script (e.g., `gen-golden.ts`) and commit the updated golden files alongside the generator changes.
+- **String escaping**: When embedding user-controlled values (URLs, field names, paths) into generated code, always escape for the target language. Never assume inputs are safe.
+- **Search key optimizations**: When generating code that searches response bodies for specific fields, ensure the search key extraction handles all supported JSONPath notations (dot, bracket, numeric index).
+
 ---
 
 ## Testing

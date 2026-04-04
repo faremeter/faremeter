@@ -1,0 +1,36 @@
+{
+  "name": "@faremeter/sidecar",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "packageManager": "pnpm@10.12.1",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./app": {
+      "import": "./dist/src/app.js",
+      "types": "./dist/src/app.d.ts"
+    }
+  },
+  "dependencies": {
+    "@faremeter/logs": "workspace:^",
+    "@faremeter/middleware-openapi": "workspace:^",
+    "@faremeter/types": "workspace:^",
+    "arktype": "catalog:",
+    "@hono/node-server": "catalog:",
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@tapjs/tsx": "catalog:",
+    "tap": "catalog:",
+    "tsx": "catalog:",
+    "typescript-language-server": "catalog:"
+  },
+  "tap": {
+    "plugin": [
+      "@tapjs/tsx",
+      "!@tapjs/typescript"
+    ]
+  }
+}

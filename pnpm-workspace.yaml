@@ -22,6 +22,8 @@ catalog:
   "@solana/spl-token": 0.4.13
   "@solana/transactions": 2.3.0
   "@solana/web3.js": 1.98.4
+  "@scalar/json-magic": 0.4.3
+  "@scalar/openapi-parser": 0.25.1
   "@tapjs/asserts": 4.0.1
   "@tapjs/tsx": 3.0.1
   "@types/express": 5.0.3
@@ -33,9 +35,11 @@ catalog:
   bs58: 6.0.0
   dotenv: 17.2.2
   eslint: 9.34.0
+  expr-eval: 2.0.2
   express: 5.1.0
   hono: 4.9.0
   jiti: 2.5.1
+  json-p3: 2.2.2
   prettier: 3.6.2
   tap: 21.1.0
   tsc-esm-fix: 3.1.2

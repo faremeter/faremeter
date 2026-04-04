@@ -6,7 +6,7 @@ all: lint build doc test
 pre-build: FORCE
 	rm -f .eslintcache .build-finished
 
-build: pre-build packages/logs packages/types packages/info packages/wallet-solana packages/wallet-evm $(wildcard packages/*) packages/test-harness scripts apps/facilitator tests
+build: pre-build packages/logs packages/types packages/info packages/wallet-solana packages/wallet-evm $(wildcard packages/*) packages/middleware-openapi packages/gateway-nginx packages/test-harness apps/sidecar scripts apps/facilitator tests
 	touch .build-finished
 
 lint:
@@ -25,6 +25,10 @@ doc: FORCE
 	pnpm prettier -w packages/*/README.md
 	pnpm typedoc
 	pnpm prettier -w docs/
+
+packages/gateway-nginx: FORCE
+	cd $@ && rm -rf dist && pnpm tsc && pnpm tsc-esm-fix
+	cp $@/src/lua/*.lua $@/dist/src/lua/
 
 packages/%: FORCE
 	cd $@ && rm -rf dist && pnpm tsc && pnpm tsc-esm-fix

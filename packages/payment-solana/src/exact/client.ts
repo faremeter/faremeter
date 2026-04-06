@@ -7,20 +7,33 @@ import type {
 } from "@faremeter/types/client";
 import type { SolanaCAIP2Network } from "@faremeter/info/solana";
 import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  createTransferCheckedInstruction,
-  getAssociatedTokenAddressSync,
-  getMint,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
+  fetchMint,
+  findAssociatedTokenPda,
+  getCreateAssociatedTokenIdempotentInstruction,
+  getTransferCheckedInstruction,
+  TOKEN_PROGRAM_ADDRESS,
+} from "@solana-program/token";
+import {
+  getSetComputeUnitLimitInstruction,
+  getSetComputeUnitPriceInstruction,
+} from "@solana-program/compute-budget";
+import {
+  address,
+  AccountRole,
+  createNoopSigner,
+  createSolanaRpc,
+  type Address,
+  type Instruction,
+  type AccountMeta,
+  type Rpc,
+  type SolanaRpcApi,
+} from "@solana/kit";
 import {
   getBase64EncodedWireTransaction,
   type SignaturesMap,
   type TransactionMessageBytes,
 } from "@solana/transactions";
 import {
-  ComputeBudgetProgram,
-  Connection,
   PublicKey,
   TransactionInstruction,
   TransactionMessage,
@@ -48,24 +61,22 @@ export type Wallet = {
   sendTransaction?: (tx: VersionedTransaction) => Promise<string>;
 };
 
-interface GetAssociatedTokenAddressSyncOptions {
-  allowOwnerOffCurve?: boolean;
-  programId?: PublicKey;
-  associatedTokenProgramId?: PublicKey;
-}
-
-function generateGetAssociatedTokenAddressSyncRest(
-  tokenConfig: GetAssociatedTokenAddressSyncOptions,
+export function toTransactionInstruction(
+  ix: Instruction & { accounts?: readonly AccountMeta[] },
 ) {
-  const { allowOwnerOffCurve, programId, associatedTokenProgramId } =
-    tokenConfig;
-
-  // NOTE: These map to the trailing default args of
-  // getAssociatedTokenAddressSync, so order matters. If things are
-  // refactored, they should be updated to match the reality of the
-  // implementation.
-
-  return [allowOwnerOffCurve, programId, associatedTokenProgramId] as const;
+  return new TransactionInstruction({
+    programId: new PublicKey(ix.programAddress),
+    keys: (ix.accounts ?? []).map((a) => ({
+      pubkey: new PublicKey(a.address),
+      isSigner:
+        a.role === AccountRole.READONLY_SIGNER ||
+        a.role === AccountRole.WRITABLE_SIGNER,
+      isWritable:
+        a.role === AccountRole.WRITABLE ||
+        a.role === AccountRole.WRITABLE_SIGNER,
+    })),
+    data: ix.data ? Buffer.from(ix.data) : Buffer.alloc(0),
+  });
 }
 
 const PaymentMode = {
@@ -76,13 +87,13 @@ const PaymentMode = {
 type PaymentMode = (typeof PaymentMode)[keyof typeof PaymentMode];
 
 async function extractMetadata(args: {
-  connection: Connection | undefined;
-  mint: PublicKey;
+  rpc: Rpc<SolanaRpcApi> | undefined;
+  mintAddress: Address;
   requirements: x402PaymentRequirements;
   options: CreatePaymentHandlerOptions | undefined;
   wallet: Wallet;
 }) {
-  const { connection, mint, requirements, wallet, options } = args;
+  const { rpc, mintAddress, requirements, wallet, options } = args;
 
   const extra = PaymentRequirementsExtra(requirements.extra);
 
@@ -93,19 +104,18 @@ async function extractMetadata(args: {
   let recentBlockhash: string;
   if (extra.recentBlockhash !== undefined) {
     recentBlockhash = extra.recentBlockhash;
-  } else if (connection !== undefined) {
-    recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+  } else if (rpc !== undefined) {
+    recentBlockhash = (await rpc.getLatestBlockhash().send()).value.blockhash;
   } else {
     throw new Error("couldn't get the latest Solana network block hash");
   }
 
   let decimals: number;
-
   if (extra.decimals !== undefined) {
     decimals = extra.decimals;
-  } else if (connection !== undefined) {
-    const mintInfo = await getMint(connection, mint);
-    decimals = mintInfo.decimals;
+  } else if (rpc !== undefined) {
+    const mintInfo = await fetchMint(rpc, mintAddress);
+    decimals = mintInfo.data.decimals;
   } else {
     throw new Error("couldn't get the decimal information for the mint");
   }
@@ -123,9 +133,9 @@ async function extractMetadata(args: {
     paymentMode = PaymentMode.SettlementAccount;
   }
 
-  const tokenProgramId = extra.tokenProgram
-    ? new PublicKey(extra.tokenProgram)
-    : (options?.token?.programId ?? TOKEN_PROGRAM_ID);
+  const tokenProgram = extra.tokenProgram
+    ? address(extra.tokenProgram)
+    : TOKEN_PROGRAM_ADDRESS;
 
   const memo = extra.memo;
 
@@ -136,17 +146,26 @@ async function extractMetadata(args: {
     amount,
     payerKey,
     paymentMode,
-    tokenProgramId,
+    tokenProgram,
     memo,
   };
 }
 
 interface CreatePaymentHandlerOptions {
-  token?: GetAssociatedTokenAddressSyncOptions;
+  rpc?: Rpc<SolanaRpcApi>;
   settlementRentDestination?: string;
   features?: {
     enableSettlementAccounts?: boolean;
   };
+}
+
+function isConnection(value: unknown): value is { rpcEndpoint: string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "rpcEndpoint" in value &&
+    typeof (value as { rpcEndpoint: unknown }).rpcEndpoint === "string"
+  );
 }
 
 /**
@@ -157,18 +176,41 @@ interface CreatePaymentHandlerOptions {
  *
  * @param wallet - Wallet providing signing capabilities
  * @param mint - SPL token mint public key
- * @param connection - Optional Solana connection for fetching blockhash and mint info
- * @param options - Optional configuration for token address and features
+ * @param options - Optional configuration including RPC fallback and features
  * @returns A PaymentHandler function for use with the x402 client
  */
+/** @deprecated Pass `{ rpc }` in options instead of a Connection */
 export function createPaymentHandler(
   wallet: Wallet,
   mint: PublicKey,
-  connection?: Connection,
+  connection: { rpcEndpoint: string },
   options?: CreatePaymentHandlerOptions,
+): PaymentHandler;
+export function createPaymentHandler(
+  wallet: Wallet,
+  mint: PublicKey,
+  options?: CreatePaymentHandlerOptions,
+): PaymentHandler;
+export function createPaymentHandler(
+  wallet: Wallet,
+  mint: PublicKey,
+  connectionOrOptions?: { rpcEndpoint: string } | CreatePaymentHandlerOptions,
+  legacyOptions?: CreatePaymentHandlerOptions,
 ): PaymentHandler {
-  const tokenConfig = options?.token ?? {};
+  let options: CreatePaymentHandlerOptions | undefined;
 
+  if (isConnection(connectionOrOptions)) {
+    logger.warning(
+      "createPaymentHandler: passing a Connection as the third argument is deprecated. " +
+        "Pass { rpc: createSolanaRpc(url) } in options instead.",
+    );
+    options = {
+      ...legacyOptions,
+      rpc: createSolanaRpc(connectionOrOptions.rpcEndpoint),
+    };
+  } else {
+    options = connectionOrOptions;
+  }
   let hasWarnedAboutDeprecation = false;
 
   const signTransaction = async (tx: VersionedTransaction) => {
@@ -192,6 +234,8 @@ export function createPaymentHandler(
     mint ? mint.toBase58() : "sol",
   );
 
+  const mintAddress = address(mint.toBase58());
+
   return async (
     _context: RequestContext,
     accepts: x402PaymentRequirements[],
@@ -206,55 +250,56 @@ export function createPaymentHandler(
           amount,
           payerKey,
           paymentMode,
-          tokenProgramId,
+          tokenProgram,
           memo,
         } = await extractMetadata({
-          connection,
-          mint,
+          rpc: options?.rpc,
+          mintAddress,
           requirements,
           wallet,
           options,
         });
 
-        const getAssociatedTokenAddressSyncRest =
-          generateGetAssociatedTokenAddressSyncRest({
-            ...tokenConfig,
-            programId: tokenProgramId,
-          });
+        const walletSigner = createNoopSigner(
+          address(wallet.publicKey.toBase58()),
+        );
 
         const instructions = [
-          ComputeBudgetProgram.setComputeUnitLimit({
-            units: 50_000,
-          }),
-          ComputeBudgetProgram.setComputeUnitPrice({
-            microLamports: 1,
-          }),
+          toTransactionInstruction(
+            getSetComputeUnitLimitInstruction({ units: 50_000 }),
+          ),
+          toTransactionInstruction(
+            getSetComputeUnitPriceInstruction({ microLamports: 1n }),
+          ),
         ];
 
-        const sourceAccount = getAssociatedTokenAddressSync(
-          mint,
-          wallet.publicKey,
-          ...getAssociatedTokenAddressSyncRest,
-        );
+        const [sourceAccount] = await findAssociatedTokenPda({
+          mint: mintAddress,
+          owner: address(wallet.publicKey.toBase58()),
+          tokenProgram,
+        });
 
         switch (paymentMode) {
           case PaymentMode.ToSpec: {
-            const receiverAccount = getAssociatedTokenAddressSync(
-              mint,
-              payTo,
-              ...getAssociatedTokenAddressSyncRest,
-            );
+            const [receiverAccount] = await findAssociatedTokenPda({
+              mint: mintAddress,
+              owner: address(payTo.toBase58()),
+              tokenProgram,
+            });
 
             instructions.push(
-              createTransferCheckedInstruction(
-                sourceAccount,
-                mint,
-                receiverAccount,
-                wallet.publicKey,
-                amount,
-                decimals,
-                undefined,
-                tokenProgramId,
+              toTransactionInstruction(
+                getTransferCheckedInstruction(
+                  {
+                    source: sourceAccount,
+                    mint: mintAddress,
+                    destination: receiverAccount,
+                    authority: walletSigner,
+                    amount: BigInt(amount),
+                    decimals,
+                  },
+                  { programAddress: tokenProgram },
+                ),
               ),
               createMemoInstruction(memo ?? generateMemoNonce()),
             );
@@ -291,29 +336,34 @@ export function createPaymentHandler(
 
           case PaymentMode.SettlementAccount: {
             const settleKeypair = Keypair.generate();
-            const settleATA = getAssociatedTokenAddressSync(
-              mint,
-              settleKeypair.publicKey,
-              ...getAssociatedTokenAddressSyncRest,
-            );
+            const [settleATA] = await findAssociatedTokenPda({
+              mint: mintAddress,
+              owner: address(settleKeypair.publicKey.toBase58()),
+              tokenProgram,
+            });
+
             instructions.push(
-              createAssociatedTokenAccountIdempotentInstruction(
-                wallet.publicKey,
-                settleATA,
-                settleKeypair.publicKey,
-                mint,
-                tokenProgramId,
-                tokenConfig.associatedTokenProgramId,
+              toTransactionInstruction(
+                getCreateAssociatedTokenIdempotentInstruction({
+                  payer: walletSigner,
+                  ata: settleATA,
+                  owner: address(settleKeypair.publicKey.toBase58()),
+                  mint: mintAddress,
+                  tokenProgram,
+                }),
               ),
-              createTransferCheckedInstruction(
-                sourceAccount,
-                mint,
-                settleATA,
-                wallet.publicKey,
-                amount,
-                decimals,
-                undefined,
-                tokenProgramId,
+              toTransactionInstruction(
+                getTransferCheckedInstruction(
+                  {
+                    source: sourceAccount,
+                    mint: mintAddress,
+                    destination: settleATA,
+                    authority: walletSigner,
+                    amount: BigInt(amount),
+                    decimals,
+                  },
+                  { programAddress: tokenProgram },
+                ),
               ),
             );
 

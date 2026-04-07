@@ -33,6 +33,8 @@ const payTo = payToKeypair.publicKey.toBase58();
 
 const app = new Hono();
 
+app.get("/health", (c) => c.text("ok"));
+
 app.get(
   "/protected",
   await createMiddleware({

@@ -1,6 +1,10 @@
-import { spinner, echo, $, sleep, type ProcessPromise } from "zx";
+import { spinner, echo, $, type ProcessPromise } from "zx";
+import { waitForHealth } from "../wait-for-health";
 
 $.verbose = true;
+
+const FACILITATOR_URL = "http://localhost:4000";
+const RESOURCE_SERVER_URL = "http://localhost:3000";
 
 async function runX402Payments() {
   await $`pnpm tsx solana-example/sol-payment.ts`;
@@ -26,13 +30,12 @@ async function runUsingResourceServer(
   resourceServer: ProcessPromise,
   payments: () => Promise<void>,
 ) {
-  await spinner("Sleeping, waiting for resource server to start...", async () =>
-    sleep(500),
-  );
-
   let success = true;
 
   try {
+    await spinner("Waiting for resource server health endpoint...", () =>
+      waitForHealth(`${RESOURCE_SERVER_URL}/health`),
+    );
     await payments();
   } catch (e) {
     echo("error running payments: ", e);
@@ -47,8 +50,8 @@ async function runUsingResourceServer(
 }
 
 const facilitator = $`cd ${import.meta.dirname}/../../apps/facilitator && pnpm tsx src`;
-await spinner("Sleeping, waiting for facilitator to start...", async () =>
-  sleep(5000),
+await spinner("Waiting for facilitator health endpoint...", () =>
+  waitForHealth(`${FACILITATOR_URL}/health`),
 );
 
 let ret = 0;

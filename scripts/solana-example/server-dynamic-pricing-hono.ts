@@ -38,6 +38,8 @@ if (!usdcInfo) {
 
 const app = new Hono();
 
+app.get("/health", (c) => c.text("ok"));
+
 app.get("/protected", async (c) => {
   const amount = c.req.query("amount");
 

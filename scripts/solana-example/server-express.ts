@@ -35,6 +35,10 @@ const payTo = payToKeypair.publicKey.toBase58();
 const run = async () => {
   const app = express();
 
+  app.get("/health", (_, res) => {
+    res.send("ok");
+  });
+
   app.get(
     "/protected",
     await createMiddleware({

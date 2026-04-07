@@ -59,6 +59,8 @@ app.use(
   }),
 );
 
+app.get("/health", (c) => c.text("ok"));
+
 app.route(
   "/",
   createFacilitatorRoutes({

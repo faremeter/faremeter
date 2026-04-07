@@ -54,6 +54,9 @@ catalogs:
     '@solana/web3.js':
       specifier: 1.98.4
       version: 1.98.4
+    '@sqds/multisig':
+      specifier: 2.1.4
+      version: 2.1.4
     '@tapjs/asserts':
       specifier: 4.0.1
       version: 4.0.1
@@ -1009,7 +1012,7 @@ importers:
         specifier: 'catalog:'
         version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@sqds/multisig':
-        specifier: ^2.1.4
+        specifier: 'catalog:'
         version: 2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       bs58:
         specifier: 'catalog:'
@@ -1121,7 +1124,7 @@ importers:
         specifier: 'catalog:'
         version: 1.98.4(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@sqds/multisig':
-        specifier: ^2.1.4
+        specifier: 'catalog:'
         version: 2.1.4(bufferutil@4.0.9)(encoding@0.1.13)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       bs58:
         specifier: 'catalog:'

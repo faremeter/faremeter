@@ -33,7 +33,7 @@
   "dependencies": {
     "@faremeter/logs": "workspace:^",
     "@faremeter/types": "workspace:^",
-    "@open-wallet-standard/core": "0.3.9",
+    "@open-wallet-standard/core": "catalog:",
     "@solana/web3.js": "catalog:",
     "viem": "catalog:"
   }

@@ -22,12 +22,12 @@ import {
   setTransactionMessageFeePayer,
   setTransactionMessageLifetimeUsingBlockhash,
   type Address,
-  type CompilableTransactionMessage,
   type Instruction,
   type KeyPairSigner,
 } from "@solana/kit";
 import type { Blockhash } from "@solana/rpc-types";
 import type { x402PaymentRequirements } from "@faremeter/types/x402v2";
+import type { CompilableTransactionMessage } from "../common";
 
 function createRequirements(
   overrides: Partial<x402PaymentRequirements> & {

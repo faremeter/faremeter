@@ -9,18 +9,17 @@ catalog:
   "@faremeter/x-solana-settlement": 0.4.0
   "@hono/node-server": 1.19.1
   "@logtape/logtape": 1.0.4
-  "@solana-program/compute-budget": 0.8.0
-  "@solana-program/memo": 0.10.0
-  "@solana-program/system": 0.7.0
-  "@solana-program/token": 0.5.1
-  "@solana/addresses": 5.0.0
-  "@solana/errors": 5.0.0
-  "@solana/kit": 2.3.0
-  "@solana/rpc": 5.0.0
-  "@solana/rpc-api": 5.0.0
-  "@solana/rpc-types": 3.0.3
-  "@solana/spl-token": 0.4.13
-  "@solana/transactions": 2.3.0
+  "@solana-program/compute-budget": 0.15.0
+  "@solana-program/memo": 0.11.0
+  "@solana-program/system": 0.12.0
+  "@solana-program/token": 0.13.0
+  "@solana/addresses": 6.7.0
+  "@solana/kit": 6.7.0
+  "@solana/rpc": 6.7.0
+  "@solana/rpc-api": 6.7.0
+  "@solana/rpc-types": 6.7.0
+  "@solana/spl-token": 0.4.14
+  "@solana/transactions": 6.7.0
   "@solana/web3.js": 1.98.4
   "@tapjs/asserts": 4.0.1
   "@tapjs/tsx": 3.0.1

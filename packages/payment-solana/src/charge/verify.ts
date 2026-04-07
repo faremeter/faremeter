@@ -7,13 +7,9 @@ import {
   findAssociatedTokenPda,
   parseTransferCheckedInstruction,
 } from "@solana-program/token";
-import {
-  address,
-  type Address,
-  type CompilableTransactionMessage,
-  type Instruction,
-} from "@solana/kit";
+import { address, type Address, type Instruction } from "@solana/kit";
 import type { mppChargeRequest } from "./common";
+import type { CompilableTransactionMessage } from "../common";
 import { logger } from "./logger";
 
 const DEFAULT_COMPUTE_UNIT_LIMIT = 200_000;

@@ -8,14 +8,10 @@ import {
   findAssociatedTokenPda,
   parseTransferCheckedInstruction,
 } from "@solana-program/token";
-import {
-  address,
-  type Address,
-  type CompilableTransactionMessage,
-  type Instruction,
-} from "@solana/kit";
+import { address, type Address, type Instruction } from "@solana/kit";
 import { MEMO_PROGRAM_ADDRESS } from "@solana-program/memo";
 import { PaymentRequirementsExtra } from "./facilitator";
+import type { CompilableTransactionMessage } from "../common";
 import { logger } from "./logger";
 
 const LIGHTHOUSE_PROGRAM_ADDRESS = address(

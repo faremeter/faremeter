@@ -31,7 +31,7 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
-    "@crossmint/wallets-sdk": "^0.16.2",
+    "@crossmint/wallets-sdk": "catalog:",
     "@solana/web3.js": "catalog:"
   }
 }

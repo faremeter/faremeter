@@ -33,10 +33,8 @@ export async function createCrossmintWallet(
   const crossmintWallets = CrossmintWallets.from(crossmint);
   const wallet = await crossmintWallets.getWallet(crossmintWalletAddress, {
     chain: "solana",
-    signer: {
-      type: "api-key",
-    },
   });
+  await wallet.useSigner({ type: "api-key" });
 
   const solanaWallet = SolanaWallet.from(wallet);
   const publicKey = new PublicKey(solanaWallet.address);

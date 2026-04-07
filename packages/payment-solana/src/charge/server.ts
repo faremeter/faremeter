@@ -9,6 +9,8 @@ import {
   encodeBase64URL,
   canonicalizeSortedJSON,
   decodeBase64URL,
+  generateChallengeID,
+  verifyChallengeID,
 } from "@faremeter/types/mpp";
 import type { ResourcePricing } from "@faremeter/types/pricing";
 import { isValidationError } from "@faremeter/types";
@@ -43,48 +45,6 @@ import {
   verifyNativeChargeTransaction,
 } from "./verify";
 import { logger } from "./logger";
-
-async function generateChallengeID(
-  secret: Uint8Array,
-  params: Omit<mppChallengeParams, "id">,
-): Promise<string> {
-  const slots = [
-    params.realm,
-    params.method,
-    params.intent,
-    params.request,
-    params.expires ?? "",
-    params.digest ?? "",
-    params.opaque ?? "",
-  ];
-  // Per spec: pipe-delimited. Safe because slot values are either
-  // server-controlled constants or base64url-encoded (no pipe chars).
-  const message = new TextEncoder().encode(slots.join("|"));
-  const keyData = new Uint8Array(secret);
-  const key = await crypto.subtle.importKey(
-    "raw",
-    keyData,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, message);
-  return encodeBase64URL(String.fromCharCode(...new Uint8Array(sig)));
-}
-
-async function verifyChallengeID(
-  secret: Uint8Array,
-  params: mppChallengeParams,
-): Promise<boolean> {
-  const { id, ...rest } = params;
-  const computed = await generateChallengeID(secret, rest);
-  const encoder = new TextEncoder();
-  const a = encoder.encode(computed);
-  const b = encoder.encode(id);
-  if (a.byteLength !== b.byteLength) return false;
-  const { timingSafeEqual } = await import("node:crypto");
-  return timingSafeEqual(a, b);
-}
 
 export type CreateMPPSolanaChargeHandlerArgs = {
   network: string | SolanaCAIP2Network;

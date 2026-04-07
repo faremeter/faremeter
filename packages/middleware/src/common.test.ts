@@ -140,6 +140,7 @@ await t.test("MPP digest binding", async (t) => {
       handleSettle: async () => ({
         status: "success" as const,
         method: "test-method",
+        intent: "test-intent",
         timestamp: new Date().toISOString(),
         reference: "ref",
       }),

@@ -111,6 +111,7 @@ export function createTestMPPHandler(
       return {
         status: "success" as const,
         method,
+        intent: credential.challenge.intent,
         timestamp: new Date().toISOString(),
         reference: `test-tx-${Date.now()}`,
       };

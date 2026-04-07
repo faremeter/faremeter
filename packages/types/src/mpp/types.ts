@@ -30,8 +30,16 @@ export type mppCredential = typeof mppCredential.infer;
 export const mppReceipt = type({
   status: "'success'|'failed'",
   method: "string",
+  // draft-solana-session-00 §"Receipt Format" lists `intent` as
+  // REQUIRED; the charge-intent receipt also carries it. Clients
+  // use this to route receipts to the right per-intent handler.
+  intent: "string",
   timestamp: "string",
   reference: "string",
-});
+  "challengeId?": "string",
+  "acceptedCumulative?": "string.numeric",
+  "spent?": "string.numeric",
+  "extra?": "Record<string, unknown>",
+}).onUndeclaredKey("reject");
 
 export type mppReceipt = typeof mppReceipt.infer;

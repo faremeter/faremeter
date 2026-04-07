@@ -317,6 +317,7 @@ export async function createMPPSolanaChargeHandler(
       return {
         status: "success",
         method: "solana",
+        intent: "charge",
         timestamp: new Date().toISOString(),
         reference: validatedPayload.signature,
       };
@@ -358,6 +359,7 @@ export async function createMPPSolanaChargeHandler(
     return {
       status: "success",
       method: "solana",
+      intent: "charge",
       timestamp: new Date().toISOString(),
       reference: txResult.signature,
     };
@@ -540,6 +542,7 @@ export async function createMPPSolanaNativeChargeHandler(
       return {
         status: "success",
         method: "solana",
+        intent: "charge",
         timestamp: new Date().toISOString(),
         reference: validatedPayload.signature,
       };
@@ -581,6 +584,7 @@ export async function createMPPSolanaNativeChargeHandler(
     return {
       status: "success",
       method: "solana",
+      intent: "charge",
       timestamp: new Date().toISOString(),
       reference: txResult.signature,
     };

@@ -20,7 +20,6 @@ import {
 import { fetchMint } from "@solana-program/token";
 import {
   address,
-  type CompilableTransactionMessage,
   decompileTransactionMessage,
   getBase64Encoder,
   getCompiledTransactionMessageDecoder,
@@ -36,6 +35,7 @@ import {
 } from "@solana/transactions";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 
+import type { CompilableTransactionMessage } from "../common";
 import { mppChargeRequest, chargeCredentialPayload } from "./common";
 import type { ReplayStore } from "./replay";
 import {

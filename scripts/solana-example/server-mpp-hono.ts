@@ -85,6 +85,8 @@ const mppSOLHandler = await createMPPSolanaNativeChargeHandler({
 
 const app = new Hono();
 
+app.get("/health", (c) => c.text("ok"));
+
 app.get(
   "/protected",
   await createMiddleware({

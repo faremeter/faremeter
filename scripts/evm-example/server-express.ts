@@ -21,6 +21,10 @@ const port = PORT ? parseInt(PORT) : 4021;
 const run = async () => {
   const app = express();
 
+  app.get("/health", (_, res) => {
+    res.send("ok");
+  });
+
   app.get(
     "/weather",
     await createMiddleware({

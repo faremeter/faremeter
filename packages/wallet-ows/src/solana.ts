@@ -42,8 +42,8 @@ export function createOWSSolanaWallet(
   const publicKey = new PublicKey(solanaAccount.address);
 
   const sign = async (tx: VersionedTransaction) => {
-    const messageBytes = tx.message.serialize();
-    const txHex = bytesToHex(messageBytes).slice(2);
+    const wireBytes = tx.serialize();
+    const txHex = bytesToHex(wireBytes).slice(2);
 
     const result = signTransaction(
       walletNameOrId,

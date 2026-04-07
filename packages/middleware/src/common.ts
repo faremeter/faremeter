@@ -949,10 +949,13 @@ async function handleMPPRequest<MiddlewareResponse>(
     return args.sendJSONResponse(402, undefined, headers);
   };
 
-  // Per spec Section 5.1.3: reject credential if digests don't match.
-  // Both directions: credential has digest but server doesn't (or vice versa),
-  // and digest values differ.
-  if (credential.challenge.digest !== undefined || digest !== undefined) {
+  // Per Payment HTTP Auth Section 11.2, the server SHOULD include the
+  // digest parameter in the challenge when the request has a body. Binding
+  // is therefore opt-in on the server: only enforce the check when the
+  // challenge carries a digest. This lets long-lived session challenges
+  // (minted once, no body) be reused across POST requests carrying
+  // per-call bodies.
+  if (credential.challenge.digest !== undefined) {
     if (credential.challenge.digest !== digest) {
       logger.warning("MPP credential digest does not match request body");
       return sendPaymentRequired();

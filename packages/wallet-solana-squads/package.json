@@ -34,7 +34,7 @@
     "@faremeter/logs": "workspace:^",
     "@faremeter/types": "workspace:^",
     "@solana/web3.js": "catalog:",
-    "@sqds/multisig": "^2.1.4",
+    "@sqds/multisig": "catalog:",
     "bs58": "catalog:",
     "fastestsmallesttextencoderdecoder": "^1.0.22"
   }

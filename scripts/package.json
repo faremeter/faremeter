@@ -30,7 +30,7 @@
     "@solana/spl-token": "catalog:",
     "@solana/kit": "catalog:",
     "@solana/web3.js": "catalog:",
-    "@sqds/multisig": "^2.1.4",
+    "@sqds/multisig": "catalog:",
     "bs58": "catalog:",
     "dotenv": "catalog:",
     "express": "catalog:",

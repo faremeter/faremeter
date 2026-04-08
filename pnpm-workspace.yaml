@@ -22,9 +22,7 @@ catalog:
   "@solana/rpc": 6.7.0
   "@solana/rpc-api": 6.7.0
   "@solana/rpc-types": 6.7.0
-  "@solana/spl-token": 0.4.14
   "@solana/transactions": 6.7.0
-  "@solana/web3.js": 1.98.4
   "@sqds/multisig": 2.1.4
   "@tapjs/asserts": 4.0.1
   "@tapjs/tsx": 3.0.1

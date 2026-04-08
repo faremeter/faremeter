@@ -33,7 +33,9 @@
   "dependencies": {
     "@faremeter/logs": "workspace:^",
     "@faremeter/types": "workspace:^",
-    "@solana/web3.js": "catalog:",
+    "@solana/kit": "catalog:",
+    "@solana/transactions": "catalog:",
+    "@solana/web3.js": "^1.98.4",
     "@sqds/multisig": "catalog:",
     "bs58": "catalog:",
     "fastestsmallesttextencoderdecoder": "^1.0.22"

@@ -5,10 +5,14 @@
   "type": "module",
   "dependencies": {
     "@faremeter/facilitator": "workspace:^",
+    "@faremeter/info": "workspace:^",
     "@faremeter/middleware": "workspace:^",
+    "@faremeter/payment-solana": "workspace:^",
     "@faremeter/rides": "workspace:^",
     "@faremeter/test-harness": "workspace:^",
-    "@faremeter/types": "workspace:^"
+    "@faremeter/types": "workspace:^",
+    "@solana/kit": "catalog:",
+    "bs58": "catalog:"
   },
   "devDependencies": {
     "@tapjs/tsx": "catalog:",

@@ -30,6 +30,7 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
-    "@solana/web3.js": "catalog:"
+    "@solana/kit": "catalog:",
+    "@solana/transactions": "catalog:"
   }
 }

@@ -27,6 +27,8 @@
     "@nestjs/platform-express": "^10.0.0",
     "@faremeter/x-solana-settlement": "catalog:",
     "@hono/node-server": "catalog:",
+    "@solana-program/system": "catalog:",
+    "@solana-program/token": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/kit": "catalog:",
     "@solana/web3.js": "catalog:",

@@ -34,7 +34,7 @@
     "@faremeter/logs": "workspace:^",
     "@faremeter/types": "workspace:^",
     "@open-wallet-standard/core": "catalog:",
-    "@solana/web3.js": "catalog:",
+    "@solana/kit": "catalog:",
     "viem": "catalog:"
   }
 }

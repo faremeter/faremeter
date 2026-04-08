@@ -60,9 +60,7 @@
     "@solana/rpc": "catalog:",
     "@solana/rpc-api": "catalog:",
     "@solana/rpc-types": "catalog:",
-    "@solana/spl-token": "catalog:",
     "@solana/transactions": "catalog:",
-    "@solana/web3.js": "catalog:",
     "arktype": "catalog:"
   },
   "tap": {

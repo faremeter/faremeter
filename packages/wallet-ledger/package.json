@@ -21,7 +21,7 @@
     "@ledgerhq/hw-transport": "^6.31.0",
     "@ledgerhq/hw-transport-node-hid": "^6.29.0",
     "@ledgerhq/hw-transport-webusb": "^6.29.0",
-    "@solana/web3.js": "catalog:",
+    "@solana/kit": "catalog:",
     "arktype": "catalog:",
     "viem": "catalog:"
   },

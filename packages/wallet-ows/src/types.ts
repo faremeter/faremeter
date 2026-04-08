@@ -1,5 +1,5 @@
 import type { Hex } from "viem";
-import type { PublicKey, VersionedTransaction } from "@solana/web3.js";
+import type { Address, Transaction } from "@solana/kit";
 import type { evm } from "@faremeter/types";
 
 /**
@@ -9,13 +9,8 @@ import type { evm } from "@faremeter/types";
  */
 export interface OWSSolanaWallet {
   network: string;
-  publicKey: PublicKey;
-  partiallySignTransaction: (
-    tx: VersionedTransaction,
-  ) => Promise<VersionedTransaction>;
-  updateTransaction: (
-    tx: VersionedTransaction,
-  ) => Promise<VersionedTransaction>;
+  publicKey: Address;
+  partiallySignTransaction: (tx: Transaction) => Promise<Transaction>;
 }
 
 /**

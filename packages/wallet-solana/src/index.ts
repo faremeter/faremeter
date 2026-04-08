@@ -4,26 +4,43 @@
  * @description Local wallet creation for Solana using keypairs
  * @packageDocumentation
  */
-import type { Keypair, VersionedTransaction } from "@solana/web3.js";
+import {
+  createKeyPairSignerFromBytes,
+  type Address,
+  type KeyPairSigner,
+  type Transaction,
+} from "@solana/kit";
+import { partiallySignTransaction } from "@solana/transactions";
+
+export type LocalWalletInput = Uint8Array | KeyPairSigner;
 
 /**
- * Creates a local Solana wallet from a keypair for signing transactions.
+ * Creates a local Solana wallet from a 64-byte secret key (or an existing
+ * {@link KeyPairSigner}) for signing kit-native transactions.
  *
  * @param network - Network identifier (e.g., "mainnet-beta", "devnet").
- * @param keypair - Solana keypair containing the private key.
- * @returns A wallet object that can sign versioned transactions.
+ * @param input - Either a 64-byte secret key or an existing kit `KeyPairSigner`.
+ * @returns A wallet object that can partially sign kit `Transaction`s.
  */
-export async function createLocalWallet(network: string, keypair: Keypair) {
-  const signTransaction = async (tx: VersionedTransaction) => {
-    tx.sign([keypair]);
-    return tx;
+export async function createLocalWallet(
+  network: string,
+  input: LocalWalletInput,
+) {
+  const signer: KeyPairSigner =
+    input instanceof Uint8Array
+      ? await createKeyPairSignerFromBytes(input)
+      : input;
+
+  const publicKey: Address = signer.address;
+
+  const signTransaction = async (tx: Transaction): Promise<Transaction> => {
+    return partiallySignTransaction([signer.keyPair], tx);
   };
 
   return {
     network,
-    publicKey: keypair.publicKey,
+    publicKey,
     partiallySignTransaction: signTransaction,
-    updateTransaction: signTransaction,
   };
 }
 

@@ -1,4 +1,10 @@
-import { PublicKey, VersionedTransaction } from "@solana/web3.js";
+import {
+  address,
+  getBase58Decoder,
+  type Address,
+  type SignatureBytes,
+  type Transaction,
+} from "@solana/kit";
 import Solana from "@ledgerhq/hw-app-solana/lib-es/Solana";
 import { createTransport } from "./transport";
 import type { LedgerSolanaWallet } from "./types";
@@ -7,7 +13,7 @@ import type { LedgerSolanaWallet } from "./types";
  * Creates a Ledger hardware wallet interface for Solana.
  *
  * Connects to a Ledger device and returns a wallet that can sign
- * Solana versioned transactions.
+ * kit-native Solana transactions.
  *
  * @param network - Solana network identifier (e.g., "mainnet-beta", "devnet").
  * @param derivationPath - BIP-44 derivation path (e.g., "44'/501'/0'").
@@ -20,27 +26,35 @@ export async function createLedgerSolanaWallet(
   const transport = await createTransport();
   const solana = new Solana(transport);
 
-  const { address } = await solana.getAddress(derivationPath);
-  const publicKey = new PublicKey(address);
+  const { address: addressBytes } = await solana.getAddress(derivationPath);
+  const publicKey: Address = address(getBase58Decoder().decode(addressBytes));
 
-  const signTransaction = async (tx: VersionedTransaction) => {
-    const message = tx.message.serialize();
-
+  const signTransaction = async (tx: Transaction): Promise<Transaction> => {
     const signature = await solana.signTransaction(
       derivationPath,
-      Buffer.from(message),
+      Buffer.from(tx.messageBytes),
     );
 
-    tx.addSignature(publicKey, signature.signature);
+    const signatureBytes = new Uint8Array(signature.signature);
+    if (signatureBytes.length !== 64) {
+      throw new Error(
+        `Ledger signature must be 64 bytes, got ${signatureBytes.length}`,
+      );
+    }
 
-    return tx;
+    return {
+      ...tx,
+      signatures: {
+        ...tx.signatures,
+        [publicKey]: signatureBytes as SignatureBytes,
+      },
+    };
   };
 
   return {
     network,
     publicKey,
     partiallySignTransaction: signTransaction,
-    updateTransaction: signTransaction,
     disconnect: async () => {
       await transport.close();
     },

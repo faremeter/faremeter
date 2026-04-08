@@ -1,6 +1,6 @@
 import Eth from "@ledgerhq/hw-app-eth/lib-es/Eth";
 import Solana from "@ledgerhq/hw-app-solana/lib-es/Solana";
-import { PublicKey } from "@solana/web3.js";
+import { getBase58Decoder } from "@solana/kit";
 import { createTransport, translateLedgerError } from "./transport";
 import type { UserInterface } from "./types";
 
@@ -64,8 +64,7 @@ export async function selectLedgerAccount(
         } catch (error) {
           throw translateLedgerError(error);
         }
-        const publicKey = new PublicKey(result.address);
-        const address = publicKey.toBase58();
+        const address = getBase58Decoder().decode(result.address);
         accounts.push({ path, address });
         ui.message(`${i + 1}. ${address}`);
       }

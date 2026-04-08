@@ -32,6 +32,6 @@
   },
   "dependencies": {
     "@crossmint/wallets-sdk": "catalog:",
-    "@solana/web3.js": "catalog:"
+    "@solana/kit": "catalog:"
   }
 }

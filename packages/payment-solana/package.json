@@ -48,6 +48,7 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
+    "@faremeter/flex-solana": "catalog:",
     "@faremeter/info": "workspace:^",
     "@faremeter/logs": "workspace:^",
     "@faremeter/types": "workspace:^",

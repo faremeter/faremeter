@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { logger, logResponse } from "../logger";
-import { Connection, Keypair, PublicKey, clusterApiUrl } from "@solana/web3.js";
+import { address, createSolanaRpc } from "@solana/kit";
 import { bytesToHex } from "viem";
 import { createOWSSolanaWallet } from "@faremeter/wallet-ows";
 import {
@@ -38,31 +38,19 @@ const privateKeyHex = bytesToHex(secretKey).slice(2);
 
 importWalletPrivateKey(WALLET_NAME, privateKeyHex, "", undefined, "solana");
 
-// Verify the OWS wallet derived the same address as the keypair file.
-const expectedAddress =
-  Keypair.fromSecretKey(keypairBytes).publicKey.toBase58();
 const wallet = createOWSSolanaWallet(network, {
   walletNameOrId: WALLET_NAME,
   passphrase: "",
 });
 
-if (wallet.publicKey.toBase58() !== expectedAddress) {
-  deleteWallet(WALLET_NAME);
-  throw new Error(
-    `OWS derived address ${wallet.publicKey.toBase58()} does not match expected ${expectedAddress}`,
-  );
-}
+logger.info(`OWS wallet "${WALLET_NAME}" address: ${wallet.publicKey}`);
 
-logger.info(
-  `OWS wallet "${WALLET_NAME}" address: ${wallet.publicKey.toBase58()}`,
-);
-
-const connection = new Connection(clusterApiUrl(network));
-const mint = new PublicKey(usdcInfo.address);
+const rpc = createSolanaRpc("https://api.devnet.solana.com");
+const mint = address(usdcInfo.address);
 
 try {
   const fetchWithPayer = wrapFetch(fetch, {
-    handlers: [createPaymentHandler(wallet, mint, connection)],
+    handlers: [createPaymentHandler(wallet, mint, rpc)],
   });
 
   const req = await fetchWithPayer("http://127.0.0.1:3000/protected");

@@ -3,12 +3,11 @@ import { logger } from "../logger";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { createMiddleware } from "@faremeter/middleware/hono";
-import { Keypair } from "@solana/web3.js";
+import { createKeyPairSignerFromBytes } from "@solana/kit";
 import {
   clusterToCAIP2,
   lookupKnownSPLToken,
   x402Exact,
-  xSolanaSettlement,
 } from "@faremeter/info/solana";
 import fs from "fs";
 
@@ -18,7 +17,7 @@ if (!PAYTO_KEYPAIR_PATH) {
   throw new Error("PAYTO_KEYPAIR_PATH must be set in your environment");
 }
 
-const payToKeypair = Keypair.fromSecretKey(
+const payToSigner = await createKeyPairSignerFromBytes(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYTO_KEYPAIR_PATH, "utf-8"))),
 );
 
@@ -30,7 +29,7 @@ if (!usdcInfo) {
   throw new Error(`couldn't look up SPLToken ${splTokenName} on ${network}!`);
 }
 
-const payTo = payToKeypair.publicKey.toBase58();
+const payTo = payToSigner.address;
 
 const app = new Hono();
 
@@ -41,20 +40,6 @@ app.get(
   await createMiddleware({
     facilitatorURL: "http://localhost:4000",
     accepts: [
-      // USDC xSolanaSettlement Payment
-      xSolanaSettlement({
-        network,
-        payTo,
-        asset: "USDC",
-        amount: "10000", // 0.01 USDC
-      }),
-      // Native SOL xSolanaSettlement Payment
-      xSolanaSettlement({
-        network,
-        payTo,
-        asset: "sol",
-        amount: "1000000",
-      }),
       // USDC Exact Payment
       x402Exact({
         network,

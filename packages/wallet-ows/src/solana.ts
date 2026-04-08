@@ -1,4 +1,11 @@
-import { PublicKey, VersionedTransaction } from "@solana/web3.js";
+import {
+  address,
+  getBase64EncodedWireTransaction,
+  getBase64Encoder,
+  type Address,
+  type SignatureBytes,
+  type Transaction,
+} from "@solana/kit";
 import { bytesToHex, hexToBytes, isHex } from "viem";
 import {
   getWallet as getWalletOWS,
@@ -39,11 +46,15 @@ export function createOWSSolanaWallet(
     throw new Error(msg);
   }
 
-  const publicKey = new PublicKey(solanaAccount.address);
+  const publicKey: Address = address(solanaAccount.address);
 
-  const sign = async (tx: VersionedTransaction) => {
-    const wireBytes = tx.serialize();
-    const txHex = bytesToHex(wireBytes).slice(2);
+  const sign = async (tx: Transaction): Promise<Transaction> => {
+    // OWS signs the message portion of a full wire-format transaction.
+    // Serialize to wire bytes first (matching the v1 `tx.serialize()`
+    // behavior), then hand the hex to OWS.
+    const wireBase64 = getBase64EncodedWireTransaction(tx);
+    const wireBytes = getBase64Encoder().encode(wireBase64);
+    const txHex = bytesToHex(new Uint8Array(wireBytes)).slice(2);
 
     const result = signTransaction(
       walletNameOrId,
@@ -67,15 +78,19 @@ export function createOWSSolanaWallet(
         `OWS signature must be 64 bytes, got ${signatureBytes.length}`,
       );
     }
-    tx.addSignature(publicKey, signatureBytes);
 
-    return tx;
+    return {
+      ...tx,
+      signatures: {
+        ...tx.signatures,
+        [publicKey]: signatureBytes as SignatureBytes,
+      },
+    };
   };
 
   return {
     network,
     publicKey,
     partiallySignTransaction: sign,
-    updateTransaction: sign,
   };
 }

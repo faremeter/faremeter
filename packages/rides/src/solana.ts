@@ -11,9 +11,19 @@ import { exact } from "@faremeter/payment-solana";
 import { type WalletAdapter } from "./types";
 import { getTokenBalance } from "@faremeter/payment-solana/splToken";
 import { isValidationError } from "@faremeter/types";
-import { PublicKey, Keypair, clusterApiUrl, Connection } from "@solana/web3.js";
-import { createSolanaRpc } from "@solana/kit";
+import {
+  address,
+  createKeyPairSignerFromBytes,
+  createSolanaRpc,
+  type KeyPairSigner,
+} from "@solana/kit";
 import { readLocalFile } from "./common";
+
+const clusterRpcUrls: Record<KnownCluster, string> = {
+  "mainnet-beta": "https://api.mainnet-beta.solana.com",
+  devnet: "https://api.devnet.solana.com",
+  testnet: "https://api.testnet.solana.com",
+};
 
 const networkAliases = new Map<string, KnownCluster>(
   Object.entries({
@@ -53,14 +63,15 @@ export function findNetworkMintCombinations(
   });
 }
 
-export const matchKeyPair = match({
-  "TypedArray.Uint8": (x) => Keypair.fromSecretKey(x),
-  "string.json.parse |> number[] | number[]": (x) =>
-    Keypair.fromSecretKey(Uint8Array.from(x)),
+export const matchSecretKey = match({
+  "TypedArray.Uint8": (x) => x,
+  "string.json.parse |> number[] | number[]": (x) => Uint8Array.from(x),
   default: () => undefined,
 });
 
-export async function toKeypair(input: unknown) {
+export async function toKeyPairSigner(
+  input: unknown,
+): Promise<KeyPairSigner | undefined> {
   if (typeof input === "string") {
     const possibleKey = await readLocalFile(input);
 
@@ -68,13 +79,13 @@ export async function toKeypair(input: unknown) {
       input = possibleKey;
     }
   }
-  const result = matchKeyPair(input);
+  const result = matchSecretKey(input);
 
-  if (isValidationError(result)) {
+  if (result === undefined || isValidationError(result)) {
     return undefined;
   }
 
-  return result;
+  return createKeyPairSignerFromBytes(result);
 }
 
 export type CreateAdapterOptions = {
@@ -91,9 +102,9 @@ export function createAdapter(opts: CreateAdapterOptions) {
 
   return {
     addLocalWallet: async (input: unknown) => {
-      const privateKey = await toKeypair(input);
+      const signer = await toKeyPairSigner(input);
 
-      if (privateKey === undefined) {
+      if (signer === undefined) {
         // We don't know what this private key is.
         return null;
       }
@@ -101,16 +112,11 @@ export function createAdapter(opts: CreateAdapterOptions) {
       const res: WalletAdapter[] = [];
 
       for (const { cluster, mints } of clusters) {
-        const rpcURL = clusterApiUrl(cluster);
+        const rpcURL = clusterRpcUrls[cluster];
         const rpcClient = createSolanaRpc(rpcURL);
 
         for (const mint of mints) {
-          const connection = new Connection(
-            clusterApiUrl(cluster),
-            "confirmed",
-          );
-
-          const wallet = await createLocalWallet(cluster, privateKey);
+          const wallet = await createLocalWallet(cluster, signer);
           res.push({
             x402Id: [
               {
@@ -121,12 +127,12 @@ export function createAdapter(opts: CreateAdapterOptions) {
             ],
             paymentHandler: exact.createPaymentHandler(
               wallet,
-              new PublicKey(mint.address),
-              connection,
+              address(mint.address),
+              rpcClient,
             ),
             getBalance: async () => {
               let balance = await getTokenBalance({
-                account: privateKey.publicKey.toBase58(),
+                account: signer.address,
                 asset: mint.address,
                 rpcClient,
               });

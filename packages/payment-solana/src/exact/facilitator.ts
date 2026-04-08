@@ -33,6 +33,8 @@ import {
   appendTransactionMessageInstructions,
   signTransactionMessageWithSigners,
   pipe,
+  type Address,
+  type KeyPairSigner,
   type Rpc,
   type SolanaRpcApi,
   type Transaction,
@@ -44,7 +46,6 @@ import {
   partiallySignTransaction,
 } from "@solana/transactions";
 import type { TransactionError } from "@solana/rpc-types";
-import { Keypair, PublicKey } from "@solana/web3.js";
 import { type } from "arktype";
 import { isValidTransaction } from "./verify";
 import { logger } from "./logger";
@@ -55,8 +56,8 @@ import { TransactionStore } from "./cache";
 export interface HookBaseArgs {
   network: string | SolanaCAIP2Network;
   rpc: Rpc<SolanaRpcApi>;
-  feePayerKeypair: Keypair;
-  mint: PublicKey;
+  feePayerSigner: KeyPairSigner;
+  mint: Address;
   mintInfo: Awaited<ReturnType<typeof fetchMint>>;
   requirements: x402PaymentRequirements;
   payment: x402PaymentPayload;
@@ -203,11 +204,11 @@ const sendTransaction = async (
 export const createFacilitatorHandler = async (
   network: string | SolanaCAIP2Network,
   rpc: Rpc<SolanaRpcApi>,
-  feePayerKeypair: Keypair,
-  mint: PublicKey,
+  feePayerSigner: KeyPairSigner,
+  mint: Address,
   config?: FacilitatorOptions,
 ): Promise<FacilitatorHandler> => {
-  const { isMatchingRequirement } = generateMatcher(network, mint.toBase58());
+  const { isMatchingRequirement } = generateMatcher(network, mint);
 
   const {
     maxRetries = 30,
@@ -216,14 +217,14 @@ export const createFacilitatorHandler = async (
     maxTransactionAge = 150,
   } = config ?? {};
 
-  const mintInfo = await fetchMint(rpc, address(mint.toBase58()));
+  const mintInfo = await fetchMint(rpc, mint);
 
   const tokenProgram = mintInfo.programAddress;
 
   const hookArgs = {
     network,
     rpc,
-    feePayerKeypair,
+    feePayerSigner,
     mint,
     mintInfo,
     logger,
@@ -258,7 +259,7 @@ export const createFacilitatorHandler = async (
     const settleOwner = settleSigner.address;
 
     const [settleATA] = await findAssociatedTokenPda({
-      mint: address(mint.toBase58()),
+      mint,
       owner: settleOwner,
       tokenProgram,
     });
@@ -280,12 +281,8 @@ export const createFacilitatorHandler = async (
     }
 
     const settle = async () => {
-      const feePayerSigner = await createKeyPairSignerFromBytes(
-        feePayerKeypair.secretKey,
-      );
-
       const [payToATA] = await findAssociatedTokenPda({
-        mint: address(mint.toBase58()),
+        mint,
         owner: address(requirements.payTo),
         tokenProgram,
       });
@@ -300,7 +297,7 @@ export const createFacilitatorHandler = async (
         getTransferCheckedInstruction(
           {
             source: settleATA,
-            mint: address(mint.toBase58()),
+            mint,
             destination: payToATA,
             authority: settleSigner,
             amount: BigInt(requirements.amount),
@@ -373,7 +370,7 @@ export const createFacilitatorHandler = async (
       validResult = await isValidTransaction(
         transactionMessage,
         requirements,
-        feePayerKeypair.publicKey.toBase58(),
+        feePayerSigner.address,
         tokenProgram,
         maxPriorityFee,
       );
@@ -393,11 +390,8 @@ export const createFacilitatorHandler = async (
       settle: async () => {
         let signedTransaction;
         try {
-          const kitKeypair = await createKeyPairSignerFromBytes(
-            feePayerKeypair.secretKey,
-          );
           signedTransaction = await partiallySignTransaction(
-            [kitKeypair.keyPair],
+            [feePayerSigner.keyPair],
             transaction,
           );
         } catch (cause) {
@@ -464,7 +458,7 @@ export const createFacilitatorHandler = async (
         scheme: x402Scheme,
         network: clusterToCAIP2(resolveCluster()).caip2,
         extra: {
-          feePayer: feePayerKeypair.publicKey.toString(),
+          feePayer: feePayerSigner.address,
           tokenProgram,
           features,
         },
@@ -488,9 +482,9 @@ export const createFacilitatorHandler = async (
 
       return {
         ...x,
-        asset: mint.toBase58(),
+        asset: mint,
         extra: {
-          feePayer: feePayerKeypair.publicKey.toString(),
+          feePayer: feePayerSigner.address,
           decimals: mintInfo.data.decimals,
           recentBlockhash,
           ...memo,

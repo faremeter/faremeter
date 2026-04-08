@@ -14,7 +14,7 @@ import {
   resolveSupportedVersions,
 } from "@faremeter/middleware/common";
 import { createRemoteX402Handlers } from "@faremeter/middleware";
-import { Keypair } from "@solana/web3.js";
+import { createKeyPairSignerFromBytes } from "@solana/kit";
 import fs from "fs";
 
 const { PAYTO_KEYPAIR_PATH } = process.env;
@@ -23,13 +23,13 @@ if (!PAYTO_KEYPAIR_PATH) {
   throw new Error("PAYTO_KEYPAIR_PATH must be set in your environment");
 }
 
-const payToKeypair = Keypair.fromSecretKey(
+const payToSigner = await createKeyPairSignerFromBytes(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYTO_KEYPAIR_PATH, "utf-8"))),
 );
 
 const network = "devnet";
 const solanaNetwork = lookupX402Network(network);
-const payTo = payToKeypair.publicKey.toBase58();
+const payTo = payToSigner.address;
 
 const usdcInfo = lookupKnownSPLToken(network, "USDC");
 if (!usdcInfo) {

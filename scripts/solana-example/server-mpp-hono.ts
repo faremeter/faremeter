@@ -4,8 +4,11 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { createMiddleware } from "@faremeter/middleware/hono";
 import { createRemoteX402Handlers } from "@faremeter/middleware";
-import { Keypair, PublicKey, clusterApiUrl } from "@solana/web3.js";
-import { createSolanaRpc } from "@solana/kit";
+import {
+  address,
+  createKeyPairSignerFromBytes,
+  createSolanaRpc,
+} from "@solana/kit";
 import {
   lookupKnownSPLToken,
   lookupX402Network,
@@ -29,25 +32,25 @@ if (!ADMIN_KEYPAIR_PATH) {
   throw new Error("ADMIN_KEYPAIR_PATH must be set in your environment");
 }
 
-const payToKeypair = Keypair.fromSecretKey(
+const payToSigner = await createKeyPairSignerFromBytes(
   Uint8Array.from(JSON.parse(fs.readFileSync(PAYTO_KEYPAIR_PATH, "utf-8"))),
 );
 
-const adminKeypair = Keypair.fromSecretKey(
+const adminSigner = await createKeyPairSignerFromBytes(
   Uint8Array.from(JSON.parse(fs.readFileSync(ADMIN_KEYPAIR_PATH, "utf-8"))),
 );
 
 const network = "devnet";
 const solanaNetwork = lookupX402Network(network);
-const payTo = payToKeypair.publicKey.toBase58();
-const rpc = createSolanaRpc(clusterApiUrl(network));
+const payTo = payToSigner.address;
+const rpc = createSolanaRpc("https://api.devnet.solana.com");
 
 const usdcInfo = lookupKnownSPLToken(network, "USDC");
 if (!usdcInfo) {
   throw new Error("couldn't look up USDC on devnet");
 }
 
-const usdcMint = new PublicKey(usdcInfo.address);
+const usdcMint = address(usdcInfo.address);
 const secretKey = crypto.randomBytes(32);
 
 const x402Accepts = [
@@ -67,7 +70,7 @@ const x402Handlers = createRemoteX402Handlers({
 const mppUSDCHandler = await createMPPSolanaChargeHandler({
   network,
   rpc,
-  feePayerKeypair: adminKeypair,
+  feePayerSigner: adminSigner,
   mint: usdcMint,
   replayStore: createInMemoryReplayStore(),
   realm: "mpp-example",
@@ -77,7 +80,7 @@ const mppUSDCHandler = await createMPPSolanaChargeHandler({
 const mppSOLHandler = await createMPPSolanaNativeChargeHandler({
   network,
   rpc,
-  feePayerKeypair: adminKeypair,
+  feePayerSigner: adminSigner,
   replayStore: createInMemoryReplayStore(),
   realm: "mpp-example",
   secretKey,

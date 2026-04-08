@@ -1,10 +1,10 @@
 import "dotenv/config";
 import { logResponse } from "../logger";
+import { address, createSolanaRpc } from "@solana/kit";
 import { createCrossmintWallet } from "@faremeter/wallet-crossmint";
-import { createPaymentHandler } from "@faremeter/x-solana-settlement";
+import { lookupKnownSPLToken } from "@faremeter/info/solana";
+import { createPaymentHandler } from "@faremeter/payment-solana/exact";
 import { wrap as wrapFetch } from "@faremeter/fetch";
-import { client } from "@faremeter/types";
-import { normalizeNetworkId } from "@faremeter/info";
 
 // Address of your crossmint wallet
 const crossmintWallet = process.env.CROSSMINT_WALLET;
@@ -16,16 +16,31 @@ if (!crossmintWallet || !crossmintApi) {
   );
 }
 
+const network = "devnet";
+
+const usdcInfo = lookupKnownSPLToken(network, "USDC");
+if (!usdcInfo) {
+  throw new Error("couldn't look up USDC on devnet");
+}
+
 const wallet = await createCrossmintWallet(
-  "devnet",
+  network,
   crossmintApi,
   crossmintWallet,
 );
+
+const rpc = createSolanaRpc("https://api.devnet.solana.com");
+const mint = address(usdcInfo.address);
+
 const fetchWithPayer = wrapFetch(fetch, {
   handlers: [
-    client.adaptPaymentHandlerV1ToV2(
-      createPaymentHandler(wallet),
-      normalizeNetworkId,
+    createPaymentHandler(
+      wallet,
+      mint,
+      rpc,
+      // Crossmint only exposes sendTransaction; enable settlement-account
+      // mode so the x402 exact handler takes the sendTransaction path.
+      { features: { enableSettlementAccounts: true } },
     ),
   ],
 });

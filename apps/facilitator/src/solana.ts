@@ -1,10 +1,7 @@
 import { logger } from "./logger";
 
-import { createFacilitatorHandler as createSolanaHandler } from "@faremeter/x-solana-settlement/facilitator";
 import { createFacilitatorHandler as createFacilitatorHandlerExact } from "@faremeter/payment-solana/exact";
 import { createFacilitatorHandler as createFacilitatorHandlerFlex } from "@faremeter/payment-solana/flex/facilitator";
-import { adaptHandlerV1ToV2 } from "@faremeter/facilitator";
-import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
 import {
   address,
   createKeyPairSignerFromBytes,
@@ -14,6 +11,12 @@ import { isKnownCluster, lookupKnownSPLToken } from "@faremeter/info/solana";
 import fs from "fs";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 
+const clusterRpcUrls: Record<string, string> = {
+  "mainnet-beta": "https://api.mainnet-beta.solana.com",
+  devnet: "https://api.devnet.solana.com",
+  testnet: "https://api.testnet.solana.com",
+};
+
 export async function createHandlers(network: string, keypairPath: string) {
   if (!isKnownCluster(network)) {
     logger.error(`Solana network '${network}' is invalid`);
@@ -21,11 +24,14 @@ export async function createHandlers(network: string, keypairPath: string) {
   }
 
   const handlers: FacilitatorHandler[] = [];
-  const raw = JSON.parse(fs.readFileSync(keypairPath, "utf-8")) as number[];
-  const adminKeypair = Keypair.fromSecretKey(Uint8Array.from(raw));
-  const adminSigner = await createKeyPairSignerFromBytes(Uint8Array.from(raw));
-  const apiUrl = clusterApiUrl(network);
-  const connection = new Connection(apiUrl, "confirmed");
+  const secretKey = Uint8Array.from(
+    JSON.parse(fs.readFileSync(keypairPath, "utf-8")),
+  );
+  const adminSigner = await createKeyPairSignerFromBytes(secretKey);
+  const apiUrl = clusterRpcUrls[network];
+  if (!apiUrl) {
+    throw new Error(`No RPC URL for cluster ${network}`);
+  }
   const rpc = createSolanaRpc(apiUrl);
 
   const usdcInfo = lookupKnownSPLToken(network, "USDC");
@@ -38,23 +44,12 @@ export async function createHandlers(network: string, keypairPath: string) {
     throw new Error(`Couldn't look up the PYUSD SPL Token on ${network}`);
   }
 
-  const usdcMint = new PublicKey(usdcInfo.address);
-  const pyusdMint = new PublicKey(pyusdInfo.address);
+  const usdcMint = address(usdcInfo.address);
+  const pyusdMint = address(pyusdInfo.address);
 
-  // Add Solana handlers
-  // Note: x-solana-settlement handlers use legacy v1 types and need to be adapted
   handlers.push(
-    // SOL (v1 handler - adapted to v2)
-    adaptHandlerV1ToV2(createSolanaHandler(network, connection, adminKeypair)),
-    // SPL Token (v1 handler - adapted to v2)
-    adaptHandlerV1ToV2(
-      createSolanaHandler(network, connection, adminKeypair, usdcMint),
-    ),
-    // SPL Token with exact scheme (native v2 handler)
-    await createFacilitatorHandlerExact(network, rpc, adminKeypair, usdcMint),
-    // PYUSD Token-2022 with exact scheme
-    await createFacilitatorHandlerExact(network, rpc, adminKeypair, pyusdMint),
-    // Flex scheme (USDC)
+    await createFacilitatorHandlerExact(network, rpc, adminSigner, usdcMint),
+    await createFacilitatorHandlerExact(network, rpc, adminSigner, pyusdMint),
     // XXX - Low timing params are only suitable for devnet testing.
     // Raise minGracePeriodSlots and confirmationBufferSlots for mainnet.
     await createFacilitatorHandlerFlex(network, rpc, adminSigner, {

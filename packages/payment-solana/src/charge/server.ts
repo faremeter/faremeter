@@ -19,10 +19,11 @@ import {
 } from "@faremeter/info/solana";
 import { fetchMint } from "@solana-program/token";
 import {
-  address,
   decompileTransactionMessage,
   getBase64Encoder,
   getCompiledTransactionMessageDecoder,
+  type Address,
+  type KeyPairSigner,
   type Rpc,
   type Signature,
   type SolanaRpcApi,
@@ -33,7 +34,8 @@ import {
   getTransactionDecoder,
   partiallySignTransaction,
 } from "@solana/transactions";
-import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+
+const LAMPORTS_PER_SOL = 1_000_000_000;
 
 import type { CompilableTransactionMessage } from "../common";
 import { mppChargeRequest, chargeCredentialPayload } from "./common";
@@ -89,8 +91,8 @@ async function verifyChallengeID(
 export type CreateMPPSolanaChargeHandlerArgs = {
   network: string | SolanaCAIP2Network;
   rpc: Rpc<SolanaRpcApi>;
-  feePayerKeypair?: Keypair;
-  mint: PublicKey;
+  feePayerSigner?: KeyPairSigner;
+  mint: Address;
   replayStore: ReplayStore;
   realm: string;
   secretKey: Uint8Array;
@@ -205,7 +207,7 @@ export async function createMPPSolanaChargeHandler(
   const {
     network,
     rpc,
-    feePayerKeypair,
+    feePayerSigner,
     mint,
     replayStore,
     realm,
@@ -216,19 +218,12 @@ export async function createMPPSolanaChargeHandler(
   } = args;
 
   const solanaNetwork = lookupX402Network(network);
-  const mintAddress = mint.toBase58();
-  const hasFeePayerKeypair = feePayerKeypair !== undefined;
-  const feePayerAddress = feePayerKeypair?.publicKey.toBase58();
+  const mintAddress = mint;
+  const hasFeePayer = feePayerSigner !== undefined;
+  const feePayerAddress = feePayerSigner?.address;
 
-  const mintInfo = await fetchMint(rpc, address(mintAddress));
+  const mintInfo = await fetchMint(rpc, mint);
   const tokenProgram = mintInfo.programAddress;
-
-  const feePayerSigner = hasFeePayerKeypair
-    ? await (async () => {
-        const { createKeyPairSignerFromBytes } = await import("@solana/kit");
-        return createKeyPairSignerFromBytes(feePayerKeypair.secretKey);
-      })()
-    : null;
 
   const getChallenge = async (
     intent: string,
@@ -242,7 +237,7 @@ export async function createMPPSolanaChargeHandler(
       tokenProgram: tokenProgram as string,
     };
 
-    if (hasFeePayerKeypair && feePayerAddress) {
+    if (hasFeePayer && feePayerAddress) {
       const latestBlockhash = await rpc.getLatestBlockhash().send();
       methodDetails.feePayer = true;
       methodDetails.feePayerKey = feePayerAddress;
@@ -420,7 +415,7 @@ const SOL_DECIMALS = Math.log10(LAMPORTS_PER_SOL);
 export type CreateMPPSolanaNativeChargeHandlerArgs = {
   network: string | SolanaCAIP2Network;
   rpc: Rpc<SolanaRpcApi>;
-  feePayerKeypair?: Keypair;
+  feePayerSigner?: KeyPairSigner;
   replayStore: ReplayStore;
   realm: string;
   secretKey: Uint8Array;
@@ -435,7 +430,7 @@ export async function createMPPSolanaNativeChargeHandler(
   const {
     network,
     rpc,
-    feePayerKeypair,
+    feePayerSigner,
     replayStore,
     realm,
     secretKey,
@@ -445,15 +440,8 @@ export async function createMPPSolanaNativeChargeHandler(
   } = args;
 
   const solanaNetwork = lookupX402Network(network);
-  const hasFeePayerKeypair = feePayerKeypair !== undefined;
-  const feePayerAddress = feePayerKeypair?.publicKey.toBase58();
-
-  const feePayerSigner = hasFeePayerKeypair
-    ? await (async () => {
-        const { createKeyPairSignerFromBytes } = await import("@solana/kit");
-        return createKeyPairSignerFromBytes(feePayerKeypair.secretKey);
-      })()
-    : null;
+  const hasFeePayer = feePayerSigner !== undefined;
+  const feePayerAddress = feePayerSigner?.address;
 
   const getChallenge = async (
     intent: string,
@@ -466,7 +454,7 @@ export async function createMPPSolanaNativeChargeHandler(
       decimals: SOL_DECIMALS,
     };
 
-    if (hasFeePayerKeypair && feePayerAddress) {
+    if (hasFeePayer && feePayerAddress) {
       const latestBlockhash = await rpc.getLatestBlockhash().send();
       methodDetails.feePayer = true;
       methodDetails.feePayerKey = feePayerAddress;

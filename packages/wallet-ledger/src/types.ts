@@ -1,6 +1,6 @@
 import type { Hex, TransactionSerializable, TypedDataDefinition } from "viem";
 import { evm } from "@faremeter/types";
-import type { PublicKey, VersionedTransaction } from "@solana/web3.js";
+import type { Address, Transaction } from "@solana/kit";
 import type Transport from "@ledgerhq/hw-transport";
 
 /**
@@ -19,13 +19,8 @@ export interface LedgerEvmWallet {
  */
 export interface LedgerSolanaWallet {
   network: string;
-  publicKey: PublicKey;
-  partiallySignTransaction: (
-    tx: VersionedTransaction,
-  ) => Promise<VersionedTransaction>;
-  updateTransaction: (
-    tx: VersionedTransaction,
-  ) => Promise<VersionedTransaction>;
+  publicKey: Address;
+  partiallySignTransaction: (tx: Transaction) => Promise<Transaction>;
   disconnect: () => Promise<void>;
 }
 

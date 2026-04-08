@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { logResponse } from "../logger";
-import { Keypair } from "@solana/web3.js";
 import { createLocalWallet } from "@faremeter/wallet-solana";
 import { createMPPSolanaNativeChargeClient } from "@faremeter/payment-solana/charge";
 import { wrap as wrapFetch } from "@faremeter/fetch";
@@ -12,11 +11,11 @@ if (!PAYER_KEYPAIR_PATH) {
   throw new Error("PAYER_KEYPAIR_PATH must be set in your environment");
 }
 
-const keypair = Keypair.fromSecretKey(
-  Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
+const secretKey = Uint8Array.from(
+  JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8")),
 );
 
-const wallet = await createLocalWallet("devnet", keypair);
+const wallet = await createLocalWallet("devnet", secretKey);
 
 const fetchWithPayer = wrapFetch(fetch, {
   handlers: [],

@@ -43,33 +43,6 @@ await t.test("returns wallet with correct shape and publicKey", async (t) => {
 
   t.equal(wallet.network, "mainnet-beta");
   t.ok(wallet.publicKey, "publicKey is defined");
-  t.equal(wallet.publicKey.toBase58(), solanaAddress);
+  t.equal(wallet.publicKey, solanaAddress);
   t.equal(typeof wallet.partiallySignTransaction, "function");
-  t.equal(typeof wallet.updateTransaction, "function");
 });
-
-await t.test(
-  "partiallySignTransaction and updateTransaction are the same function",
-  async (t) => {
-    const fakeGetWallet = () => ({
-      id: "w1",
-      name: "test-wallet",
-      accounts: [
-        {
-          chainId: "solana:mainnet",
-          address: "11111111111111111111111111111112",
-          derivationPath: "m/44'/501'/0'",
-        },
-      ],
-      createdAt: "2025-01-01T00:00:00Z",
-    });
-
-    const wallet = createOWSSolanaWallet("mainnet-beta", opts, fakeGetWallet);
-
-    t.equal(
-      wallet.partiallySignTransaction,
-      wallet.updateTransaction,
-      "both methods point to the same sign function",
-    );
-  },
-);

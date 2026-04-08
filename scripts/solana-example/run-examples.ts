@@ -7,12 +7,11 @@ const FACILITATOR_URL = "http://localhost:4000";
 const RESOURCE_SERVER_URL = "http://localhost:3000";
 
 async function runX402Payments() {
-  await $`pnpm tsx solana-example/squads-payment.ts`;
   await $`pnpm tsx solana-example/solana-exact-payment.ts`;
   await $`pnpm tsx solana-example/token2022-exact-payment.ts`;
   await $`pnpm tsx solana-example/ows-exact-payment.ts`;
   await $`pnpm tsx solana-example/flex-payment.ts`;
-  // XXX - Add the Crossmint and Ledger payment in future.
+  // XXX - Add the Crossmint, Ledger, and Squads payments in future.
 }
 
 async function runMPPPayments() {

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { logResponse } from "../logger";
-import { Connection, Keypair, PublicKey, clusterApiUrl } from "@solana/web3.js";
+import { address, createSolanaRpc } from "@solana/kit";
 import { createLocalWallet } from "@faremeter/wallet-solana";
 import { lookupKnownSPLToken } from "@faremeter/info/solana";
 import { createPaymentHandler } from "@faremeter/payment-solana/exact";
@@ -20,16 +20,16 @@ if (!usdcInfo) {
   throw new Error("couldn't look up USDC on devnet");
 }
 
-const keypair = Keypair.fromSecretKey(
-  Uint8Array.from(JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8"))),
+const secretKey = Uint8Array.from(
+  JSON.parse(fs.readFileSync(PAYER_KEYPAIR_PATH, "utf-8")),
 );
 
-const connection = new Connection(clusterApiUrl(network));
-const wallet = await createLocalWallet(network, keypair);
-const mint = new PublicKey(usdcInfo.address);
+const rpc = createSolanaRpc("https://api.devnet.solana.com");
+const wallet = await createLocalWallet(network, secretKey);
+const mint = address(usdcInfo.address);
 
 const fetchWithPayer = wrapFetch(fetch, {
-  handlers: [createPaymentHandler(wallet, mint, connection)],
+  handlers: [createPaymentHandler(wallet, mint, rpc)],
 });
 
 const req1 = await fetchWithPayer(

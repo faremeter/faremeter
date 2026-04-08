@@ -369,7 +369,7 @@ export function acceptsToPricing(
       amount: a.maxAmountRequired ?? "0",
       asset: a.asset ?? "",
       recipient: a.payTo ?? "",
-      network: a.network ?? "",
+      network: a.network ? normalizeNetworkId(a.network) : "",
     };
     if (a.description) p.description = a.description;
     return p;

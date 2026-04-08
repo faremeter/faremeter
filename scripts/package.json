@@ -25,7 +25,6 @@
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
-    "@faremeter/x-solana-settlement": "catalog:",
     "@hono/node-server": "catalog:",
     "@solana-program/system": "catalog:",
     "@solana-program/token": "catalog:",

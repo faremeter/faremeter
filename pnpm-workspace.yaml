@@ -7,7 +7,6 @@ packages:
 catalog:
   "@crossmint/wallets-sdk": 1.0.7
   "@eslint/js": 9.34.0
-  "@faremeter/x-solana-settlement": 0.4.0
   "@hono/node-server": 1.19.1
   "@logtape/logtape": 1.0.4
   "@open-wallet-standard/core": 1.2.4

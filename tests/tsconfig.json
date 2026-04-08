@@ -9,6 +9,7 @@
     "interop/*.ts",
     "x402-in-process/*.ts",
     "mpp/*.ts",
+    "mpp-session/*.ts",
     "rides/*.ts"
   ]
 }

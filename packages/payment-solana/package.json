@@ -33,6 +33,11 @@
       "require": "./dist/src/charge/index.js",
       "import": "./dist/src/charge/index.js",
       "types": "./dist/src/charge/index.d.ts"
+    },
+    "./session": {
+      "require": "./dist/src/session/index.js",
+      "import": "./dist/src/session/index.js",
+      "types": "./dist/src/session/index.d.ts"
     }
   },
   "devDependencies": {
@@ -48,6 +53,7 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
+    "@faremeter/flex-solana": "catalog:",
     "@faremeter/info": "workspace:^",
     "@faremeter/logs": "workspace:^",
     "@faremeter/types": "workspace:^",
@@ -63,7 +69,8 @@
     "@solana/spl-token": "catalog:",
     "@solana/transactions": "catalog:",
     "@solana/web3.js": "catalog:",
-    "arktype": "catalog:"
+    "arktype": "catalog:",
+    "bs58": "catalog:"
   },
   "tap": {
     "plugin": [

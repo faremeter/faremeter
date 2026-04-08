@@ -1,7 +1,22 @@
 #!/usr/bin/env pnpm tsx
 
 import t from "tap";
-import { findMatchingPaymentRequirements } from "./common";
+import {
+  findMatchingPaymentRequirements,
+  handleMiddlewareRequest,
+  resolveSupportedVersions,
+} from "./common";
+import type {
+  MPPMethodHandler,
+  mppChallengeParams,
+  mppCredential,
+} from "@faremeter/types/mpp";
+import {
+  AUTHORIZATION_HEADER,
+  MPP_PAYMENT_SCHEME,
+  serializeCredential,
+} from "@faremeter/types/mpp";
+import type { ResourcePricing } from "@faremeter/types/pricing";
 
 await t.test("findMatchingPaymentRequirements", async (t) => {
   await t.test(
@@ -94,6 +109,130 @@ await t.test("findMatchingPaymentRequirements", async (t) => {
     t.equal(result, undefined, "should not match different networks");
     t.end();
   });
+
+  t.end();
+});
+
+await t.test("MPP digest binding", async (t) => {
+  const pricing: ResourcePricing[] = [
+    {
+      amount: "1",
+      asset: "test-asset",
+      recipient: "test-recipient",
+      network: "test-network",
+    },
+  ];
+
+  const makeHandler = (challengeDigest?: string): MPPMethodHandler => {
+    const challenge: mppChallengeParams = {
+      id: "challenge-id",
+      realm: "test",
+      method: "test-method",
+      intent: "test-intent",
+      request: "req",
+      ...(challengeDigest !== undefined ? { digest: challengeDigest } : {}),
+    };
+    return {
+      method: "test-method",
+      capabilities: { networks: [], assets: [] },
+      getSupportedIntents: () => ["test-intent"],
+      getChallenge: async () => challenge,
+      handleSettle: async () => ({
+        status: "success" as const,
+        method: "test-method",
+        intent: "test-intent",
+        timestamp: new Date().toISOString(),
+        reference: "ref",
+      }),
+    };
+  };
+
+  const runRequest = async (args: {
+    handler: MPPMethodHandler;
+    body: ArrayBuffer | null;
+    credentialDigest?: string;
+  }) => {
+    const pricingEntry = pricing[0];
+    if (!pricingEntry) throw new Error("pricing entry missing");
+    const challenge = await args.handler.getChallenge(
+      "test-intent",
+      pricingEntry,
+      "http://test/resource",
+    );
+    const credential: mppCredential = {
+      challenge: {
+        ...challenge,
+        ...(args.credentialDigest !== undefined
+          ? { digest: args.credentialDigest }
+          : {}),
+      },
+      payload: {},
+    };
+    const authHeader = `${MPP_PAYMENT_SCHEME} ${serializeCredential(credential)}`;
+
+    let bodyCalled = false;
+    let lastStatus: number | undefined;
+
+    await handleMiddlewareRequest<string>({
+      mppMethodHandlers: [args.handler],
+      pricing,
+      resource: "http://test/resource",
+      supportedVersions: resolveSupportedVersions(undefined),
+      getHeader: (key) =>
+        key.toLowerCase() === AUTHORIZATION_HEADER.toLowerCase()
+          ? authHeader
+          : undefined,
+      getBody: async () => args.body,
+      sendJSONResponse: (status) => {
+        lastStatus = status;
+        return `status:${status}`;
+      },
+      body: async () => {
+        bodyCalled = true;
+        return "ok";
+      },
+    });
+
+    return { bodyCalled, lastStatus };
+  };
+
+  await t.test(
+    "challenge without digest accepts body-bearing request",
+    async (t) => {
+      const body = new TextEncoder().encode(
+        JSON.stringify({ hello: "world" }),
+      ).buffer;
+      const result = await runRequest({
+        handler: makeHandler(),
+        body,
+      });
+      t.ok(
+        result.bodyCalled,
+        "body callback should fire when challenge has no digest",
+      );
+      t.end();
+    },
+  );
+
+  await t.test(
+    "challenge with digest still enforces match against body",
+    async (t) => {
+      const body = new TextEncoder().encode(
+        JSON.stringify({ hello: "world" }),
+      ).buffer;
+      const result = await runRequest({
+        handler: makeHandler("sha-256=:wrong:"),
+        body,
+        credentialDigest: "sha-256=:wrong:",
+      });
+      t.notOk(
+        result.bodyCalled,
+        "body callback should not fire when digests mismatch request body",
+      );
+      t.equal(result.lastStatus, 402, "should re-challenge on digest mismatch");
+      t.end();
+    },
+  );
 
   t.end();
 });

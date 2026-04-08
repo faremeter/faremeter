@@ -7,9 +7,7 @@ const FACILITATOR_URL = "http://localhost:4000";
 const RESOURCE_SERVER_URL = "http://localhost:3000";
 
 async function runX402Payments() {
-  await $`pnpm tsx solana-example/sol-payment.ts`;
   await $`pnpm tsx solana-example/squads-payment.ts`;
-  await $`pnpm tsx solana-example/token-payment.ts`;
   await $`pnpm tsx solana-example/solana-exact-payment.ts`;
   await $`pnpm tsx solana-example/token2022-exact-payment.ts`;
   await $`pnpm tsx solana-example/ows-exact-payment.ts`;

@@ -1,5 +1,6 @@
 {
   "name": "faremeter",
+  "type": "module",
   "license": "GPL-3.0-only",
   "packageManager": "pnpm@10.19.0",
   "private": true,

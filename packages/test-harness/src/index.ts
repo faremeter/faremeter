@@ -35,6 +35,7 @@ export { generateTestId } from "./scheme/types";
 export {
   createTestFacilitatorHandler,
   type CreateTestFacilitatorHandlerOpts,
+  type AmountPolicy,
 } from "./scheme/facilitator";
 export {
   createTestPaymentHandler,

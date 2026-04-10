@@ -24,7 +24,14 @@ doc: FORCE
 	bin/generate-readme
 	pnpm prettier -w packages/*/README.md
 	pnpm typedoc
+	bin/strip-link-extensions docs
 	pnpm prettier -w docs/
+
+sync-docs: doc
+	@test -n "$(DEST)" || (echo "Usage: make sync-docs DEST=<dir>" && exit 1)
+	cp docs/*.md "$(DEST)/"
+	@echo "Synced $$(ls docs/*.md | wc -l | tr -d ' ') files to $(DEST)"
+	@echo "Remember to commit in the destination repo."
 
 packages/gateway-nginx: FORCE
 	cd $@ && rm -rf dist && pnpm tsc && pnpm tsc-esm-fix

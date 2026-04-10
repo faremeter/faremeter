@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+
+/**
+ * Post-processes TypeDoc markdown output to strip .md extensions from
+ * internal links. Mintlify expects extensionless paths for cross-page
+ * references.
+ *
+ * Only rewrites links whose target matches a generated file in the
+ * output directory, so external URLs (e.g. GitHub source links) are
+ * left untouched.
+ *
+ * Usage: bin/strip-link-extensions <docs-dir>
+ */
+
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+const docsDir = process.argv[2];
+if (!docsDir) {
+  console.error("Usage: strip-link-extensions <docs-dir>");
+  process.exit(1);
+}
+
+const mdFiles = readdirSync(docsDir).filter((f) => f.endsWith(".md"));
+const knownBases = new Set(mdFiles.map((f) => f.replace(/\.md$/, "")));
+
+// Match markdown links: ](target.md) or ](target.md#anchor)
+const linkRe = /\]\(([^)]+?)\.md(#[^)]*)?\)/g;
+
+let totalRewrites = 0;
+
+for (const file of mdFiles) {
+  const filePath = join(docsDir, file);
+  const original = readFileSync(filePath, "utf-8");
+
+  const updated = original.replace(linkRe, (match, target, anchor) => {
+    if (!knownBases.has(target)) return match;
+    totalRewrites++;
+    return `](${target}${anchor ?? ""})`;
+  });
+
+  if (updated !== original) {
+    writeFileSync(filePath, updated, "utf-8");
+  }
+}
+
+console.log(
+  `Stripped .md from ${totalRewrites} internal links across ${mdFiles.length} files`,
+);

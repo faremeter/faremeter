@@ -23,6 +23,8 @@ export default {
   tsconfig: "tsconfig.typedoc.json",
   sanitizeComments: true,
   flattenOutputFiles: true,
+  hideBreadcrumbs: true,
+  hidePageHeader: true,
   blockTags: [
     ...OptionDefaults.blockTags,
     "@title",

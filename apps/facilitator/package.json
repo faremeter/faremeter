@@ -27,6 +27,7 @@
   "devDependencies": {
     "@tapjs/tsx": "catalog:",
     "tap": "catalog:",
+    "tsc-esm-fix": "catalog:",
     "tsx": "catalog:",
     "typescript-language-server": "catalog:"
   },

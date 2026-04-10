@@ -30,7 +30,7 @@ packages/%: FORCE
 	cd $@ && rm -rf dist && pnpm tsc && pnpm tsc-esm-fix
 
 apps/%: FORCE
-	cd $@ && rm -rf dist && pnpm tsc
+	cd $@ && rm -rf dist && pnpm tsc && pnpm tsc-esm-fix
 
 scripts: FORCE
 	cd scripts && rm -rf dist && pnpm tsc

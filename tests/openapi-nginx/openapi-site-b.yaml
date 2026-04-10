@@ -1,0 +1,39 @@
+openapi: "3.0.0"
+info:
+  title: Site B Integration Test Spec
+  version: "1.0.0"
+
+x-faremeter-assets:
+  usdc:
+    chain: test-local
+    token: TEST
+    decimals: 6
+    recipient: test-receiver
+
+x-faremeter-pricing:
+  rates:
+    usdc: 10
+
+paths:
+  /v1/chat/completions:
+    post:
+      summary: Two-phase chat completion (10x rate)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "500"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "200":
+          description: Chat completion
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Health status

@@ -10,6 +10,7 @@
     "x402-in-process/*.ts",
     "mpp/*.ts",
     "openapi/*.ts",
+    "openapi-nginx/*.ts",
     "rides/*.ts"
   ]
 }

@@ -5,16 +5,24 @@
   "type": "module",
   "dependencies": {
     "@faremeter/facilitator": "workspace:^",
+    "@faremeter/fetch": "workspace:^",
+    "@faremeter/info": "workspace:^",
+    "@faremeter/logs": "workspace:^",
     "@faremeter/middleware": "workspace:^",
     "@faremeter/middleware-openapi": "workspace:^",
     "@faremeter/rides": "workspace:^",
+    "@faremeter/sidecar": "workspace:^",
     "@faremeter/test-harness": "workspace:^",
-    "@faremeter/types": "workspace:^"
+    "@faremeter/types": "workspace:^",
+    "@hono/node-server": "catalog:",
+    "hono": "catalog:"
   },
   "devDependencies": {
     "@tapjs/tsx": "catalog:",
+    "@types/node": "catalog:",
     "tap": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "zx": "catalog:"
   },
   "tap": {
     "plugin": [

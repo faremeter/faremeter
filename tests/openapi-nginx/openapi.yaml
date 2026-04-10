@@ -1,0 +1,165 @@
+openapi: "3.0.0"
+info:
+  title: Sidecar Integration Test Spec
+  version: "1.0.0"
+
+x-faremeter-assets:
+  usdc:
+    chain: test-local
+    token: TEST
+    decimals: 6
+    recipient: test-receiver
+
+x-faremeter-pricing:
+  rates:
+    usdc: 1
+
+paths:
+  /v1/chat/completions:
+    post:
+      summary: Two-phase chat completion (JSON response)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "500"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "200":
+          description: Chat completion
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/chat/stream:
+    post:
+      summary: Two-phase streaming completion (SSE response)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "500"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "200":
+          description: Streaming completion
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /v1/images/generations:
+    post:
+      summary: One-phase image generation (no authorize expression)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            capture: "1"
+      responses:
+        "200":
+          description: Image generation
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/data:
+    get:
+      summary: Unpaid read (no x-faremeter-pricing)
+      responses:
+        "200":
+          description: Data list
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Paid write (method dispatch test)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "100"
+            capture: "$.response.body.usage.count"
+      responses:
+        "200":
+          description: Data created
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /v1/unstable:
+    post:
+      summary: Capture failure test (upstream may omit expected field)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "500"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "200":
+          description: Unstable endpoint
+
+  /v1/models:
+    post:
+      summary: Match filter routing (model-specific pricing)
+      x-faremeter-pricing:
+        rules:
+          - match: '$[?@.request.body.model == "expensive"]'
+            authorize: "1000"
+            capture: "$.response.body.usage.total_tokens * 10"
+          - match: "$"
+            authorize: "100"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "200":
+          description: Model response
+
+  /v1/premium:
+    post:
+      summary: Rate cascade test (path-level rate override)
+      x-faremeter-pricing:
+        rates:
+          usdc: 5
+        rules:
+          - match: "$"
+            authorize: "100"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "200":
+          description: Premium response
+
+  /v1/estimate:
+    post:
+      summary: coalesce and jsonSize in authorize expression
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "jsonSize($.request.body.messages) / 4 + coalesce($.request.body.max_tokens, 100)"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "200":
+          description: Estimate response
+
+  /v1/ws/chat:
+    get:
+      summary: WebSocket chat (two-phase, frame-level capture)
+      parameters:
+        - name: Upgrade
+          in: header
+          schema:
+            type: string
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "500"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "101":
+          description: WebSocket upgrade
+
+  /health:
+    get:
+      summary: Unpaid health check (no x-faremeter-pricing)
+      responses:
+        "200":
+          description: Health status

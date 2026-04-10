@@ -27,9 +27,25 @@ const testPaymentPayload = type({
 /**
  * Options for creating a test facilitator handler.
  */
+/**
+ * Policy that decides whether a settlement amount is acceptable
+ * given the signed payment amount. The default is exact match.
+ */
+export type AmountPolicy = (
+  settleAmount: bigint,
+  signedAmount: bigint,
+) => boolean;
+
 export type CreateTestFacilitatorHandlerOpts = {
   /** Address that should receive payments. */
   payTo: string;
+  /**
+   * Decides whether a settlement amount is acceptable given the
+   * signed payment amount. Defaults to exact match. Tests for
+   * hold-and-settle schemes should pass
+   * `(settle, signed) => settle <= signed`.
+   */
+  amountPolicy?: AmountPolicy;
   /** Optional callback invoked during verify. */
   onVerify?: (
     requirements: x402PaymentRequirements,
@@ -65,7 +81,12 @@ function validateTestPayload(
 export function createTestFacilitatorHandler(
   opts: CreateTestFacilitatorHandlerOpts,
 ): FacilitatorHandler {
-  const { payTo, onVerify, onSettle } = opts;
+  const {
+    payTo,
+    amountPolicy = (settle, signed) => settle === signed,
+    onVerify,
+    onSettle,
+  } = opts;
 
   const getSupported = (): Promise<x402SupportedKind>[] => {
     return [
@@ -144,11 +165,12 @@ export function createTestFacilitatorHandler(
 
     const testPayload = result.payload;
 
-    // Verify amount matches
-    if (testPayload.amount !== requirements.amount) {
+    if (
+      !amountPolicy(BigInt(requirements.amount), BigInt(testPayload.amount))
+    ) {
       return {
         success: false,
-        errorReason: "Amount mismatch",
+        errorReason: `Amount policy rejected: settle=${requirements.amount}, signed=${testPayload.amount}`,
         transaction: "",
         network: requirements.network,
         payer: "",

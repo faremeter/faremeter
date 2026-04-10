@@ -1228,6 +1228,7 @@ Reset harness state (interceptors, resource handler).
 - [ResourceResult](#resourceresult)
 - [ResourceHandler](#resourcehandler)
 - [TestPaymentPayload](#testpaymentpayload)
+- [AmountPolicy](#amountpolicy)
 - [CreateTestFacilitatorHandlerOpts](#createtestfacilitatorhandleropts)
 - [CreateTestPaymentHandlerOpts](#createtestpaymenthandleropts)
 - [CreateTestMPPHandlerOpts](#createtestmpphandleropts)
@@ -1365,13 +1366,20 @@ Payload structure for test payment scheme transactions.
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
 | `TestPaymentPayload` | `{ testId: string; amount: string; timestamp: number; metadata?: Record<string, unknown> or undefined; }` |
 
+### AmountPolicy
+
+Policy that decides whether a settlement amount is acceptable
+given the signed payment amount. The default is exact match.
+
+| Type           | Type                                                         |
+| -------------- | ------------------------------------------------------------ |
+| `AmountPolicy` | `( settleAmount: bigint, signedAmount: bigint, ) => boolean` |
+
 ### CreateTestFacilitatorHandlerOpts
 
-Options for creating a test facilitator handler.
-
-| Type                               | Type                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CreateTestFacilitatorHandlerOpts` | `{ /** Address that should receive payments. */ payTo: string; /** Optional callback invoked during verify. */ onVerify?: ( requirements: x402PaymentRequirements, payload: x402PaymentPayload, testPayload: TestPaymentPayload, ) => void; /** Optional callback invoked during settle. */ onSettle?: ( requirements: x402PaymentRequirements, payload: x402PaymentPayload, testPayload: TestPaymentPayload, ) => void; }` |
+| Type                               | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CreateTestFacilitatorHandlerOpts` | `{ /** Address that should receive payments. */ payTo: string; /** * Decides whether a settlement amount is acceptable given the * signed payment amount. Defaults to exact match. Tests for * hold-and-settle schemes should pass * `(settle, signed) => settle <= signed`. */ amountPolicy?: AmountPolicy; /** Optional callback invoked during verify. */ onVerify?: ( requirements: x402PaymentRequirements, payload: x402PaymentPayload, testPayload: TestPaymentPayload, ) => void; /** Optional callback invoked during settle. */ onSettle?: ( requirements: x402PaymentRequirements, payload: x402PaymentPayload, testPayload: TestPaymentPayload, ) => void; }` |
 
 ### CreateTestPaymentHandlerOpts
 

@@ -1091,6 +1091,9 @@ importers:
 
   packages/wallet-solana:
     dependencies:
+      '@faremeter/logs':
+        specifier: workspace:^
+        version: link:../logs
       '@solana/kit':
         specifier: 'catalog:'
         version: 6.7.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)

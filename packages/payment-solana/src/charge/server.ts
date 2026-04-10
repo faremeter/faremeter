@@ -146,18 +146,31 @@ const sendTransaction = async (
   return { success: false, error: "Transaction confirmation timeout" };
 };
 
+type ConfirmedTransactionResult = {
+  transactionMessage: CompilableTransactionMessage;
+  innerInstructions?: ReadonlyArray<{
+    index: number;
+    instructions: ReadonlyArray<{
+      programIdIndex: number;
+      accounts: readonly number[];
+      data: string;
+    }>;
+  }>;
+  staticAccountKeys?: readonly string[];
+};
+
 const fetchConfirmedTransaction = async (
   rpc: Rpc<SolanaRpcApi>,
   signature: string,
   maxRetries: number,
   retryDelayMs: number,
-): Promise<CompilableTransactionMessage | null> => {
+): Promise<ConfirmedTransactionResult | null> => {
   for (let i = 0; i < maxRetries; i++) {
     const result = await rpc
       .getTransaction(signature as Signature, {
         commitment: "confirmed",
         maxSupportedTransactionVersion: 0,
-        encoding: "base64",
+        encoding: "jsonParsed",
       })
       .send();
 
@@ -168,7 +181,31 @@ const fetchConfirmedTransaction = async (
         );
       }
 
-      const txData = result.transaction;
+      // Extract static account keys and inner instructions from the
+      // JSON-parsed response before decompiling the transaction message.
+      const message = (result.transaction as any)?.message;
+      const staticAccountKeys: string[] =
+        message?.accountKeys?.map((k: any) =>
+          typeof k === "string" ? k : k.pubkey,
+        ) ?? [];
+      const innerInstructions = (result.meta as any)?.innerInstructions;
+
+      // Also fetch the base64-encoded transaction for decompilation.
+      // Re-fetch with base64 encoding since jsonParsed does not provide
+      // raw wire bytes needed for decompileTransactionMessage.
+      const base64Result = await rpc
+        .getTransaction(signature as Signature, {
+          commitment: "confirmed",
+          maxSupportedTransactionVersion: 0,
+          encoding: "base64",
+        })
+        .send();
+
+      if (!base64Result) {
+        throw new Error("transaction disappeared between fetches");
+      }
+
+      const txData = base64Result.transaction;
       const txB64 = Array.isArray(txData) ? txData[0] : txData;
       if (typeof txB64 !== "string") {
         throw new Error("unexpected transaction encoding in RPC response");
@@ -178,7 +215,12 @@ const fetchConfirmedTransaction = async (
       const compiledMessage = getCompiledTransactionMessageDecoder().decode(
         decodedTx.messageBytes,
       );
-      return decompileTransactionMessage(compiledMessage);
+
+      return {
+        transactionMessage: decompileTransactionMessage(compiledMessage),
+        innerInstructions: innerInstructions ?? undefined,
+        staticAccountKeys,
+      };
     }
 
     await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
@@ -332,19 +374,21 @@ export async function createMPPSolanaChargeHandler(
         throw new Error("push mode is not allowed with fee sponsorship");
       }
 
-      const transactionMessage = await fetchConfirmedTransaction(
+      const confirmedTx = await fetchConfirmedTransaction(
         rpc,
         validatedPayload.signature,
         maxRetries,
         retryDelayMs,
       );
 
-      if (!transactionMessage) {
+      if (!confirmedTx) {
         throw new Error("could not fetch confirmed transaction");
       }
 
       const verifyResult = await verifyChargeTransaction({
-        transactionMessage,
+        transactionMessage: confirmedTx.transactionMessage,
+        innerInstructions: confirmedTx.innerInstructions,
+        staticAccountKeys: confirmedTx.staticAccountKeys,
         ...verifyArgs,
       });
 
@@ -555,19 +599,19 @@ export async function createMPPSolanaNativeChargeHandler(
         throw new Error("push mode is not allowed with fee sponsorship");
       }
 
-      const transactionMessage = await fetchConfirmedTransaction(
+      const confirmedNativeTx = await fetchConfirmedTransaction(
         rpc,
         validatedPayload.signature,
         maxRetries,
         retryDelayMs,
       );
 
-      if (!transactionMessage) {
+      if (!confirmedNativeTx) {
         throw new Error("could not fetch confirmed transaction");
       }
 
       const verifyResult = await verifyNativeChargeTransaction({
-        transactionMessage,
+        transactionMessage: confirmedNativeTx.transactionMessage,
         ...verifyArgs,
       });
 

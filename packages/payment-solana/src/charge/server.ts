@@ -45,6 +45,7 @@ import {
   verifyNativeChargeTransaction,
 } from "./verify";
 import { logger } from "./logger";
+import { toAddress, toKeyPairSigner } from "../compat";
 
 async function generateChallengeID(
   secret: Uint8Array,
@@ -91,8 +92,10 @@ async function verifyChallengeID(
 export type CreateMPPSolanaChargeHandlerArgs = {
   network: string | SolanaCAIP2Network;
   rpc: Rpc<SolanaRpcApi>;
-  feePayerSigner?: KeyPairSigner;
-  mint: Address;
+  feePayerSigner?:
+    | KeyPairSigner
+    | { secretKey: Uint8Array; publicKey: { toBase58(): string } };
+  mint: Address | { toBase58(): string };
   replayStore: ReplayStore;
   realm: string;
   secretKey: Uint8Array;
@@ -207,8 +210,6 @@ export async function createMPPSolanaChargeHandler(
   const {
     network,
     rpc,
-    feePayerSigner,
-    mint,
     replayStore,
     realm,
     secretKey,
@@ -216,6 +217,10 @@ export async function createMPPSolanaChargeHandler(
     retryDelayMs = 1000,
     maxPriorityFee = 100_000,
   } = args;
+  const mint: Address = toAddress(args.mint);
+  const feePayerSigner: KeyPairSigner | undefined = args.feePayerSigner
+    ? await toKeyPairSigner(args.feePayerSigner)
+    : undefined;
 
   const solanaNetwork = lookupX402Network(network);
   const mintAddress = mint;
@@ -415,7 +420,9 @@ const SOL_DECIMALS = Math.log10(LAMPORTS_PER_SOL);
 export type CreateMPPSolanaNativeChargeHandlerArgs = {
   network: string | SolanaCAIP2Network;
   rpc: Rpc<SolanaRpcApi>;
-  feePayerSigner?: KeyPairSigner;
+  feePayerSigner?:
+    | KeyPairSigner
+    | { secretKey: Uint8Array; publicKey: { toBase58(): string } };
   replayStore: ReplayStore;
   realm: string;
   secretKey: Uint8Array;
@@ -430,7 +437,6 @@ export async function createMPPSolanaNativeChargeHandler(
   const {
     network,
     rpc,
-    feePayerSigner,
     replayStore,
     realm,
     secretKey,
@@ -438,6 +444,9 @@ export async function createMPPSolanaNativeChargeHandler(
     retryDelayMs = 1000,
     maxPriorityFee = 100_000,
   } = args;
+  const feePayerSigner: KeyPairSigner | undefined = args.feePayerSigner
+    ? await toKeyPairSigner(args.feePayerSigner)
+    : undefined;
 
   const solanaNetwork = lookupX402Network(network);
   const hasFeePayer = feePayerSigner !== undefined;

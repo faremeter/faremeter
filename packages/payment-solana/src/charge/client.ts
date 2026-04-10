@@ -35,6 +35,7 @@ import {
   type WalletLifetimeConstraint,
 } from "../exact/client";
 import { mppChargeRequest } from "./common";
+import { toAddress } from "../compat";
 
 async function broadcastAndConfirm(
   tx: Transaction,
@@ -117,16 +118,20 @@ async function fetchLifetimeConstraint(
 
 export type CreateMPPSolanaChargeClientArgs = {
   wallet: Wallet;
-  mint: Address;
+  mint: Address | { toBase58(): string };
   rpc?: Rpc<SolanaRpcApi>;
-  tokenProgramId?: Address;
+  tokenProgramId?: Address | { toBase58(): string };
   broadcast?: boolean;
 };
 
 export function createMPPSolanaChargeClient(
   args: CreateMPPSolanaChargeClientArgs,
 ): MPPPaymentHandler {
-  const { wallet, mint, rpc, broadcast = false } = args;
+  const mint = toAddress(args.mint);
+  const defaultTokenProgram = args.tokenProgramId
+    ? toAddress(args.tokenProgramId)
+    : undefined;
+  const { wallet, rpc, broadcast = false } = args;
 
   if (broadcast && !rpc) {
     throw new Error("rpc is required when broadcast is true");
@@ -177,7 +182,7 @@ export function createMPPSolanaChargeClient(
 
         const tokenProgramId: Address = md?.tokenProgram
           ? address(md.tokenProgram)
-          : (args.tokenProgramId ?? TOKEN_PROGRAM_ADDRESS);
+          : (defaultTokenProgram ?? TOKEN_PROGRAM_ADDRESS);
 
         const [sourceAccount] = await findAssociatedTokenPda({
           mint,

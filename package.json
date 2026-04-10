@@ -19,6 +19,9 @@
     "typescript-language-server": "catalog:"
   },
   "tap": {
+    "include": [
+      "**/*.test.ts"
+    ],
     "plugin": [
       "!@tapjs/typescript",
       "@tapjs/tsx"

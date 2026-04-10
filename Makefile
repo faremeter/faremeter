@@ -6,7 +6,7 @@ all: lint build doc test
 pre-build: FORCE
 	rm -f .eslintcache .build-finished
 
-build: pre-build packages/logs packages/types packages/info packages/wallet-solana packages/wallet-evm packages/middleware packages/middleware-openapi packages/gateway-nginx $(wildcard packages/*) packages/test-harness scripts apps/facilitator apps/sidecar tests
+build: pre-build packages/logs packages/types packages/info packages/wallet-solana packages/wallet-evm packages/middleware packages/middleware-openapi packages/gateway-nginx $(wildcard packages/*) packages/test-harness apps/facilitator apps/sidecar scripts tests
 	touch .build-finished
 
 lint:

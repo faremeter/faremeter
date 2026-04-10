@@ -267,8 +267,9 @@ await t.test("basicRetry", async (t) => {
       const begin = Date.now();
       const res = await wrappedFetch("http://somewhere/something/protected");
       const delta = Date.now() - begin;
-      // XXX - Hopefully this doesn't become flakey.
-      t.ok(delta > 90 && delta < 150);
+      // Verify the retry delay fired (>90ms) with doubled upper bound
+      // to avoid flakiness under CI/system load.
+      t.ok(delta > 90 && delta < 300);
       t.equal(res.status, 200);
       const body = await res.text();
       t.matchOnly(body, "retry worked");

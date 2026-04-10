@@ -43,6 +43,7 @@ export async function createSquadsWallet(
     publicKey: keypair.publicKey,
     buildTransaction: async (
       instructions: TransactionInstruction[],
+      recentBlockhash: string,
     ): Promise<VersionedTransaction> => {
       const [vaultPda] = multisig.getVaultPda({
         multisigPda,
@@ -56,8 +57,6 @@ export async function createSquadsWallet(
 
       const currentTransactionIndex = Number(multisigInfo.transactionIndex);
       const newTransactionIndex = BigInt(currentTransactionIndex + 1);
-
-      const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
       const testTransferMessage = new TransactionMessage({
         payerKey: vaultPda,

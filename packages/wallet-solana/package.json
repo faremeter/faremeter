@@ -30,6 +30,7 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
+    "@faremeter/logs": "workspace:^",
     "@solana/kit": "catalog:",
     "@solana/transactions": "catalog:"
   }

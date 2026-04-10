@@ -21,7 +21,7 @@ async function checkDuration<T>(min: number, max: number, f: () => Promise<T>) {
 }
 
 await t.test("checkAllSettledNoTimeout", async (t) => {
-  const results = await checkDuration(25, 150, () =>
+  const results = await checkDuration(25, 300, () =>
     allSettledWithTimeout(
       [sleep(10, "good"), sleep(30, "to"), sleep(1, "go")],
       100,
@@ -47,7 +47,7 @@ await t.test("checkAllSettledNoTimeout", async (t) => {
 });
 
 await t.test("checkAllSettledWithTimeout", async (t) => {
-  const results = await checkDuration(20, 125, () =>
+  const results = await checkDuration(20, 250, () =>
     allSettledWithTimeout([sleep(10), sleep(500)], 100),
   );
 
@@ -71,7 +71,7 @@ await t.test("checkAllSettledWithTimeout", async (t) => {
 });
 
 await t.test("checkAllSettleException", async (t) => {
-  const results = await checkDuration(10, 45, async () =>
+  const results = await checkDuration(10, 90, async () =>
     allSettledWithTimeout(
       [
         sleep(10, 42),

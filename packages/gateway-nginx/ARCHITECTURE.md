@@ -14,9 +14,9 @@ The nginx gateway is a generated OpenResty configuration that intercepts HTTP tr
 +--------+    +-------------------+----------+    +-----------+
 | client | -> |       nginx (OpenResty)      | -> | upstream  |
 +--------+ <- |   Lua phases: access,        | <- | (your API)|
-               |   header-filter, body-filter,|    +-----------+
-               |   log, content (WebSocket)   |
-               +------------------------------+
+              |   header-filter, body-filter,|    +-----------+
+              |   log, content (WebSocket)   |
+              +------------------------------+
 ```
 
 **nginx** handles TLS termination, routing, and proxying. Each priced endpoint gets Lua code injected into nginx's request processing phases. The Lua code is stateless -- all pricing logic lives in the sidecar.

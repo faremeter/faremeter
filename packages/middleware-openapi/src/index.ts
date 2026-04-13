@@ -22,8 +22,10 @@ export type {
 export type {
   Asset,
   EvalContext,
+  EvalTrace,
   FaremeterSpec,
   OperationPricing,
+  PhaseTrace,
   PriceResult,
   PricingRule,
   Rates,

@@ -118,6 +118,8 @@ Parameters:
 - [OperationPricing](#operationpricing)
 - [FaremeterSpec](#faremeterspec)
 - [EvalContext](#evalcontext)
+- [PhaseTrace](#phasetrace)
+- [EvalTrace](#evaltrace)
 - [PriceResult](#priceresult)
 - [EvalError](#evalerror)
 - [EvalErrorHandler](#evalerrorhandler)
@@ -176,11 +178,23 @@ lose precision to IEEE-754 rounding.
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `EvalContext` | `{ request: { body: Record<string, unknown>; headers: Record<string, string>; query: Record<string, string>; path: string; }; response?: { body: Record<string, unknown>; headers: Record<string, string>; status: number; }; }` |
 
+### PhaseTrace
+
+| Type         | Type                                                          |
+| ------------ | ------------------------------------------------------------- |
+| `PhaseTrace` | `{ bindings: Record<string, unknown>; coefficient: number; }` |
+
+### EvalTrace
+
+| Type        | Type                                                                                     |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| `EvalTrace` | `{ ruleIndex: number; rule: PricingRule; authorize?: PhaseTrace; capture: PhaseTrace; }` |
+
 ### PriceResult
 
-| Type          | Type                                                                                                                                                                                                                                                                                                           |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PriceResult` | `{ matched: boolean; amount: Record<string, bigint>; // True when the matched rule has an explicit `authorize`// expression. When false, the authorize result was derived from // the`capture` expression and the handler settles at /request // instead of deferring to /response. hasAuthorize?: boolean; }` |
+| Type          | Type                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PriceResult` | `{ matched: boolean; amount: Record<string, bigint>; // True when the matched rule has an explicit `authorize`// expression. When false, the authorize result was derived from // the`capture` expression and the handler settles at /request // instead of deferring to /response. hasAuthorize?: boolean; ruleIndex?: number; rule?: PricingRule; trace?: PhaseTrace; }` |
 
 ### EvalError
 
@@ -226,9 +240,9 @@ lose precision to IEEE-754 rounding.
 
 ### CaptureResponse
 
-| Type              | Type                                                                                                                                                                                                                                                                                                                                |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CaptureResponse` | `{ captured: boolean; settled: boolean; amount: Record<string, string>; // When settlement is attempted and fails, the facilitator's // machine-readable error payload is propagated here. Absent for // successful settlements and for one-phase rules where authorize // and capture produce the same amount. error?: unknown; }` |
+| Type              | Type                                                                                                                                                                                                                                                                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CaptureResponse` | `{ captured: boolean; settled: boolean; amount: Record<string, string>; // When settlement is attempted and fails, the facilitator's // machine-readable error payload is propagated here. Absent for // successful settlements and for one-phase rules where authorize // and capture produce the same amount. error?: unknown; trace?: EvalTrace; }` |
 
 ### GatewayHandler
 

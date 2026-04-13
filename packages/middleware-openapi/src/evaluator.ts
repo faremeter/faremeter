@@ -144,8 +144,9 @@ function resolveExpression(
   jpEnv: JSONPathEnvironment,
   ctx: Record<string, unknown>,
   exprParser: Parser,
-): number {
+): { coefficient: number; bindings: Record<string, unknown> } {
   const vars: Record<string, unknown> = {};
+  const bindings: Record<string, unknown> = {};
   let varIndex = 0;
 
   let processed = expression;
@@ -169,6 +170,7 @@ function resolveExpression(
       let anyNil = false;
       let substituted = coal.arg;
       const localVars: Record<string, unknown> = {};
+      const localBindings: Record<string, unknown> = {};
       for (const ref of argRefs) {
         const nodes = jpEnv.query(ref, ctx as never);
         const values = nodes.values();
@@ -178,12 +180,14 @@ function resolveExpression(
         }
         const name = `${REF_VAR_PREFIX}${varIndex++}`;
         localVars[name] = values[0];
+        localBindings[ref] = values[0];
         substituted = substituted.replace(ref, name);
       }
       if (anyNil) {
         replacement = `(${coal.fallback})`;
       } else {
         Object.assign(vars, localVars);
+        Object.assign(bindings, localBindings);
         replacement = `(${substituted})`;
       }
     }
@@ -199,6 +203,7 @@ function resolveExpression(
       throw new Error(`JSONPath '${ref}' resolved to ${values.length} values`);
     }
     vars[name] = values[0];
+    bindings[ref] = values[0];
     return name;
   });
 
@@ -217,7 +222,7 @@ function resolveExpression(
       `expression '${expression}' evaluated to non-finite number`,
     );
   }
-  return result;
+  return { coefficient: result, bindings };
 }
 
 function validateRateKeys(
@@ -414,7 +419,9 @@ export function createPricingEvaluator(
         ? { request: ctx.request, response: ctx.response }
         : { request: ctx.request };
 
-    for (const rule of op.rules) {
+    for (let i = 0; i < op.rules.length; i++) {
+      const rule = op.rules[i];
+      if (!rule) continue;
       // Match JSONPath has already been compiled during validateExpressions,
       // so a runtime throw here is a real bug — let it propagate.
       const matchCtx = rule.matchIsFilter ? matchCtxArray : matchCtxObject;
@@ -436,8 +443,16 @@ export function createPricingEvaluator(
       }
 
       try {
-        const coefficient = resolveExpression(expr, jpEnv, exprCtx, exprParser);
+        const { coefficient, bindings } = resolveExpression(
+          expr,
+          jpEnv,
+          exprCtx,
+          exprParser,
+        );
         const result = buildResult(coefficient, op.rates);
+        result.ruleIndex = i;
+        result.rule = rule.source;
+        result.trace = { coefficient, bindings };
         if (phase === "authorize") {
           result.hasAuthorize = ruleHasAuthorize;
         }

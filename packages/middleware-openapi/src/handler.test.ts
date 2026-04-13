@@ -8,7 +8,7 @@
 
 import t from "tap";
 import { createGatewayHandler } from "./handler";
-import type { Asset, FaremeterSpec } from "./types";
+import type { Asset, FaremeterSpec, PricingRule } from "./types";
 
 const DEFAULT_ASSETS: Record<string, Asset> = {
   "usdc-sol": {
@@ -518,3 +518,88 @@ await t.test(
     t.end();
   },
 );
+
+await t.test(
+  "handleResponse includes two-phase trace with authorize and capture bindings",
+  async (t) => {
+    const rule: PricingRule = {
+      match: "$",
+      authorize: "$.request.body.max_tokens",
+      capture: "$.response.body.usage.total_tokens",
+    };
+    const spec = makeSpec([rule]);
+    const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
+    const result = await handler.handleResponse(
+      responsePayload(
+        { usage: { total_tokens: 42 } },
+        { model: "gpt-4o", max_tokens: 100 },
+      ),
+    );
+    t.ok(result.trace, "trace must be defined when a rule matched");
+    t.equal(result.trace?.ruleIndex, 0, "first rule matched");
+    t.matchOnly(result.trace?.rule, rule, "rule must match the spec rule");
+    t.ok(
+      result.trace?.authorize,
+      "authorize trace must be present for two-phase rule",
+    );
+    t.match(result.trace?.authorize?.bindings, {
+      "$.request.body.max_tokens": 100,
+    });
+    t.equal(result.trace?.authorize?.coefficient, 100);
+    t.ok(result.trace?.capture, "capture trace must be present");
+    t.match(result.trace?.capture?.bindings, {
+      "$.response.body.usage.total_tokens": 42,
+    });
+    t.equal(result.trace?.capture?.coefficient, 42);
+    t.end();
+  },
+);
+
+await t.test(
+  "handleResponse includes capture-only trace without authorize",
+  async (t) => {
+    const rule: PricingRule = {
+      match: "$",
+      capture: "50",
+    };
+    const spec = makeSpec([rule]);
+    const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
+    const result = await handler.handleResponse(
+      responsePayload(
+        { usage: { total_tokens: 50 } },
+        { model: "gpt-4o", messages: [] },
+      ),
+    );
+    t.ok(result.trace, "trace must be defined when a rule matched");
+    t.equal(result.trace?.ruleIndex, 0);
+    t.matchOnly(result.trace?.rule, rule);
+    t.equal(
+      result.trace?.authorize,
+      undefined,
+      "no authorize on capture-only rule",
+    );
+    t.ok(result.trace?.capture);
+    t.equal(result.trace?.capture?.coefficient, 50);
+    t.equal(result.trace?.rule.authorize, undefined);
+    t.end();
+  },
+);
+
+await t.test("handleResponse omits trace when no rule matches", async (t) => {
+  const spec = makeSpec([
+    {
+      match: '$[?@.request.body.model == "gpt-4o"]',
+      authorize: "100",
+      capture: "$.response.body.usage.total_tokens",
+    },
+  ]);
+  const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
+  const result = await handler.handleResponse(
+    responsePayload(
+      { usage: { total_tokens: 50 } },
+      { model: "claude-sonnet", messages: [] },
+    ),
+  );
+  t.equal(result.trace, undefined, "trace must be absent when no rule matched");
+  t.end();
+});

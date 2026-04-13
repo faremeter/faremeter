@@ -10,7 +10,7 @@ import {
 import { createPricingEvaluator } from "./evaluator";
 import { buildContext, withResponse } from "./context";
 import { logger } from "./logger";
-import type { Asset, FaremeterSpec, PriceResult } from "./types";
+import type { Asset, EvalTrace, FaremeterSpec, PriceResult } from "./types";
 
 export type GatewayHandlerConfig = {
   spec: FaremeterSpec;
@@ -74,6 +74,7 @@ export type CaptureResponse = {
   // successful settlements and for one-phase rules where authorize
   // and capture produce the same amount.
   error?: unknown;
+  trace?: EvalTrace;
 };
 
 export type GatewayHandler = {
@@ -381,6 +382,20 @@ export function createGatewayHandler(
       paymentSettled = Object.values(captureResult.amount).some((v) => v > 0n);
     }
 
+    const trace: EvalTrace | undefined =
+      captureResult.trace &&
+      captureResult.ruleIndex !== undefined &&
+      captureResult.rule
+        ? {
+            ruleIndex: captureResult.ruleIndex,
+            rule: captureResult.rule,
+            capture: captureResult.trace,
+            ...(authResult.hasAuthorize && authResult.trace
+              ? { authorize: authResult.trace }
+              : {}),
+          }
+        : undefined;
+
     const response: CaptureResponse = {
       captured: Object.keys(captureResult.amount).length > 0,
       settled: paymentSettled,
@@ -388,6 +403,9 @@ export function createGatewayHandler(
     };
     if (settlementError !== undefined) {
       response.error = settlementError;
+    }
+    if (trace) {
+      response.trace = trace;
     }
     return response;
   }

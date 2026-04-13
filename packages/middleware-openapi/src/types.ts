@@ -48,6 +48,18 @@ export type EvalContext = {
   };
 };
 
+export type PhaseTrace = {
+  bindings: Record<string, unknown>;
+  coefficient: number;
+};
+
+export type EvalTrace = {
+  ruleIndex: number;
+  rule: PricingRule;
+  authorize?: PhaseTrace;
+  capture: PhaseTrace;
+};
+
 export type PriceResult = {
   matched: boolean;
   amount: Record<string, bigint>;
@@ -56,4 +68,7 @@ export type PriceResult = {
   // the `capture` expression and the handler settles at /request
   // instead of deferring to /response.
   hasAuthorize?: boolean;
+  ruleIndex?: number;
+  rule?: PricingRule;
+  trace?: PhaseTrace;
 };

@@ -54,10 +54,19 @@ local function deliver_capture()
   local resp_headers_json = cjson.encode(ngx.ctx.fm_captured_headers or {})
   local resp_body_json = cjson.encode(fm.reconstruct_nested(accumulated_fields))
 
-  if op_key_json == nil or method_json == nil or path_json == nil
-      or headers_json == nil or query_json == nil or body_json == nil
-      or resp_status_json == nil or resp_headers_json == nil or resp_body_json == nil then
-    ngx.log(ngx.WARN, "faremeter: failed to encode ws capture payload")
+  local failed_fields = {}
+  if op_key_json == nil then failed_fields[#failed_fields + 1] = "operationKey" end
+  if method_json == nil then failed_fields[#failed_fields + 1] = "method" end
+  if path_json == nil then failed_fields[#failed_fields + 1] = "path" end
+  if headers_json == nil then failed_fields[#failed_fields + 1] = "headers" end
+  if query_json == nil then failed_fields[#failed_fields + 1] = "query" end
+  if body_json == nil then failed_fields[#failed_fields + 1] = "body" end
+  if resp_status_json == nil then failed_fields[#failed_fields + 1] = "response.status" end
+  if resp_headers_json == nil then failed_fields[#failed_fields + 1] = "response.headers" end
+  if resp_body_json == nil then failed_fields[#failed_fields + 1] = "response.body" end
+  if #failed_fields > 0 then
+    ngx.log(ngx.WARN, "faremeter: failed to encode ws capture payload fields: ",
+        table.concat(failed_fields, ", "))
     return
   end
 

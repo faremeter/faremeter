@@ -147,3 +147,4 @@ ngx.ctx.fm_path = ngx.var.uri
 ngx.ctx.fm_req_headers = headers
 ngx.ctx.fm_req_query = query
 ngx.ctx.fm_req_body = parsed_body
+ngx.ctx.fm_req_body_raw = raw_body

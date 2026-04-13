@@ -248,6 +248,25 @@ await t.test(
 );
 
 await t.test(
+  "log.lua and websocket.lua use fm_req_body_raw for digest-stable encoding",
+  (t) => {
+    const log = readLua("log.lua");
+    const ws = readLua("websocket.lua");
+    t.match(
+      log,
+      /fm_req_body_raw/,
+      "log.lua must reference fm_req_body_raw for the request body field",
+    );
+    t.match(
+      ws,
+      /fm_req_body_raw/,
+      "websocket.lua must reference fm_req_body_raw for the request body field",
+    );
+    t.end();
+  },
+);
+
+await t.test(
   "access.lua surfaces a cjson.encode failure on the error response path",
   (t) => {
     // The non-200 error response path calls `cjson.encode(gateway.body)`

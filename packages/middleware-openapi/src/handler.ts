@@ -367,6 +367,20 @@ export function createGatewayHandler(
       }
     }
 
+    if (
+      !paymentSettled &&
+      !settlementError &&
+      authResult.matched &&
+      !authResult.hasAuthorize
+    ) {
+      // One-phase rule: settlement already happened at /request time.
+      // If handleResponse is called, the request succeeded (200), so
+      // settlement succeeded. Only set settled if a non-zero amount
+      // was actually captured (zero amounts are filtered by toPricing
+      // and skip settlement entirely).
+      paymentSettled = Object.values(captureResult.amount).some((v) => v > 0n);
+    }
+
     const response: CaptureResponse = {
       captured: Object.keys(captureResult.amount).length > 0,
       settled: paymentSettled,

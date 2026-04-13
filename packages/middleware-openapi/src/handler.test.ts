@@ -472,3 +472,49 @@ await t.test(
     t.end();
   },
 );
+
+await t.test(
+  "handleResponse reports settled:true for one-phase rule with non-zero capture",
+  async (t) => {
+    // One-phase (capture-only) rules settle at /request time. When
+    // handleResponse is called it means /request returned 200, which
+    // means settlement already succeeded. The CaptureResponse must
+    // reflect that so callers (e.g. the onCapture hook) can rely on
+    // settled:true for billing assertions without checking phase type.
+    // One-phase capture expressions must not reference $.response.*,
+    // so use a literal coefficient here.
+    const spec = makeSpec([{ match: "$", capture: "50" }]);
+    const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
+    const result = await handler.handleResponse(
+      responsePayload(
+        { usage: { total_tokens: 50 } },
+        { model: "gpt-4o", messages: [] },
+      ),
+    );
+    t.equal(result.captured, true);
+    t.equal(result.settled, true);
+    t.equal(result.amount["usdc-sol"], "50");
+    t.end();
+  },
+);
+
+await t.test(
+  "handleResponse reports settled:false for one-phase rule with zero capture",
+  async (t) => {
+    // When the capture expression evaluates to zero, toPricing drops
+    // the entry and handleRequest returns 200 without settling. The
+    // log phase still runs (access.lua sets fm_paid on any 200), but
+    // no payment was taken, so settled must remain false.
+    const spec = makeSpec([{ match: "$", capture: "0" }]);
+    const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
+    const result = await handler.handleResponse(
+      responsePayload(
+        { usage: { total_tokens: 0 } },
+        { model: "gpt-4o", messages: [] },
+      ),
+    );
+    t.equal(result.captured, true);
+    t.equal(result.settled, false);
+    t.end();
+  },
+);

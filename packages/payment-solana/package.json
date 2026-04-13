@@ -33,6 +33,21 @@
       "require": "./dist/src/charge/index.js",
       "import": "./dist/src/charge/index.js",
       "types": "./dist/src/charge/index.d.ts"
+    },
+    "./flex/client": {
+      "require": "./dist/src/flex/client/index.js",
+      "import": "./dist/src/flex/client/index.js",
+      "types": "./dist/src/flex/client/index.d.ts"
+    },
+    "./flex/facilitator": {
+      "require": "./dist/src/flex/facilitator/index.js",
+      "import": "./dist/src/flex/facilitator/index.js",
+      "types": "./dist/src/flex/facilitator/index.d.ts"
+    },
+    "./flex/hono": {
+      "require": "./dist/src/flex/hono/index.js",
+      "import": "./dist/src/flex/hono/index.js",
+      "types": "./dist/src/flex/hono/index.d.ts"
     }
   },
   "devDependencies": {
@@ -48,8 +63,10 @@
     "typescript-language-server": "catalog:"
   },
   "dependencies": {
+    "@faremeter/flex-solana": "^0.1.0",
     "@faremeter/info": "workspace:^",
     "@faremeter/logs": "workspace:^",
+    "@faremeter/middleware": "workspace:^",
     "@faremeter/types": "workspace:^",
     "@solana-program/compute-budget": "catalog:",
     "@solana-program/memo": "catalog:",
@@ -63,7 +80,8 @@
     "@solana/spl-token": "catalog:",
     "@solana/transactions": "catalog:",
     "@solana/web3.js": "catalog:",
-    "arktype": "catalog:"
+    "arktype": "catalog:",
+    "hono": "catalog:"
   },
   "tap": {
     "plugin": [

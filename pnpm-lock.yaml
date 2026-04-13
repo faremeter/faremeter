@@ -681,12 +681,18 @@ importers:
 
   packages/payment-solana:
     dependencies:
+      '@faremeter/flex-solana':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@faremeter/info':
         specifier: workspace:^
         version: link:../info
       '@faremeter/logs':
         specifier: workspace:^
         version: link:../logs
+      '@faremeter/middleware':
+        specifier: workspace:^
+        version: link:../middleware
       '@faremeter/types':
         specifier: workspace:^
         version: link:../types
@@ -729,6 +735,9 @@ importers:
       arktype:
         specifier: 'catalog:'
         version: 2.1.21
+      hono:
+        specifier: 'catalog:'
+        version: 4.9.0
     devDependencies:
       '@eslint/js':
         specifier: 'catalog:'
@@ -1195,6 +1204,9 @@ importers:
 
   scripts:
     dependencies:
+      '@faremeter/facilitator':
+        specifier: workspace:^
+        version: link:../packages/facilitator
       '@faremeter/fetch':
         specifier: workspace:*
         version: link:../packages/fetch

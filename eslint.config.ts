@@ -18,7 +18,7 @@ export default defineConfig(
   checkTypes
     ? tseslint.configs.stylisticTypeChecked
     : tseslint.configs.stylistic,
-  globalIgnores(["**/idl_type.ts", "**/dist/**"]),
+  globalIgnores(["**/idl_type.ts", "**/dist/**", "**/generated/**"]),
   {
     linterOptions: {
       reportUnusedDisableDirectives: checkTypes ? "warn" : "off",

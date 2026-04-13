@@ -72,7 +72,7 @@ if (!OPENRESTY_BIN) {
   process.exit(0);
 }
 
-const opmBin = OPENRESTY_BIN.replace("openresty", "opm");
+const opmBin = join(resolve(OPENRESTY_BIN, ".."), "opm");
 const opmResult =
   await $`${opmBin} list 2>/dev/null | grep lua-resty-http`.nothrow();
 if (opmResult.exitCode !== 0) {

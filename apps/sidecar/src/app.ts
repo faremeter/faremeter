@@ -13,10 +13,10 @@ export type CreateAppOpts = GatewayHandlerConfig & {
   /**
    * Called once per successful `/response` with the capture envelope
    * that will be returned to the Lua gateway. The hook fires for
-   * every matched capture, including one-phase telemetry captures
-   * where `result.settled === false` — the gateway's log-phase
-   * capture pipeline is the caller, and it delivers both billed
-   * and non-billed capture events. Consumers that only care about
+   * every matched capture. One-phase (capture-only) rules report
+   * `result.settled === true` when a non-zero amount was charged at
+   * request time; zero-amount captures and unmatched rules report
+   * `result.settled === false`. Consumers that only care about
    * settled bills should gate on `result.settled`.
    *
    * The hook runs post-settlement and is awaited to catch async

@@ -550,6 +550,7 @@ await t.test("nginx sidecar integration", async (t) => {
       await cb.awaitCapture("POST /v1/images/generations");
       const cap = requireCapture(cb, "POST /v1/images/generations");
       t.equal(cap.captured, true);
+      t.equal(cap.settled, true);
       t.equal(cap.amount.usdc, "1");
       t.end();
     },

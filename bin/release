@@ -35,10 +35,13 @@ step::30::update_package_versions() {
 	command::exists jq || log::fatal "jq is required but not installed"
 
 	local pkgfiles pkgfile tmpfile actual
-	pkgfiles=(packages/*/package.json)
-	[[ -f ${pkgfiles[0]} ]] || log::fatal "no package.json files found under packages/"
+	pkgfiles=(packages/*/package.json apps/*/package.json)
+	[[ -f ${pkgfiles[0]} ]] || log::fatal "no package.json files found"
 
 	for pkgfile in "${pkgfiles[@]}"; do
+		[[ -f $pkgfile ]] || continue
+		jq -e '.version' "$pkgfile" >/dev/null 2>&1 || continue
+
 		tmpfile=$(temp::file)
 		jq --arg v "$NEW_VERSION" '.version = $v' "$pkgfile" >"$tmpfile"
 		mv "$tmpfile" "$pkgfile"
@@ -47,13 +50,13 @@ step::30::update_package_versions() {
 		[[ $actual == "$NEW_VERSION" ]] || log::fatal "$pkgfile: expected version $NEW_VERSION, got $actual"
 	done
 
-	pnpm prettier --write packages/*/package.json >/dev/null
+	pnpm prettier --write packages/*/package.json apps/*/package.json >/dev/null
 }
 
 step::40::commit_and_tag() {
 	log::info "committing and tagging $NEW_TAG"
 
-	git add packages/*/package.json
+	git add packages/*/package.json apps/*/package.json
 	git commit -m "Update faremeter version to $NEW_TAG"
 	git tag -s "$NEW_TAG" -m "faremeter $NEW_TAG"
 

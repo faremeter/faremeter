@@ -1097,6 +1097,119 @@ await t.test(
   },
 );
 
+await t.test("trace: simple ref bindings are recorded", (t) => {
+  const spec = makeSpec([
+    {
+      match: "$",
+      capture: "$.request.body.tokens * 20",
+    },
+  ]);
+  const evaluator = createPricingEvaluator(spec);
+  const result = evaluator.capture(OP, requestCtx({ tokens: 5, messages: [] }));
+  t.equal(result.matched, true);
+  t.ok(result.trace !== undefined, "trace must be present on a matched result");
+  t.equal(result.trace?.coefficient, 100, "coefficient is tokens * 20 = 100");
+  t.same(
+    result.trace?.bindings,
+    { "$.request.body.tokens": 5 },
+    "bindings must map the JSONPath string to the resolved value",
+  );
+  t.end();
+});
+
+await t.test("trace: coalesce with non-nil primary records the ref", (t) => {
+  const spec = makeSpec([
+    {
+      match: "$",
+      capture: "coalesce($.request.body.tokens, 0) * 10",
+    },
+  ]);
+  const evaluator = createPricingEvaluator(spec);
+  const result = evaluator.capture(OP, requestCtx({ tokens: 7, messages: [] }));
+  t.equal(result.matched, true);
+  t.ok(result.trace !== undefined, "trace must be present");
+  t.equal(result.trace?.coefficient, 70, "coefficient is 7 * 10 = 70");
+  t.ok(
+    "$.request.body.tokens" in (result.trace?.bindings ?? {}),
+    "bindings must contain the ref when the primary resolves",
+  );
+  t.equal(result.trace?.bindings["$.request.body.tokens"], 7);
+  t.end();
+});
+
+await t.test(
+  "trace: coalesce with nil primary excludes the ref from bindings",
+  (t) => {
+    const spec = makeSpec([
+      {
+        match: "$",
+        capture: "coalesce($.request.body.tokens, 0) * 10",
+      },
+    ]);
+    const evaluator = createPricingEvaluator(spec);
+    const result = evaluator.capture(
+      OP,
+      requestCtx({ model: "gpt-4o", messages: [] }),
+    );
+    t.equal(result.matched, true);
+    t.ok(result.trace !== undefined, "trace must be present");
+    t.equal(
+      result.trace?.coefficient,
+      0,
+      "fallback 0 * 10 = 0 when tokens is absent",
+    );
+    t.notOk(
+      "$.request.body.tokens" in (result.trace?.bindings ?? {}),
+      "nil-path ref must be absent from bindings",
+    );
+    t.end();
+  },
+);
+
+await t.test("trace: ruleIndex and rule identify the matched rule", (t) => {
+  const spec = makeSpec([
+    {
+      match: '$[?@.request.body.model == "gpt-4o"]',
+      capture: "100",
+    },
+    {
+      match: "$",
+      capture: "$.request.body.tokens * 5",
+    },
+  ]);
+  const evaluator = createPricingEvaluator(spec);
+
+  const secondRuleCtx = requestCtx({ model: "other", tokens: 3, messages: [] });
+  const result = evaluator.capture(OP, secondRuleCtx);
+  t.equal(result.matched, true);
+  t.equal(result.ruleIndex, 1, "second rule is at index 1");
+  t.same(
+    result.rule,
+    { match: "$", capture: "$.request.body.tokens * 5" },
+    "rule must match the source rule from the spec",
+  );
+  t.ok(result.trace !== undefined, "trace must be present");
+  t.equal(result.trace?.coefficient, 15, "coefficient is 3 * 5 = 15");
+  t.end();
+});
+
+await t.test("trace: unmatched result has no trace", (t) => {
+  const spec = makeSpec([
+    {
+      match: '$[?@.request.body.model == "gpt-4o"]',
+      capture: "100",
+    },
+  ]);
+  const evaluator = createPricingEvaluator(spec);
+  const result = evaluator.capture(
+    OP,
+    requestCtx({ model: "other", messages: [] }),
+  );
+  t.equal(result.matched, false);
+  t.equal(result.trace, undefined, "unmatched result must have no trace");
+  t.end();
+});
+
 await t.test(
   "nested coalesce: triple-nested with only deepest fallback resolving",
   (t) => {

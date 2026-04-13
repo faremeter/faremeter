@@ -156,6 +156,7 @@ Per-request state flows through `ngx.ctx`:
 | `fm_req_headers`      | access        | log, websocket                             | Request headers (preserved as-is, including arrays)        |
 | `fm_req_query`        | access        | log, websocket                             | Query parameters                                           |
 | `fm_req_body`         | access        | log, websocket                             | Parsed request body (or nil for bodyless methods)          |
+| `fm_req_body_raw`     | access        | log, websocket                             | Raw request body bytes (for digest-stable JSON encoding)   |
 | `fm_status`           | header-filter | log                                        | Upstream response status code                              |
 | `fm_is_sse`           | header-filter | body-filter                                | Whether the response is SSE                                |
 | `fm_captured`         | body-filter   | log                                        | Extracted response body fields (nested)                    |

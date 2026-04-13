@@ -22,3 +22,4 @@ export * as charge from "./charge";
  * @description SPL token balance and account utilities
  */
 export * as splToken from "./splToken";
+export * as flex from "./flex";

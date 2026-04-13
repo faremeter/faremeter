@@ -19,6 +19,7 @@ catalog:
   "@solana-program/token": 0.13.0
   "@solana/addresses": 6.7.0
   "@solana/kit": 6.7.0
+  "@solana/program-client-core": 6.7.0
   "@solana/rpc": 6.7.0
   "@solana/rpc-api": 6.7.0
   "@solana/rpc-types": 6.7.0

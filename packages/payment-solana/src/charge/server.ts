@@ -45,7 +45,7 @@ import {
   verifyNativeChargeTransaction,
 } from "./verify";
 import { logger } from "./logger";
-import { toAddress, toKeyPairSigner } from "../compat";
+import { toAddress, toKeyPairSigner, toRpc } from "../compat";
 
 async function generateChallengeID(
   secret: Uint8Array,
@@ -91,7 +91,7 @@ async function verifyChallengeID(
 
 export type CreateMPPSolanaChargeHandlerArgs = {
   network: string | SolanaCAIP2Network;
-  rpc: Rpc<SolanaRpcApi>;
+  rpc: Rpc<SolanaRpcApi> | string;
   feePayerSigner?:
     | KeyPairSigner
     | { secretKey: Uint8Array; publicKey: { toBase58(): string } };
@@ -209,7 +209,6 @@ export async function createMPPSolanaChargeHandler(
 ): Promise<MPPMethodHandler> {
   const {
     network,
-    rpc,
     replayStore,
     realm,
     secretKey,
@@ -217,6 +216,7 @@ export async function createMPPSolanaChargeHandler(
     retryDelayMs = 1000,
     maxPriorityFee = 100_000,
   } = args;
+  const rpc = toRpc(args.rpc);
   const mint: Address = toAddress(args.mint);
   const feePayerSigner: KeyPairSigner | undefined = args.feePayerSigner
     ? await toKeyPairSigner(args.feePayerSigner)
@@ -419,7 +419,7 @@ const SOL_DECIMALS = Math.log10(LAMPORTS_PER_SOL);
 
 export type CreateMPPSolanaNativeChargeHandlerArgs = {
   network: string | SolanaCAIP2Network;
-  rpc: Rpc<SolanaRpcApi>;
+  rpc: Rpc<SolanaRpcApi> | string;
   feePayerSigner?:
     | KeyPairSigner
     | { secretKey: Uint8Array; publicKey: { toBase58(): string } };
@@ -436,7 +436,6 @@ export async function createMPPSolanaNativeChargeHandler(
 ): Promise<MPPMethodHandler> {
   const {
     network,
-    rpc,
     replayStore,
     realm,
     secretKey,
@@ -444,6 +443,7 @@ export async function createMPPSolanaNativeChargeHandler(
     retryDelayMs = 1000,
     maxPriorityFee = 100_000,
   } = args;
+  const rpc = toRpc(args.rpc);
   const feePayerSigner: KeyPairSigner | undefined = args.feePayerSigner
     ? await toKeyPairSigner(args.feePayerSigner)
     : undefined;

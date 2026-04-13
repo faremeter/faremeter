@@ -40,7 +40,7 @@ import { PaymentRequirementsExtra } from "./facilitator";
 import { generateMatcher } from "./common";
 import { generateMemoNonce } from "./memo";
 import { getAddMemoInstruction } from "@solana-program/memo";
-import { toAddress } from "../compat";
+import { toAddress, toRpc } from "../compat";
 
 export type WalletLifetimeConstraint = {
   blockhash: Blockhash;
@@ -216,10 +216,11 @@ async function generateSettleSigner() {
 export function createPaymentHandler(
   wallet: Wallet,
   mintInput: Address | { toBase58(): string },
-  rpc?: Rpc<SolanaRpcApi>,
+  rpcInput?: Rpc<SolanaRpcApi> | string,
   options?: CreatePaymentHandlerOptions,
 ): PaymentHandler {
   const mint: Address = toAddress(mintInput);
+  const rpc = rpcInput ? toRpc(rpcInput) : undefined;
   const { isMatchingRequirement } = generateMatcher(wallet.network, mint);
 
   return async (

@@ -12,8 +12,11 @@
 import {
   address,
   createKeyPairSignerFromBytes,
+  createSolanaRpc,
   type Address,
   type KeyPairSigner,
+  type Rpc,
+  type SolanaRpcApi,
 } from "@solana/kit";
 import { getLogger } from "@faremeter/logs";
 
@@ -110,4 +113,15 @@ export async function toKeyPairSigner(
   }
 
   throw new TypeError("expected a Uint8Array, KeyPairSigner, or Keypair");
+}
+
+/**
+ * Accepts an `Rpc<SolanaRpcApi>` or a URL string and returns
+ * an `Rpc<SolanaRpcApi>`.
+ */
+export function toRpc(input: Rpc<SolanaRpcApi> | string): Rpc<SolanaRpcApi> {
+  if (typeof input === "string") {
+    return createSolanaRpc(input);
+  }
+  return input;
 }

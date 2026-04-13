@@ -1,8 +1,12 @@
 #!/usr/bin/env pnpm tsx
 
 import t from "tap";
-import { address, createKeyPairSignerFromBytes } from "@solana/kit";
-import { toAddress, toKeyPairSigner } from "./compat";
+import {
+  address,
+  createKeyPairSignerFromBytes,
+  createSolanaRpc,
+} from "@solana/kit";
+import { toAddress, toKeyPairSigner, toRpc } from "./compat";
 
 // A deterministic 64-byte secret key for testing (32-byte seed +
 // 32-byte public key, as expected by createKeyPairSignerFromBytes).
@@ -73,4 +77,17 @@ await t.test("toKeyPairSigner: throws on invalid input", async (t) => {
   await t.rejects(() => toKeyPairSigner("not-a-signer" as never), {
     message: /expected a Uint8Array, KeyPairSigner, or Keypair/,
   });
+});
+
+// ---------- toRpc ----------
+
+await t.test("toRpc: passes through an Rpc object", async (t) => {
+  const rpc = createSolanaRpc("https://api.devnet.solana.com");
+  const result = toRpc(rpc);
+  t.equal(result, rpc);
+});
+
+await t.test("toRpc: creates an Rpc from a URL string", async (t) => {
+  const result = toRpc("https://api.devnet.solana.com");
+  t.ok(typeof result.getLatestBlockhash === "function");
 });

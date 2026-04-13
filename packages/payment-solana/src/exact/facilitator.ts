@@ -48,7 +48,7 @@ import {
 import type { TransactionError } from "@solana/rpc-types";
 import { type } from "arktype";
 import { isValidTransaction } from "./verify";
-import { toAddress, toKeyPairSigner } from "../compat";
+import { toAddress, toKeyPairSigner, toRpc } from "../compat";
 import { logger } from "./logger";
 import { x402Scheme, generateMatcher } from "./common";
 import { getAddMemoInstruction } from "@solana-program/memo";
@@ -204,13 +204,14 @@ const sendTransaction = async (
  */
 export const createFacilitatorHandler = async (
   network: string | SolanaCAIP2Network,
-  rpc: Rpc<SolanaRpcApi>,
+  rpcInput: Rpc<SolanaRpcApi> | string,
   feePayerSignerInput:
     | KeyPairSigner
     | { secretKey: Uint8Array; publicKey: { toBase58(): string } },
   mintInput: Address | { toBase58(): string },
   config?: FacilitatorOptions,
 ): Promise<FacilitatorHandler> => {
+  const rpc = toRpc(rpcInput);
   const mint: Address = toAddress(mintInput);
   const feePayerSigner: KeyPairSigner =
     await toKeyPairSigner(feePayerSignerInput);

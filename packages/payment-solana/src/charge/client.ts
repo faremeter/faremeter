@@ -35,7 +35,7 @@ import {
   type WalletLifetimeConstraint,
 } from "../exact/client";
 import { mppChargeRequest } from "./common";
-import { toAddress } from "../compat";
+import { toAddress, toRpc } from "../compat";
 
 async function broadcastAndConfirm(
   tx: Transaction,
@@ -119,7 +119,7 @@ async function fetchLifetimeConstraint(
 export type CreateMPPSolanaChargeClientArgs = {
   wallet: Wallet;
   mint: Address | { toBase58(): string };
-  rpc?: Rpc<SolanaRpcApi>;
+  rpc?: Rpc<SolanaRpcApi> | string;
   tokenProgramId?: Address | { toBase58(): string };
   broadcast?: boolean;
 };
@@ -131,7 +131,8 @@ export function createMPPSolanaChargeClient(
   const defaultTokenProgram = args.tokenProgramId
     ? toAddress(args.tokenProgramId)
     : undefined;
-  const { wallet, rpc, broadcast = false } = args;
+  const rpc = args.rpc ? toRpc(args.rpc) : undefined;
+  const { wallet, broadcast = false } = args;
 
   if (broadcast && !rpc) {
     throw new Error("rpc is required when broadcast is true");
@@ -249,14 +250,15 @@ export function createMPPSolanaChargeClient(
 
 export type CreateMPPSolanaNativeChargeClientArgs = {
   wallet: Wallet;
-  rpc?: Rpc<SolanaRpcApi>;
+  rpc?: Rpc<SolanaRpcApi> | string;
   broadcast?: boolean;
 };
 
 export function createMPPSolanaNativeChargeClient(
   args: CreateMPPSolanaNativeChargeClientArgs,
 ): MPPPaymentHandler {
-  const { wallet, rpc, broadcast = false } = args;
+  const rpc = args.rpc ? toRpc(args.rpc) : undefined;
+  const { wallet, broadcast = false } = args;
 
   if (broadcast && !rpc) {
     throw new Error("rpc is required when broadcast is true");

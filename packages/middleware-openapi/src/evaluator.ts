@@ -439,6 +439,9 @@ export function createPricingEvaluator(
         expr = rule.capture;
       }
       if (!expr) {
+        // Unreachable for valid specs: validateExpressions ensures every
+        // rule has at least a capture expression. Guard retained for
+        // defensive safety; no trace is attached since no expression ran.
         return { matched: true, amount: {} };
       }
 

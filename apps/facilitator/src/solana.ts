@@ -2,9 +2,14 @@ import { logger } from "./logger";
 
 import { createFacilitatorHandler as createSolanaHandler } from "@faremeter/x-solana-settlement/facilitator";
 import { createFacilitatorHandler as createFacilitatorHandlerExact } from "@faremeter/payment-solana/exact";
+import { createFacilitatorHandler as createFacilitatorHandlerFlex } from "@faremeter/payment-solana/flex/facilitator";
 import { adaptHandlerV1ToV2 } from "@faremeter/facilitator";
 import { clusterApiUrl, Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { createSolanaRpc } from "@solana/kit";
+import {
+  address,
+  createKeyPairSignerFromBytes,
+  createSolanaRpc,
+} from "@solana/kit";
 import { isKnownCluster, lookupKnownSPLToken } from "@faremeter/info/solana";
 import fs from "fs";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
@@ -16,9 +21,9 @@ export async function createHandlers(network: string, keypairPath: string) {
   }
 
   const handlers: FacilitatorHandler[] = [];
-  const adminKeypair = Keypair.fromSecretKey(
-    Uint8Array.from(JSON.parse(fs.readFileSync(keypairPath, "utf-8"))),
-  );
+  const raw = JSON.parse(fs.readFileSync(keypairPath, "utf-8")) as number[];
+  const adminKeypair = Keypair.fromSecretKey(Uint8Array.from(raw));
+  const adminSigner = await createKeyPairSignerFromBytes(Uint8Array.from(raw));
   const apiUrl = clusterApiUrl(network);
   const connection = new Connection(apiUrl, "confirmed");
   const rpc = createSolanaRpc(apiUrl);
@@ -49,6 +54,15 @@ export async function createHandlers(network: string, keypairPath: string) {
     await createFacilitatorHandlerExact(network, rpc, adminKeypair, usdcMint),
     // PYUSD Token-2022 with exact scheme
     await createFacilitatorHandlerExact(network, rpc, adminKeypair, pyusdMint),
+    // Flex scheme (USDC)
+    // XXX - Low timing params are only suitable for devnet testing.
+    // Raise minGracePeriodSlots and confirmationBufferSlots for mainnet.
+    await createFacilitatorHandlerFlex(network, rpc, adminSigner, {
+      supportedMints: [address(usdcInfo.address)],
+      defaultSplits: [{ recipient: adminSigner.address, bps: 300 }],
+      minGracePeriodSlots: 10n,
+      confirmationBufferSlots: 5n,
+    }),
   );
 
   logger.info(`Solana handlers configured for ${network}`);

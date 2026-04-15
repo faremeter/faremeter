@@ -31,8 +31,6 @@ import type {
 import { lookupX402Network } from "@faremeter/info/solana";
 import { isValidationError } from "@faremeter/types";
 import {
-  generateMatcher,
-  FLEX_SCHEME,
   FlexPaymentPayload,
   serializePaymentAuthorization,
   createEd25519VerifyInstruction,
@@ -44,6 +42,7 @@ import {
   getFinalizeInstructionDataEncoder,
   FLEX_PROGRAM_ADDRESS,
 } from "@faremeter/flex-solana";
+import { generateMatcher, FLEX_SCHEME } from "../common";
 import { logger } from "../logger";
 import {
   createHoldManager,

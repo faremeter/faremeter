@@ -3,6 +3,7 @@ import "../logger";
 import { default as express } from "express";
 import { createMiddleware } from "@faremeter/middleware/express";
 import {
+  clusterToCAIP2,
   lookupKnownSPLToken,
   x402Exact,
   xSolanaSettlement,
@@ -72,6 +73,15 @@ const run = async () => {
           amount: "10000",
           payTo,
         }),
+        // Flex Payment (USDC)
+        {
+          scheme: "flex",
+          network: clusterToCAIP2(network).caip2,
+          maxAmountRequired: usdcInfo.toUnit("10000"),
+          payTo,
+          asset: usdcInfo.address,
+          maxTimeoutSeconds: 60,
+        },
       ],
     }),
     (_, res) => {

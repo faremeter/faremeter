@@ -13,6 +13,7 @@ async function runX402Payments() {
   await $`pnpm tsx solana-example/solana-exact-payment.ts`;
   await $`pnpm tsx solana-example/token2022-exact-payment.ts`;
   await $`pnpm tsx solana-example/ows-exact-payment.ts`;
+  await $`pnpm tsx solana-example/flex-payment.ts`;
   // XXX - Add the Crossmint and Ledger payment in future.
 }
 

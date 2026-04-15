@@ -9,13 +9,13 @@ import type { x402PaymentRequirements } from "@faremeter/types/x402v2";
 import { isValidationError } from "@faremeter/types";
 
 import {
-  generateMatcher,
   serializePaymentAuthorization,
   signPaymentAuthorization,
   fetchEscrowAccount,
   FlexPaymentRequirementsExtra,
   FLEX_PROGRAM_ADDRESS,
 } from "@faremeter/flex-solana";
+import { generateMatcher } from "../common";
 import type { webcrypto } from "node:crypto";
 import { logger } from "../logger";
 

@@ -85,8 +85,8 @@ catalogs:
       specifier: npm:@types/web@^0.0.246
       version: 0.0.246
     arktype:
-      specifier: 2.1.21
-      version: 2.1.21
+      specifier: 2.2.0
+      version: 2.2.0
     bs58:
       specifier: 6.0.0
       version: 6.0.0
@@ -227,7 +227,7 @@ importers:
         version: 6.7.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
       dotenv:
         specifier: 'catalog:'
         version: 17.2.2
@@ -350,7 +350,7 @@ importers:
         version: link:../types
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
     devDependencies:
       '@eslint/js':
         specifier: 'catalog:'
@@ -421,7 +421,7 @@ importers:
         version: link:../types
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
     devDependencies:
       '@eslint/js':
         specifier: 'catalog:'
@@ -515,7 +515,7 @@ importers:
         version: link:../types
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
     devDependencies:
       '@eslint/js':
         specifier: 'catalog:'
@@ -576,7 +576,7 @@ importers:
         version: 0.25.1
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
       expr-eval:
         specifier: 'catalog:'
         version: 2.0.2
@@ -628,7 +628,7 @@ importers:
         version: link:../types
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
       viem:
         specifier: 'catalog:'
         version: 2.41.2(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@4.3.6)
@@ -713,7 +713,7 @@ importers:
         version: 6.7.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
       hono:
         specifier: 'catalog:'
         version: 4.9.0
@@ -780,7 +780,7 @@ importers:
         version: 6.7.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
       viem:
         specifier: 'catalog:'
         version: 2.41.2(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@4.3.6)
@@ -844,7 +844,7 @@ importers:
         version: link:../types
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
       hono:
         specifier: 'catalog:'
         version: 4.9.0
@@ -887,7 +887,7 @@ importers:
     dependencies:
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
     devDependencies:
       '@eslint/js':
         specifier: 'catalog:'
@@ -1031,7 +1031,7 @@ importers:
         version: 6.7.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       arktype:
         specifier: 'catalog:'
-        version: 2.1.21
+        version: 2.2.0
       viem:
         specifier: 'catalog:'
         version: 2.41.2(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@4.3.6)
@@ -1372,14 +1372,8 @@ packages:
     resolution: {integrity: sha512-3yWxPTq3UQ/FY9p1ErPxIyfT64elWaMvM9lIHnaqpyft63tkxodF5aUElYHrdisWve5cETkh1+KBw1yJuW0aRw==}
     engines: {node: '>=14.13.1'}
 
-  '@ark/schema@0.47.0':
-    resolution: {integrity: sha512-s5Hc1TUmRiA+NhewAHZJtl7xuFN0y4vAdv/JrvgCxgf1NKwBAylTvqCnQ8iPYn8kG3qAmHwgPpbJ+C5iHKJsbQ==}
-
   '@ark/schema@0.56.0':
     resolution: {integrity: sha512-ECg3hox/6Z/nLajxXqNhgPtNdHWC9zNsDyskwO28WinoFEnWow4IsERNz9AnXRhTZJnYIlAJ4uGn3nlLk65vZA==}
-
-  '@ark/util@0.47.0':
-    resolution: {integrity: sha512-KAOwSSjgZCEYd/3QEIjmq1LRHnVk2fOjypGVfm3V+1C7KrSsV5yRoQjb50b0KTuA1A317G9LXz+UD6g4O1A6NA==}
 
   '@ark/util@0.56.0':
     resolution: {integrity: sha512-BghfRC8b9pNs3vBoDJhcta0/c1J1rsoS1+HgVUreMFPdhz/CRAKReAu57YEllNaSy98rWAdY1gE+gFup7OXpgA==}
@@ -2988,9 +2982,6 @@ packages:
 
   arkregex@0.0.5:
     resolution: {integrity: sha512-ncYjBdLlh5/QnVsAA8De16Tc9EqmYM7y/WU9j+236KcyYNUXogpz3sC4ATIZYzzLxwI+0sEOaQLEmLmRleaEXw==}
-
-  arktype@2.1.21:
-    resolution: {integrity: sha512-RPsqONfr/hi8nnlzqSn1i3oMAtvFqt8jIVD7tIFoqP+/wu0Jb04f0bQOLBBDILWv+tjBxBqmCeIfO4f9AMYktw==}
 
   arktype@2.2.0:
     resolution: {integrity: sha512-t54MZ7ti5BhOEvzEkgKnWvqj+UbDfWig+DHr5I34xatymPusKLS0lQpNJd8M6DzmIto2QGszHfNKoFIT8tMCZQ==}
@@ -5270,15 +5261,9 @@ snapshots:
       ansi-styles: 6.2.3
       is-fullwidth-code-point: 4.0.0
 
-  '@ark/schema@0.47.0':
-    dependencies:
-      '@ark/util': 0.47.0
-
   '@ark/schema@0.56.0':
     dependencies:
       '@ark/util': 0.56.0
-
-  '@ark/util@0.47.0': {}
 
   '@ark/util@0.56.0': {}
 
@@ -8113,11 +8098,6 @@ snapshots:
   arkregex@0.0.5:
     dependencies:
       '@ark/util': 0.56.0
-
-  arktype@2.1.21:
-    dependencies:
-      '@ark/schema': 0.47.0
-      '@ark/util': 0.47.0
 
   arktype@2.2.0:
     dependencies:

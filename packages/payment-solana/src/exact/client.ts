@@ -208,8 +208,8 @@ async function generateSettleSigner() {
  * and submitted by the client to fulfill x402 payment requirements.
  *
  * @param wallet - Wallet providing signing capabilities
- * @param mint - SPL token mint address
- * @param rpc - Optional Solana RPC client for fetching blockhash and mint info
+ * @param mintInput - SPL token mint address
+ * @param rpcInput - Optional Solana RPC client for fetching blockhash and mint info
  * @param options - Optional configuration for token address and features
  * @returns A PaymentHandler function for use with the x402 client
  */

@@ -196,9 +196,9 @@ const sendTransaction = async (
  * fee payer keypair, and submits them to the Solana network.
  *
  * @param network - Solana network identifier (cluster name, CAIP-2 string, or SolanaCAIP2Network object)
- * @param rpc - Solana RPC client
- * @param feePayerKeypair - Keypair for paying transaction fees
- * @param mint - SPL token mint public key
+ * @param rpcInput - Solana RPC client
+ * @param feePayerSignerInput - Keypair or signer for paying transaction fees
+ * @param mintInput - SPL token mint public key
  * @param config - Optional configuration for retries, fees, and hooks
  * @returns A FacilitatorHandler for processing Solana exact payments
  */

@@ -51,7 +51,7 @@ A Ledger EVM wallet interface.
 Creates a Ledger hardware wallet interface for Solana.
 
 Connects to a Ledger device and returns a wallet that can sign
-Solana versioned transactions.
+kit-native Solana transactions.
 
 | Function                   | Type                                                                       |
 | -------------------------- | -------------------------------------------------------------------------- |
@@ -129,13 +129,12 @@ Ledger hardware wallet interface for EVM chains.
 
 Ledger hardware wallet interface for Solana.
 
-| Property                   | Type                                                          | Description |
-| -------------------------- | ------------------------------------------------------------- | ----------- |
-| `network`                  | `string`                                                      |             |
-| `publicKey`                | `PublicKey`                                                   |             |
-| `partiallySignTransaction` | `(tx: VersionedTransaction) => Promise<VersionedTransaction>` |             |
-| `updateTransaction`        | `(tx: VersionedTransaction) => Promise<VersionedTransaction>` |             |
-| `disconnect`               | `() => Promise<void>`                                         |             |
+| Property                   | Type                                                                                                                                                                                | Description |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `network`                  | `string`                                                                                                                                                                            |             |
+| `publicKey`                | `Address`                                                                                                                                                                           |             |
+| `partiallySignTransaction` | `(tx: Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>) => Promise<Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>>` |             |
+| `disconnect`               | `() => Promise<void>`                                                                                                                                                               |             |
 
 ### LedgerTransportWrapper
 

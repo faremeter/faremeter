@@ -27,19 +27,18 @@ pnpm install @faremeter/wallet-solana-squads
 
 Creates a Squads multisig wallet for Solana.
 
-Wraps the Squads SDK to create proposals, gather approvals, and execute
-vault transactions through a multisig workflow.
+Wraps the Squads SDK (still on
 
-| Function             | Type                                                                                                                                                                                                                                           |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `createSquadsWallet` | `(network: string, connection: Connection, keypair: Keypair, multisigPda: PublicKey, squadMember: Keypair) => Promise<{ network: string; publicKey: PublicKey; buildTransaction: (instructions: TransactionInstruction[]) => Promise<...>; }>` |
+| Function             | Type                                                                                                                                                                                                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createSquadsWallet` | `(network: string, connection: Connection, keypair: Keypair, multisigPda: PublicKey, squadMember: Keypair) => Promise<{ network: string; publicKey: Address; buildTransaction: (instructions: readonly Instruction<...>[], lifetimeConstraint: { ...; }) => Promise<...>; }>` |
 
 Parameters:
 
 - `network`: - Solana network identifier.
-- `connection`: - Solana RPC connection.
+- `connection`: - Solana RPC connection (v1).
 - `keypair`: - Admin keypair for creating and signing proposals.
-- `multisigPda`: - Program-derived address of the Squads multisig account.
+- `multisigPda`: - Program-derived address of the Squads multisig.
 - `squadMember`: - Additional squad member keypair for approval quorum.
 
 Returns:

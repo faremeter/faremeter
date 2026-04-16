@@ -30,9 +30,9 @@ Creates a Crossmint custodial wallet for Solana.
 Uses the Crossmint Wallets SDK to sign and send transactions via
 API key authentication.
 
-| Function                | Type                                                                                                                                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `createCrossmintWallet` | `(network: string, crossmintApiKey: string, crossmintWalletAddress: string) => Promise<{ network: string; publicKey: PublicKey; sendTransaction: (tx: VersionedTransaction) => Promise<...>; }>` |
+| Function                | Type                                                                                                                                                                                                                                                      |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createCrossmintWallet` | `(network: string, crossmintApiKey: string, crossmintWalletAddress: string) => Promise<{ network: string; publicKey: Address; sendTransaction: (tx: Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>) => Promise<...>; }>` |
 
 Parameters:
 
@@ -42,7 +42,7 @@ Parameters:
 
 Returns:
 
-A wallet object that can send Solana transactions.
+A wallet object that can send kit-native Solana transactions.
 
 <!-- TSDOC_END -->
 

@@ -24,24 +24,33 @@ pnpm install @faremeter/wallet-solana
 
 ### createLocalWallet
 
-Creates a local Solana wallet from a keypair for signing transactions.
+Creates a local Solana wallet from a 64-byte secret key, a kit
+`KeyPairSigner`, or a v1 `Keypair` for signing kit-native
+transactions.
 
-| Function            | Type                                                                                                                                                                                                                              |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `createLocalWallet` | `(network: string, keypair: Keypair) => Promise<{ network: string; publicKey: PublicKey; partiallySignTransaction: (tx: VersionedTransaction) => Promise<...>; updateTransaction: (tx: VersionedTransaction) => Promise<...>; }>` |
+| Function            | Type                                                                                                                                                                                                                               |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createLocalWallet` | `(network: string, input: LocalWalletInput) => Promise<{ network: string; publicKey: Address; partiallySignTransaction: (tx: Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>) => Promise<...>; }>` |
 
 Parameters:
 
 - `network`: - Network identifier (e.g., "mainnet-beta", "devnet").
-- `keypair`: - Solana keypair containing the private key.
+- `input`: - A 64-byte secret key, kit `KeyPairSigner`, or v1 `Keypair`.
 
 Returns:
 
-A wallet object that can sign versioned transactions.
+A wallet object that can partially sign kit `Transaction`s.
 
 ## Types
 
+- [LocalWalletInput](#localwalletinput)
 - [LocalWallet](#localwallet)
+
+### LocalWalletInput
+
+| Type               | Type                                         |
+| ------------------ | -------------------------------------------- |
+| `LocalWalletInput` | `Uint8Array or KeyPairSigner or KeypairLike` |
 
 ### LocalWallet
 

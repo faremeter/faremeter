@@ -83,12 +83,11 @@ OWS wallet interface for Solana.
 
 XXX: OWS signing calls are synchronous/blocking under the hood.
 
-| Property                   | Type                                                          | Description |
-| -------------------------- | ------------------------------------------------------------- | ----------- |
-| `network`                  | `string`                                                      |             |
-| `publicKey`                | `PublicKey`                                                   |             |
-| `partiallySignTransaction` | `(tx: VersionedTransaction) => Promise<VersionedTransaction>` |             |
-| `updateTransaction`        | `(tx: VersionedTransaction) => Promise<VersionedTransaction>` |             |
+| Property                   | Type                                                                                                                                                                                | Description |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `network`                  | `string`                                                                                                                                                                            |             |
+| `publicKey`                | `Address`                                                                                                                                                                           |             |
+| `partiallySignTransaction` | `(tx: Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>) => Promise<Readonly<{ messageBytes: TransactionMessageBytes; signatures: SignaturesMap; }>>` |             |
 
 ### OWSEvmWallet
 

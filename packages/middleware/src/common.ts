@@ -390,7 +390,7 @@ export type CreateRemoteX402HandlersArgs = {
  * combine a remote x402 facilitator with in-process MPP handlers in the
  * same middleware.
  *
- * @returns An array of {@link FacilitatorHandler} suitable for
+ * @returns An array of `FacilitatorHandler` suitable for
  * `createMiddleware({ x402Handlers: ... })`.
  */
 export function createRemoteX402Handlers(

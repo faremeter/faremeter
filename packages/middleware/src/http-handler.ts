@@ -1,5 +1,5 @@
 /**
- * Wraps a remote facilitator HTTP service as a {@link FacilitatorHandler}.
+ * Wraps a remote facilitator HTTP service as a `FacilitatorHandler`.
  *
  * This handler always sends v2 format requests and expects v2 responses.
  * Pointing it at a facilitator that only speaks v1 will produce validation
@@ -52,7 +52,7 @@ type CreateHTTPFacilitatorHandlerOpts = {
 };
 
 /**
- * Creates a {@link FacilitatorHandler} that delegates to a remote facilitator
+ * Creates a `FacilitatorHandler` that delegates to a remote facilitator
  * via HTTP.
  *
  * The glue layer constructs valid `x402PaymentRequirements` from

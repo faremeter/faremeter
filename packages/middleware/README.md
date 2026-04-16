@@ -39,7 +39,7 @@ pnpm install @faremeter/middleware
 
 ### createHTTPFacilitatorHandler
 
-Creates a {@link FacilitatorHandler } that delegates to a remote facilitator
+Creates a `FacilitatorHandler` that delegates to a remote facilitator
 via HTTP.
 
 The glue layer constructs valid `x402PaymentRequirements` from
@@ -157,7 +157,7 @@ same middleware.
 
 Returns:
 
-An array of {@link FacilitatorHandler } suitable for
+An array of `FacilitatorHandler` suitable for
 `createMiddleware({ x402Handlers: ... })`.
 
 ### resolveConfig

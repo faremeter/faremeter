@@ -12,6 +12,9 @@ catalogs:
     '@eslint/js':
       specifier: 9.34.0
       version: 9.34.0
+    '@faremeter/flex-solana':
+      specifier: 0.2.1
+      version: 0.2.1
     '@hono/node-server':
       specifier: 1.19.1
       version: 1.19.1
@@ -664,8 +667,8 @@ importers:
   packages/payment-solana:
     dependencies:
       '@faremeter/flex-solana':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: 'catalog:'
+        version: 0.2.1(@logtape/logtape@1.0.4)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@faremeter/info':
         specifier: workspace:^
         version: link:../info
@@ -1189,12 +1192,12 @@ importers:
 
   scripts:
     dependencies:
-      '@faremeter/facilitator':
-        specifier: workspace:^
-        version: link:../packages/facilitator
       '@faremeter/fetch':
         specifier: workspace:*
         version: link:../packages/fetch
+      '@faremeter/flex-solana':
+        specifier: 'catalog:'
+        version: 0.2.1(@logtape/logtape@1.0.4)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@faremeter/info':
         specifier: workspace:^
         version: link:../packages/info
@@ -1372,8 +1375,14 @@ packages:
   '@ark/schema@0.47.0':
     resolution: {integrity: sha512-s5Hc1TUmRiA+NhewAHZJtl7xuFN0y4vAdv/JrvgCxgf1NKwBAylTvqCnQ8iPYn8kG3qAmHwgPpbJ+C5iHKJsbQ==}
 
+  '@ark/schema@0.56.0':
+    resolution: {integrity: sha512-ECg3hox/6Z/nLajxXqNhgPtNdHWC9zNsDyskwO28WinoFEnWow4IsERNz9AnXRhTZJnYIlAJ4uGn3nlLk65vZA==}
+
   '@ark/util@0.47.0':
     resolution: {integrity: sha512-KAOwSSjgZCEYd/3QEIjmq1LRHnVk2fOjypGVfm3V+1C7KrSsV5yRoQjb50b0KTuA1A317G9LXz+UD6g4O1A6NA==}
+
+  '@ark/util@0.56.0':
+    resolution: {integrity: sha512-BghfRC8b9pNs3vBoDJhcta0/c1J1rsoS1+HgVUreMFPdhz/CRAKReAu57YEllNaSy98rWAdY1gE+gFup7OXpgA==}
 
   '@babel/helper-string-parser@7.27.1':
     resolution: {integrity: sha512-qMlSxKbpRlAridDExk92nSobyDdpPijUq2DW6oDnUqd0iOGxmQjyqhMIihI9+zv4LPyZdRje2cavWPbCbWm3eA==}
@@ -1693,6 +1702,17 @@ packages:
 
   '@ethersproject/web@5.8.0':
     resolution: {integrity: sha512-j7+Ksi/9KfGviws6Qtf9Q7KCqRhpwrYKQPs+JBA/rKVFF/yaWLHJEH3zfVP2plVu+eys0d2DlFmhoQJayFewcw==}
+
+  '@faremeter/flex-solana@0.2.1':
+    resolution: {integrity: sha512-KW2i8O42Nv3P8etpdS7k/s44WpXmXXdFcJ1ifN0Kdhzp/OyV4SGx+uCMvbEu7WEdKtGFkf2Lax9IGY6mZ2FagA==}
+
+  '@faremeter/logs@0.17.1':
+    resolution: {integrity: sha512-URbANx1IisTw9pGHGswPKOnLAU0FUgnfMYwgMmjkLsqHqYebeAPOnVVGu3SDGgyNudNz0iiLnIfG6sXfZvM0YQ==}
+    peerDependencies:
+      '@logtape/logtape': 1.0.4
+    peerDependenciesMeta:
+      '@logtape/logtape':
+        optional: true
 
   '@gerrit0/mini-shiki@3.22.0':
     resolution: {integrity: sha512-jMpciqEVUBKE1QwU64S4saNMzpsSza6diNCk4MWAeCxO2+LFi2FIFmL2S0VDLzEJCxuvCbU783xi8Hp/gkM5CQ==}
@@ -2966,8 +2986,14 @@ packages:
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
 
+  arkregex@0.0.5:
+    resolution: {integrity: sha512-ncYjBdLlh5/QnVsAA8De16Tc9EqmYM7y/WU9j+236KcyYNUXogpz3sC4ATIZYzzLxwI+0sEOaQLEmLmRleaEXw==}
+
   arktype@2.1.21:
     resolution: {integrity: sha512-RPsqONfr/hi8nnlzqSn1i3oMAtvFqt8jIVD7tIFoqP+/wu0Jb04f0bQOLBBDILWv+tjBxBqmCeIfO4f9AMYktw==}
+
+  arktype@2.2.0:
+    resolution: {integrity: sha512-t54MZ7ti5BhOEvzEkgKnWvqj+UbDfWig+DHr5I34xatymPusKLS0lQpNJd8M6DzmIto2QGszHfNKoFIT8tMCZQ==}
 
   array-flatten@1.1.1:
     resolution: {integrity: sha512-PCVAQswWemu6UdxsDFFX/+gVeYqKAod3D3UVm91jHwynguOwAvYPhx8nNlM++NqRcK6CxxpUafjmhIdKiHibqg==}
@@ -5248,7 +5274,13 @@ snapshots:
     dependencies:
       '@ark/util': 0.47.0
 
+  '@ark/schema@0.56.0':
+    dependencies:
+      '@ark/util': 0.56.0
+
   '@ark/util@0.47.0': {}
+
+  '@ark/util@0.56.0': {}
 
   '@babel/helper-string-parser@7.27.1': {}
 
@@ -5613,6 +5645,23 @@ snapshots:
       '@ethersproject/logger': 5.8.0
       '@ethersproject/properties': 5.8.0
       '@ethersproject/strings': 5.8.0
+
+  '@faremeter/flex-solana@0.2.1(@logtape/logtape@1.0.4)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@faremeter/logs': 0.17.1(@logtape/logtape@1.0.4)
+      '@solana/kit': 6.7.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      '@solana/program-client-core': 6.7.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)
+      arktype: 2.2.0
+    transitivePeerDependencies:
+      - '@logtape/logtape'
+      - bufferutil
+      - fastestsmallesttextencoderdecoder
+      - typescript
+      - utf-8-validate
+
+  '@faremeter/logs@0.17.1(@logtape/logtape@1.0.4)':
+    optionalDependencies:
+      '@logtape/logtape': 1.0.4
 
   '@gerrit0/mini-shiki@3.22.0':
     dependencies:
@@ -8061,10 +8110,20 @@ snapshots:
 
   argparse@2.0.1: {}
 
+  arkregex@0.0.5:
+    dependencies:
+      '@ark/util': 0.56.0
+
   arktype@2.1.21:
     dependencies:
       '@ark/schema': 0.47.0
       '@ark/util': 0.47.0
+
+  arktype@2.2.0:
+    dependencies:
+      '@ark/schema': 0.56.0
+      '@ark/util': 0.56.0
+      arkregex: 0.0.5
 
   array-flatten@1.1.1: {}
 

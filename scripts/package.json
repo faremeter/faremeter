@@ -8,7 +8,7 @@
   ],
   "dependencies": {
     "@faremeter/fetch": "workspace:*",
-    "@faremeter/flex-solana": "^0.1.0",
+    "@faremeter/flex-solana": "catalog:",
     "@faremeter/info": "workspace:^",
     "@faremeter/logs": "workspace:^",
     "@faremeter/middleware": "workspace:^",

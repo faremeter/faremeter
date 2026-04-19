@@ -70,6 +70,7 @@ local function array_aware(tbl)
 end
 
 local headers = array_aware(ngx.req.get_headers())
+headers["x-request-id"] = ngx.var.request_id
 local query = array_aware(ngx.req.get_uri_args())
 
 -- Each cjson.safe.encode can return nil on failure (NaN, Inf, cycles).

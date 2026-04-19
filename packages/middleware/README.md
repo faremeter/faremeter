@@ -318,14 +318,14 @@ Supports two mutually exclusive modes: in-process handlers or remote facilitator
 ### SettleResultV1
 
 | Type             | Type |
-| ---------------- | ---- | ---------------------------------------------------------------------------------------------------------------------- |
-| `SettleResultV1` | `    | { success: true; facilitatorResponse: x402SettleResponseV1 } or { success: false; errorResponse: MiddlewareResponse }` |
+| ---------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SettleResultV1` | `    | { success: true; facilitatorResponse: x402SettleResponseV1 } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### SettleResultV2
 
 | Type             | Type |
-| ---------------- | ---- | -------------------------------------------------------------------------------------------------------------------- |
-| `SettleResultV2` | `    | { success: true; facilitatorResponse: x402SettleResponse } or { success: false; errorResponse: MiddlewareResponse }` |
+| ---------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SettleResultV2` | `    | { success: true; facilitatorResponse: x402SettleResponse } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### SettleResult
 
@@ -336,14 +336,14 @@ Supports two mutually exclusive modes: in-process handlers or remote facilitator
 ### VerifyResultV1
 
 | Type             | Type |
-| ---------------- | ---- | ---------------------------------------------------------------------------------------------------------------------- |
-| `VerifyResultV1` | `    | { success: true; facilitatorResponse: x402VerifyResponseV1 } or { success: false; errorResponse: MiddlewareResponse }` |
+| ---------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VerifyResultV1` | `    | { success: true; facilitatorResponse: x402VerifyResponseV1 } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### VerifyResultV2
 
 | Type             | Type |
-| ---------------- | ---- | -------------------------------------------------------------------------------------------------------------------- |
-| `VerifyResultV2` | `    | { success: true; facilitatorResponse: x402VerifyResponse } or { success: false; errorResponse: MiddlewareResponse }` |
+| ---------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VerifyResultV2` | `    | { success: true; facilitatorResponse: x402VerifyResponse } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### VerifyResult
 
@@ -372,14 +372,14 @@ Contains payment information and functions to verify or settle the payment.
 ### SettleResultMPP
 
 | Type              | Type |
-| ----------------- | ---- | ------------------------------------------------------------------------------------------------ |
-| `SettleResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse }` |
+| ----------------- | ---- | ------------------------------------------------------------------------------------------------------------------------ |
+| `SettleResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### VerifyResultMPP
 
 | Type              | Type |
-| ----------------- | ---- | ------------------------------------------------------------------------------------------------ |
-| `VerifyResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse }` |
+| ----------------- | ---- | ------------------------------------------------------------------------------------------------------------------------ |
+| `VerifyResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### MiddlewareBodyContextMPP
 

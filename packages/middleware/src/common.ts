@@ -451,11 +451,19 @@ export function resolveConfig(args: CommonMiddlewareArgs): ResolvedConfig {
 
 export type SettleResultV1<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402SettleResponseV1 }
-  | { success: false; errorResponse: MiddlewareResponse };
+  | {
+      success: false;
+      errorResponse: MiddlewareResponse;
+      errorMessage?: string;
+    };
 
 export type SettleResultV2<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402SettleResponse }
-  | { success: false; errorResponse: MiddlewareResponse };
+  | {
+      success: false;
+      errorResponse: MiddlewareResponse;
+      errorMessage?: string;
+    };
 
 export type SettleResult<MiddlewareResponse> =
   | SettleResultV1<MiddlewareResponse>
@@ -463,11 +471,19 @@ export type SettleResult<MiddlewareResponse> =
 
 export type VerifyResultV1<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402VerifyResponseV1 }
-  | { success: false; errorResponse: MiddlewareResponse };
+  | {
+      success: false;
+      errorResponse: MiddlewareResponse;
+      errorMessage?: string;
+    };
 
 export type VerifyResultV2<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402VerifyResponse }
-  | { success: false; errorResponse: MiddlewareResponse };
+  | {
+      success: false;
+      errorResponse: MiddlewareResponse;
+      errorMessage?: string;
+    };
 
 export type VerifyResult<MiddlewareResponse> =
   | VerifyResultV1<MiddlewareResponse>
@@ -499,13 +515,18 @@ export type MiddlewareBodyContextV2<MiddlewareResponse> = {
 
 export type SettleResultMPP<MiddlewareResponse> =
   | { success: true; receipt: mppReceipt }
-  | { success: false; errorResponse: MiddlewareResponse };
+  | {
+      success: false;
+      errorResponse: MiddlewareResponse;
+      errorMessage?: string;
+    };
 
 export type VerifyResultMPP<MiddlewareResponse> =
   | { success: true; receipt: mppReceipt }
   | {
       success: false;
       errorResponse: MiddlewareResponse;
+      errorMessage?: string;
     };
 
 /**
@@ -814,7 +835,14 @@ async function handleV1Request<MiddlewareResponse>(
         "failed to settle payment: {errorReason}",
         settlementResponse,
       );
-      return { success: false, errorResponse: await sendPaymentRequired() };
+      const result: SettleResultV1<MiddlewareResponse> = {
+        success: false,
+        errorResponse: await sendPaymentRequired(),
+      };
+      if (settlementResponse.errorReason) {
+        result.errorMessage = settlementResponse.errorReason;
+      }
+      return result;
     }
 
     return { success: true, facilitatorResponse: settlementResponse };
@@ -834,7 +862,14 @@ async function handleV1Request<MiddlewareResponse>(
         "failed to verify payment: {invalidReason}",
         verifyResponse,
       );
-      return { success: false, errorResponse: await sendPaymentRequired() };
+      const result: VerifyResultV1<MiddlewareResponse> = {
+        success: false,
+        errorResponse: await sendPaymentRequired(),
+      };
+      if (verifyResponse.invalidReason) {
+        result.errorMessage = verifyResponse.invalidReason;
+      }
+      return result;
     }
 
     return { success: true, facilitatorResponse: verifyResponse };
@@ -891,7 +926,14 @@ async function handleV2Request<MiddlewareResponse>(
         "failed to settle v2 payment: {errorReason}",
         settlementResponse,
       );
-      return { success: false, errorResponse: await sendPaymentRequired() };
+      const result: SettleResultV2<MiddlewareResponse> = {
+        success: false,
+        errorResponse: await sendPaymentRequired(),
+      };
+      if (settlementResponse.errorReason) {
+        result.errorMessage = settlementResponse.errorReason;
+      }
+      return result;
     }
 
     return { success: true, facilitatorResponse: settlementResponse };
@@ -909,7 +951,14 @@ async function handleV2Request<MiddlewareResponse>(
         "failed to verify v2 payment: {invalidReason}",
         verifyResponse,
       );
-      return { success: false, errorResponse: await sendPaymentRequired() };
+      const result: VerifyResultV2<MiddlewareResponse> = {
+        success: false,
+        errorResponse: await sendPaymentRequired(),
+      };
+      if (verifyResponse.invalidReason) {
+        result.errorMessage = verifyResponse.invalidReason;
+      }
+      return result;
     }
 
     return { success: true, facilitatorResponse: verifyResponse };
@@ -983,7 +1032,11 @@ async function handleMPPRequest<MiddlewareResponse>(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger.warning("failed to settle MPP payment", { error: msg });
-      return { success: false, errorResponse: await sendPaymentRequired() };
+      return {
+        success: false,
+        errorResponse: await sendPaymentRequired(),
+        errorMessage: msg,
+      };
     }
   };
 
@@ -1003,6 +1056,7 @@ async function handleMPPRequest<MiddlewareResponse>(
           return {
             success: false,
             errorResponse: await sendPaymentRequired(),
+            errorMessage: msg,
           };
         }
       }

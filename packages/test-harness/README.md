@@ -1324,9 +1324,9 @@ Resource context for v2 protocol.
 
 Resource context for MPP protocol.
 
-| Type                 | Type                                                                                                  |
-| -------------------- | ----------------------------------------------------------------------------------------------------- |
-| `ResourceContextMPP` | `ResourceContextBase and { protocolVersion: "mpp"; credential: mppCredential; receipt: mppReceipt; }` |
+| Type                 | Type                                                                                                                                           |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ResourceContextMPP` | `ResourceContextBase and { protocolVersion: "mpp"; credential: mppCredential; receipt: mppReceipt; verifyReceipt?: mppReceipt or undefined; }` |
 
 ### ResourceContextX402
 
@@ -1391,9 +1391,9 @@ Options for creating a test payment handler.
 
 ### CreateTestMPPHandlerOpts
 
-| Type                       | Type                                                                                                                                                                                                 |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CreateTestMPPHandlerOpts` | `{ method?: string; realm?: string; intents?: string[]; onChallenge?: ( intent: string, pricing: ResourcePricing, resourceURL: string, ) => void; onSettle?: (credential: mppCredential) => void; }` |
+| Type                       | Type                                                                                                                                                                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CreateTestMPPHandlerOpts` | `{ method?: string; realm?: string; intents?: string[]; supportsVerify?: boolean; onChallenge?: ( intent: string, pricing: ResourcePricing, resourceURL: string, ) => void; onSettle?: (credential: mppCredential) => void; onVerify?: (credential: mppCredential) => void; }` |
 
 ### CreateTestMPPPaymentHandlerOpts
 

@@ -24,6 +24,7 @@ export interface MPPMethodHandler {
     opts?: ChallengeOpts,
   ): Promise<mppChallengeParams>;
   handleSettle(credential: mppCredential): Promise<mppReceipt | null>;
+  handleVerify?(credential: mppCredential): Promise<mppReceipt | null>;
 }
 
 /**
@@ -124,4 +125,39 @@ export async function settleMPPPayment(
   }
 
   throw new Error(`no MPP handler accepted settlement for method "${method}"`);
+}
+
+/**
+ * Routes an MPP credential to the appropriate handler for verification.
+ *
+ * Filters handlers by exact method match and presence of handleVerify,
+ * then iterates until one returns a non-null result.
+ */
+export async function verifyMPPPayment(
+  handlers: MPPMethodHandler[],
+  credential: mppCredential,
+): Promise<mppReceipt> {
+  const method = credential.challenge.method;
+  const candidates = handlers.filter(
+    (
+      h,
+    ): h is MPPMethodHandler & {
+      handleVerify: NonNullable<MPPMethodHandler["handleVerify"]>;
+    } => h.method === method && h.handleVerify !== undefined,
+  );
+
+  if (candidates.length === 0) {
+    throw new Error(
+      `no MPP handler supports verification for method "${method}"`,
+    );
+  }
+
+  for (const handler of candidates) {
+    const result = await handler.handleVerify(credential);
+    if (result) return result;
+  }
+
+  throw new Error(
+    `no MPP handler accepted verification for method "${method}"`,
+  );
 }

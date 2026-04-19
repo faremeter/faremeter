@@ -260,6 +260,7 @@ capacity (least recently used entries are removed first).
 - [MiddlewareBodyContextV1](#middlewarebodycontextv1)
 - [MiddlewareBodyContextV2](#middlewarebodycontextv2)
 - [SettleResultMPP](#settleresultmpp)
+- [VerifyResultMPP](#verifyresultmpp)
 - [MiddlewareBodyContextMPP](#middlewarebodycontextmpp)
 - [MiddlewareBodyContext](#middlewarebodycontext)
 - [HandleMiddlewareRequestArgs](#handlemiddlewarerequestargs)
@@ -374,13 +375,19 @@ Contains payment information and functions to verify or settle the payment.
 | ----------------- | ---- | ------------------------------------------------------------------------------------------------ |
 | `SettleResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse }` |
 
+### VerifyResultMPP
+
+| Type              | Type |
+| ----------------- | ---- | ------------------------------------------------------------------------------------------------ |
+| `VerifyResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse }` |
+
 ### MiddlewareBodyContextMPP
 
 Context provided to the middleware body handler for MPP protocol requests.
 
-| Type                       | Type                                                                                                                 |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `MiddlewareBodyContextMPP` | `{ protocolVersion: "mpp"; credential: mppCredential; settle: () => Promise<SettleResultMPP<MiddlewareResponse>>; }` |
+| Type                       | Type                                                                                                                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `MiddlewareBodyContextMPP` | `{ protocolVersion: "mpp"; credential: mppCredential; settle: () => Promise<SettleResultMPP<MiddlewareResponse>>; verify?: (() => Promise<VerifyResultMPP<MiddlewareResponse>>) or undefined; }` |
 
 ### MiddlewareBodyContext
 

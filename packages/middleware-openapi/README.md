@@ -125,9 +125,15 @@ Parameters:
 - [EvalErrorHandler](#evalerrorhandler)
 - [PricingEvaluator](#pricingevaluator)
 - [GatewayHandlerConfig](#gatewayhandlerconfig)
+- [AuthorizeResponse](#authorizeresponse)
+- [SettledPayment](#settledpayment)
 - [RequestContext](#requestcontext)
 - [ResponseContext](#responsecontext)
-- [GatewayResponse](#gatewayresponse)
+- [GatewayRequestResult](#gatewayrequestresult)
+- [GatewayResponseResult](#gatewayresponseresult)
+- [CapturePhase](#capturephase)
+- [CaptureError](#captureerror)
+- [CaptureRequestInfo](#capturerequestinfo)
 - [CaptureResponse](#captureresponse)
 - [GatewayHandler](#gatewayhandler)
 
@@ -216,9 +222,21 @@ lose precision to IEEE-754 rounding.
 
 ### GatewayHandlerConfig
 
-| Type                   | Type                                                                                                                                                                  |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GatewayHandlerConfig` | `{ spec: FaremeterSpec; baseURL: string; x402Handlers?: FacilitatorHandler[]; mppMethodHandlers?: MPPMethodHandler[]; supportedVersions?: SupportedVersionsConfig; }` |
+| Type                   | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GatewayHandlerConfig` | `{ spec: FaremeterSpec; baseURL: string; x402Handlers?: FacilitatorHandler[]; mppMethodHandlers?: MPPMethodHandler[]; supportedVersions?: SupportedVersionsConfig; /** * Called post-settlement when a pricing rule matched and produced * a non-empty capture amount. `result.phase`indicates whether * settlement happened at`/request`(one-phase) or`/response`* (two-phase). * * For two-phase rules the hook fires at`/response` when settlement * is attempted, regardless of whether it succeeded or failed * (`result.settled`and`result.error`distinguish the outcome). * For one-phase rules the hook fires at`/request` only on * successful settlement -- if the facilitator rejects the payment, * the request gets a 402 and the hook is not invoked. * * The hook does NOT fire when the capture expression evaluates to * zero across all assets. A zero-amount capture produces no * settlement and no hook invocation. * * The hook is awaited -- a slow async hook delays the caller. The * return value is computed before the hook is invoked, so a throw * or rejected promise is caught and logged without affecting it. * * Requires payment handlers (`x402Handlers`or`mppMethodHandlers`) * to be configured. Without them no settlement occurs and this * hook is never invoked. */ onCapture?: ( operationKey: string, result: CaptureResponse, ) => void or Promise<void>; /** * Called when a two-phase rule's payment is successfully verified at * `/request`time. Does not fire for one-phase (capture-only) rules, * which settle immediately and report through`onCapture` instead. * Does not fire when verification fails (the request gets a 402). * * The hook is awaited -- a slow async hook delays the caller. A * throw or rejected promise is caught and logged without affecting * the gateway response, which is already determined at this point. */ onAuthorize?: ( operationKey: string, result: AuthorizeResponse, ) => void or Promise<void>; }` |
+
+### AuthorizeResponse
+
+| Type                | Type |
+| ------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AuthorizeResponse` | `    | { protocol: "x402v1"; verification: x402VerifyResponseV1 } or { protocol: "x402v2"; verification: x402VerifyResponseV2 } or { protocol: "mpp"; verification: mppReceipt }` |
+
+### SettledPayment
+
+| Type             | Type |
+| ---------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SettledPayment` | `    | { protocol: "x402v1"; settlement: x402SettleResponseV1 } or { protocol: "x402v2"; settlement: x402SettleResponseV2 } or { protocol: "mpp"; settlement: mppReceipt }` |
 
 ### RequestContext
 
@@ -232,22 +250,46 @@ lose precision to IEEE-754 rounding.
 | ----------------- | ------------------------------ |
 | `ResponseContext` | `typeof responseContext.infer` |
 
-### GatewayResponse
+### GatewayRequestResult
 
-| Type              | Type                                                                    |
-| ----------------- | ----------------------------------------------------------------------- |
-| `GatewayResponse` | `{ status: number; headers?: Record<string, string>; body?: unknown; }` |
+| Type                   | Type                                                                    |
+| ---------------------- | ----------------------------------------------------------------------- |
+| `GatewayRequestResult` | `{ status: number; headers?: Record<string, string>; body?: unknown; }` |
+
+### GatewayResponseResult
+
+| Type                    | Type                  |
+| ----------------------- | --------------------- |
+| `GatewayResponseResult` | `{ status: number; }` |
+
+### CapturePhase
+
+| Type           | Type                    |
+| -------------- | ----------------------- |
+| `CapturePhase` | `request" or "response` |
+
+### CaptureError
+
+| Type           | Type                                    |
+| -------------- | --------------------------------------- |
+| `CaptureError` | `{ status: number; message?: string; }` |
+
+### CaptureRequestInfo
+
+| Type                 | Type                                                                 |
+| -------------------- | -------------------------------------------------------------------- |
+| `CaptureRequestInfo` | `{ method: string; path: string; headers: Record<string, string>; }` |
 
 ### CaptureResponse
 
-| Type              | Type                                                                                                                                                                                                                                                                                                                                                   |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `CaptureResponse` | `{ captured: boolean; settled: boolean; amount: Record<string, string>; // When settlement is attempted and fails, the facilitator's // machine-readable error payload is propagated here. Absent for // successful settlements and for one-phase rules where authorize // and capture produce the same amount. error?: unknown; trace?: EvalTrace; }` |
+| Type              | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CaptureResponse` | `{ phase: CapturePhase; settled: boolean; amount: Record<string, string>; // The original client request's method, path, and headers as // forwarded by the gateway. Useful for correlating settlement // events with access logs (e.g. via x-request-id). request: CaptureRequestInfo; // When settlement is attempted and fails, the error is propagated // here. Absent for successful settlements. error?: CaptureError; trace?: EvalTrace; // Present when settlement succeeded at this phase and a payment // handler returned a receipt. Absent when settlement failed // (`settled: false`, `error` is set). payment?: SettledPayment; }` |
 
 ### GatewayHandler
 
-| Type             | Type                                                                                                                                |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `GatewayHandler` | `{ handleRequest(ctx: RequestContext): Promise<GatewayResponse>; handleResponse(ctx: ResponseContext): Promise<CaptureResponse>; }` |
+| Type             | Type                                                                                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GatewayHandler` | `{ handleRequest(ctx: RequestContext): Promise<GatewayRequestResult>; handleResponse(ctx: ResponseContext): Promise<GatewayResponseResult>; }` |
 
 <!-- TSDOC_END -->

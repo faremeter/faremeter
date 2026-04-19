@@ -7,6 +7,7 @@ type NginxGeneratorOpts = {
   upstreamURL: string;
   specRoot?: string | undefined;
   sitePrefix?: string | undefined;
+  extraDirectives?: string[] | undefined;
 };
 
 type NginxGeneratorResult = {
@@ -17,7 +18,14 @@ type NginxGeneratorResult = {
 export function generateNginxConf(
   opts: NginxGeneratorOpts,
 ): NginxGeneratorResult {
-  const { routes, sidecarURL, upstreamURL, specRoot, sitePrefix } = opts;
+  const {
+    routes,
+    sidecarURL,
+    upstreamURL,
+    specRoot,
+    sitePrefix,
+    extraDirectives,
+  } = opts;
 
   const effectiveSidecarURL = sitePrefix
     ? `${sidecarURL}/sites/${sitePrefix}`
@@ -27,6 +35,7 @@ export function generateNginxConf(
     sidecarURL: effectiveSidecarURL,
     upstreamURL,
     specRoot,
+    extraDirectives,
   });
 
   return { locationsConf: locationBlocks, warnings };

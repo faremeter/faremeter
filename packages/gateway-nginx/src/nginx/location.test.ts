@@ -255,3 +255,150 @@ await t.test(
     t.end();
   },
 );
+
+await t.test(
+  "extraDirectives are emitted in HTTP location blocks",
+  async (t) => {
+    const routes = [makeRoute({ path: "/v1/chat", method: "POST" })];
+    const result = generateLocationBlocks(routes, {
+      ...defaultOpts,
+      extraDirectives: [
+        "proxy_read_timeout 3600s;",
+        "proxy_send_timeout 3600s;",
+      ],
+    });
+
+    t.match(
+      result.block,
+      /proxy_read_timeout 3600s;/,
+      "first extra directive is present",
+    );
+    t.match(
+      result.block,
+      /proxy_send_timeout 3600s;/,
+      "second extra directive is present",
+    );
+    t.end();
+  },
+);
+
+await t.test(
+  "extraDirectives are emitted in WebSocket location blocks",
+  async (t) => {
+    const routes = [
+      makeRoute({
+        path: "/v1/ws",
+        method: "GET",
+        transportType: "websocket",
+      }),
+    ];
+    const result = generateLocationBlocks(routes, {
+      ...defaultOpts,
+      extraDirectives: ["proxy_read_timeout 3600s;"],
+    });
+
+    t.match(
+      result.block,
+      /proxy_read_timeout 3600s;/,
+      "extra directive is present in WebSocket location",
+    );
+    t.end();
+  },
+);
+
+await t.test("extraDirectives appear before Lua blocks", async (t) => {
+  const routes = [makeRoute({ path: "/v1/chat", method: "POST" })];
+  const result = generateLocationBlocks(routes, {
+    ...defaultOpts,
+    extraDirectives: ["proxy_read_timeout 3600s;"],
+  });
+
+  const directiveIdx = result.block.indexOf("proxy_read_timeout 3600s;");
+  const luaIdx = result.block.indexOf("access_by_lua_block");
+  t.ok(
+    directiveIdx < luaIdx,
+    "extra directive appears before access_by_lua_block",
+  );
+  t.end();
+});
+
+await t.test(
+  "extraDirectives appear before WebSocket upgrade directives in mixed locations",
+  async (t) => {
+    const routes = [
+      makeRoute({ path: "/v1/stream", method: "POST", transportType: "json" }),
+      makeRoute({
+        path: "/v1/stream",
+        method: "GET",
+        transportType: "websocket",
+      }),
+    ];
+    const result = generateLocationBlocks(routes, {
+      ...defaultOpts,
+      extraDirectives: ["proxy_read_timeout 3600s;"],
+    });
+
+    const httpBlock = result.block.slice(
+      result.block.indexOf("location = /v1/stream"),
+    );
+    const directiveIdx = httpBlock.indexOf("proxy_read_timeout 3600s;");
+    const upgradeIdx = httpBlock.indexOf("error_page 418");
+    t.ok(
+      directiveIdx < upgradeIdx,
+      "extra directive appears before upgrade detection",
+    );
+    t.end();
+  },
+);
+
+await t.test(
+  "extraDirectives are emitted in the named WS location of mixed paths",
+  async (t) => {
+    const routes = [
+      makeRoute({ path: "/v1/stream", method: "POST", transportType: "json" }),
+      makeRoute({
+        path: "/v1/stream",
+        method: "GET",
+        transportType: "websocket",
+      }),
+    ];
+    const result = generateLocationBlocks(routes, {
+      ...defaultOpts,
+      extraDirectives: ["proxy_read_timeout 3600s;"],
+    });
+
+    const wsBlock = result.block.slice(
+      result.block.indexOf("location @ws_"),
+      result.block.indexOf("location = /v1/stream"),
+    );
+    t.match(
+      wsBlock,
+      /proxy_read_timeout 3600s;/,
+      "extra directive is present in named WS location",
+    );
+    t.end();
+  },
+);
+
+await t.test(
+  "extraDirectives with embedded newlines are split and indented",
+  async (t) => {
+    const routes = [makeRoute({ path: "/v1/chat", method: "POST" })];
+    const result = generateLocationBlocks(routes, {
+      ...defaultOpts,
+      extraDirectives: ["proxy_read_timeout 3600s;\nproxy_send_timeout 3600s;"],
+    });
+
+    t.match(
+      result.block,
+      /^ {2}proxy_read_timeout 3600s;$/m,
+      "first line is indented",
+    );
+    t.match(
+      result.block,
+      /^ {2}proxy_send_timeout 3600s;$/m,
+      "second line after newline split is indented",
+    );
+    t.end();
+  },
+);

@@ -19,6 +19,7 @@ type LocationOpts = {
   sidecarURL: string;
   upstreamURL: string;
   specRoot?: string | undefined;
+  extraDirectives?: string[] | undefined;
 };
 
 type LocationResult = {
@@ -29,6 +30,7 @@ type LocationResult = {
 function indent(text: string, spaces: number): string {
   const pad = " ".repeat(spaces);
   return text
+    .replace(/\r\n/g, "\n")
     .split("\n")
     .map((line) => (line.trim() === "" ? "" : pad + line))
     .join("\n");
@@ -55,7 +57,7 @@ function generatePaidHTTPLocation(
   pathDirective: string,
   routes: RouteConfig[],
   opts: LocationOpts,
-  extraDirectives?: string,
+  upgradeBlock?: string,
 ): string {
   const { sidecarURL } = opts;
   const accessCode = generateAccessBlock({ routes, sidecarURL });
@@ -72,13 +74,16 @@ function generatePaidHTTPLocation(
     lines.push("  proxy_buffering off;");
   }
 
-  // Caller-supplied extra directives (currently used by the mixed
-  // HTTP+WebSocket path to insert an Upgrade-detection jump into a
-  // named WS location). Placed before the access_by_lua block so the
-  // upgrade redirect short-circuits before any paid-request logic
-  // runs — an upgrade request should never increment billing.
-  if (extraDirectives) {
-    lines.push(extraDirectives);
+  if (opts.extraDirectives?.length) {
+    lines.push(indent(opts.extraDirectives.map((d) => d.trim()).join("\n"), 2));
+  }
+
+  // Upgrade-detection block injected by the mixed HTTP+WebSocket
+  // path. Placed before the access_by_lua block so the upgrade
+  // redirect short-circuits before any paid-request logic runs — an
+  // upgrade request should never increment billing.
+  if (upgradeBlock) {
+    lines.push(upgradeBlock);
   }
 
   lines.push("");
@@ -135,6 +140,11 @@ function generatePaidWebSocketLocation(
   const lines: string[] = [];
 
   lines.push(`location ${pathDirective} {`);
+
+  if (opts.extraDirectives?.length) {
+    lines.push(indent(opts.extraDirectives.map((d) => d.trim()).join("\n"), 2));
+  }
+
   lines.push("");
   lines.push(indent(luaBlock("access_by_lua_block", accessCode), 4));
   lines.push("");
@@ -174,6 +184,11 @@ function generatePaidWebSocketUpgradeLocation(
 
   const wsLines: string[] = [];
   wsLines.push(`location ${wsLocationName} {`);
+
+  if (opts.extraDirectives?.length) {
+    wsLines.push(indent(opts.extraDirectives.map((d) => d.trim()).join("\n"), 2));
+  }
+
   wsLines.push(indent(luaBlock("access_by_lua_block", wsAccessCode), 4));
   wsLines.push("");
   wsLines.push(indent(luaBlock("content_by_lua_block", contentCode), 4));

@@ -16,12 +16,14 @@ nginx.conf via \`include locations.conf;\`. The operator provides
 the server block, http wrapper, lua_shared_dict, and lua_package_path.
 
 Options:
-  --spec         Path to OpenAPI spec file (required)
-  --sidecar      Sidecar URL, e.g. http://127.0.0.1:4002 (required)
-  --upstream     Upstream URL used in proxy_pass (required)
-  --output       Output directory for generated files (required)
-  --site-prefix  Site name for multi-site sidecar routing
-  --help         Show this help message`;
+  --spec              Path to OpenAPI spec file (required)
+  --sidecar           Sidecar URL, e.g. http://127.0.0.1:4002 (required)
+  --upstream          Upstream URL used in proxy_pass (required)
+  --output            Output directory for generated files (required)
+  --site-prefix       Site name for multi-site sidecar routing
+  --extra-directive   Extra nginx directive injected into every generated
+                      location block (repeatable)
+  --help              Show this help message`;
 }
 
 function fatal(message: string): never {
@@ -37,6 +39,7 @@ async function main() {
       upstream: { type: "string" },
       output: { type: "string" },
       "site-prefix": { type: "string" },
+      "extra-directive": { type: "string", multiple: true },
       help: { type: "boolean" },
     },
     strict: true,
@@ -64,6 +67,7 @@ async function main() {
     upstreamURL: upstream,
     specRoot: outputDir,
     sitePrefix: values["site-prefix"],
+    extraDirectives: values["extra-directive"],
   });
 
   for (const warning of result.warnings) {

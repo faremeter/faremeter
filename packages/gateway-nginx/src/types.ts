@@ -24,6 +24,7 @@ export type GeneratorInput = {
   upstreamURL: string;
   specRoot?: string | undefined;
   sitePrefix?: string | undefined;
+  extraDirectives?: string[] | undefined;
 };
 
 export type GeneratorOutput = {

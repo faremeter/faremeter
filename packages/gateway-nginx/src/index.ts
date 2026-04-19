@@ -22,7 +22,14 @@ import { detectOverlaps } from "./path.js";
  * access. Safe to call in tests.
  */
 export function generateConfig(input: GeneratorInput): GeneratorOutput {
-  const { routes, sidecarURL, upstreamURL, specRoot, sitePrefix } = input;
+  const {
+    routes,
+    sidecarURL,
+    upstreamURL,
+    specRoot,
+    sitePrefix,
+    extraDirectives,
+  } = input;
   const warnings: string[] = [];
 
   const overlapWarnings = detectOverlaps(routes.map((r) => r.path));
@@ -36,6 +43,7 @@ export function generateConfig(input: GeneratorInput): GeneratorOutput {
     upstreamURL,
     specRoot,
     sitePrefix,
+    extraDirectives,
   });
   warnings.push(...nginxWarnings);
 

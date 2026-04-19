@@ -128,34 +128,36 @@ await t.test(
   },
 );
 
-await t.test("response evaluates capture and returns amount", async (t) => {
-  const spec = makeSpec([
-    {
-      match: "$",
-      authorize: "5000",
-      capture:
-        "$.response.body.usage.prompt_tokens * 10 + $.response.body.usage.completion_tokens * 30",
-    },
-  ]);
-  const { app } = createApp({ spec, baseURL: BASE_URL });
-
-  const res = await post(app, "/response", {
-    ...requestPayload(),
-    response: {
-      status: 200,
-      headers: {},
-      body: {
-        usage: { prompt_tokens: 100, completion_tokens: 50 },
+await t.test(
+  "response returns 500 for two-phase rule without handlers",
+  async (t) => {
+    const spec = makeSpec([
+      {
+        match: "$",
+        authorize: "5000",
+        capture:
+          "$.response.body.usage.prompt_tokens * 10 + $.response.body.usage.completion_tokens * 30",
       },
-    },
-  });
-  const data = (await res.json()) as Record<string, unknown>;
+    ]);
+    const { app } = createApp({ spec, baseURL: BASE_URL });
 
-  t.equal(data.captured, true);
-  const amount = data.amount as Record<string, unknown>;
-  t.equal(amount["usdc-sol"], "2500");
-  t.end();
-});
+    const res = await post(app, "/response", {
+      ...requestPayload(),
+      response: {
+        status: 200,
+        headers: {},
+        body: {
+          usage: { prompt_tokens: 100, completion_tokens: 50 },
+        },
+      },
+    });
+    t.equal(res.status, 500, "transport status must be non-2xx for Lua retry");
+    const data = (await res.json()) as Record<string, unknown>;
+
+    t.equal(data.status, 500);
+    t.end();
+  },
+);
 
 await t.test("response with no matching operation returns empty", async (t) => {
   const spec = makeSpec([
@@ -182,12 +184,12 @@ await t.test("response with no matching operation returns empty", async (t) => {
   });
   const data = (await res.json()) as Record<string, unknown>;
 
-  t.equal(data.captured, false);
+  t.equal(data.status, 200);
   t.end();
 });
 
 await t.test(
-  "onCapture throw does not corrupt the settled response",
+  "onCapture does not fire when no payment handlers are configured",
   async (t) => {
     const spec = makeSpec([
       {
@@ -202,7 +204,6 @@ await t.test(
       baseURL: BASE_URL,
       onCapture: () => {
         hookFired = true;
-        throw new Error("hook blew up");
       },
     });
 
@@ -214,45 +215,54 @@ await t.test(
         body: { usage: { total_tokens: 50 } },
       },
     });
-    t.equal(res.status, 200, "settled response preserved despite hook throw");
+    t.equal(res.status, 500, "transport status must be non-2xx for Lua retry");
     const data = (await res.json()) as Record<string, unknown>;
-    t.equal(data.captured, true);
-    t.ok(hookFired, "hook was invoked");
+    t.equal(data.status, 500);
+    t.equal(
+      hookFired,
+      false,
+      "hook does not fire when no handlers are configured",
+    );
     t.end();
   },
 );
 
-await t.test("onCapture fires on successful settlement", async (t) => {
-  const spec = makeSpec([
-    {
-      match: "$",
-      authorize: "100",
-      capture: "$.response.body.usage.total_tokens * 2",
-    },
-  ]);
-  const calls: { key: string; amount: unknown }[] = [];
-  const { app } = createApp({
-    spec,
-    baseURL: BASE_URL,
-    onCapture: (operationKey, result) => {
-      calls.push({ key: operationKey, amount: result.amount });
-    },
-  });
+await t.test(
+  "onCapture does not fire for two-phase rule without handlers",
+  async (t) => {
+    const spec = makeSpec([
+      {
+        match: "$",
+        authorize: "100",
+        capture: "$.response.body.usage.total_tokens * 2",
+      },
+    ]);
+    const calls: { key: string; amount: unknown }[] = [];
+    const { app } = createApp({
+      spec,
+      baseURL: BASE_URL,
+      onCapture: (operationKey, result) => {
+        calls.push({ key: operationKey, amount: result.amount });
+      },
+    });
 
-  await post(app, "/response", {
-    ...requestPayload(),
-    response: {
-      status: 200,
-      headers: {},
-      body: { usage: { total_tokens: 50 } },
-    },
-  });
+    await post(app, "/response", {
+      ...requestPayload(),
+      response: {
+        status: 200,
+        headers: {},
+        body: { usage: { total_tokens: 50 } },
+      },
+    });
 
-  t.equal(calls.length, 1);
-  t.equal(calls[0]?.key, OP);
-  t.match(calls[0]?.amount, { "usdc-sol": "100" });
-  t.end();
-});
+    t.equal(
+      calls.length,
+      0,
+      "hook must not fire when no handlers are configured",
+    );
+    t.end();
+  },
+);
 
 await t.test("onCapture does not fire on validation error", async (t) => {
   const spec = makeSpec([{ match: "$", authorize: "100", capture: "1" }]);
@@ -272,6 +282,41 @@ await t.test("onCapture does not fire on validation error", async (t) => {
     "validation failure on /response must return non-2xx (see K2 comment in app.ts)",
   );
   t.equal(fired, false, "hook not called when validation fails");
+  t.end();
+});
+
+await t.test("onCapture does not fire when no operation matches", async (t) => {
+  const spec = makeSpec([
+    {
+      match: "$",
+      authorize: "100",
+      capture: "$.response.body.usage.total_tokens",
+    },
+  ]);
+  let fired = false;
+  const { app } = createApp({
+    spec,
+    baseURL: BASE_URL,
+    onCapture: () => {
+      fired = true;
+    },
+  });
+
+  await post(app, "/response", {
+    operationKey: "GET /nonexistent",
+    method: "GET",
+    path: "/nonexistent",
+    headers: {},
+    query: {},
+    body: {},
+    response: {
+      status: 200,
+      headers: {},
+      body: { usage: { total_tokens: 100 } },
+    },
+  });
+
+  t.equal(fired, false, "hook not called when no operation matches");
   t.end();
 });
 
@@ -396,13 +441,13 @@ await t.test(
     });
     t.equal(
       res.status,
-      200,
-      "multi-value headers must not be rejected by the schema",
+      500,
+      "no handlers configured so settlement fails (non-2xx preserves Lua buffer)",
     );
     const envelope = (await res.json()) as Record<string, unknown>;
     t.equal(
-      envelope.captured,
-      true,
+      envelope.status,
+      500,
       "capture still runs on payloads with multi-value headers",
     );
     t.end();
@@ -443,55 +488,11 @@ await t.test(
   },
 );
 
-await t.test(
-  "async onCapture that rejects does not leak an unhandled rejection",
-  async (t) => {
-    const spec = makeSpec([
-      {
-        match: "$",
-        authorize: "100",
-        capture: "$.response.body.usage.total_tokens",
-      },
-    ]);
-    const rejections: unknown[] = [];
-    const listener = (reason: unknown) => {
-      rejections.push(reason);
-    };
-    process.on("unhandledRejection", listener);
-    try {
-      const { app } = createApp({
-        spec,
-        baseURL: BASE_URL,
-        // onCapture is typed `=> void` but TypeScript will accept a
-        // Promise<void> returning function. A rejected promise must not
-        // become an unhandled rejection because the sidecar's try/catch
-        // only catches synchronous throws.
-        onCapture: (() => {
-          return Promise.reject(new Error("async hook rejection"));
-        }) as (key: string, result: unknown) => void,
-      });
-      const res = await post(app, "/response", {
-        ...requestPayload(),
-        response: {
-          status: 200,
-          headers: {},
-          body: { usage: { total_tokens: 50 } },
-        },
-      });
-      t.equal(res.status, 200, "settled response preserved despite async hook");
-      // Give the event loop time for any unhandled rejection to fire.
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      t.equal(
-        rejections.length,
-        0,
-        "async onCapture must not leak unhandled rejections",
-      );
-    } finally {
-      process.off("unhandledRejection", listener);
-    }
-    t.end();
-  },
-);
+// NOTE: The async onCapture rejection test lives in
+// tests/openapi/pricing-settlement.test.ts, which has access to real
+// payment handlers. A sidecar-level test would need to configure
+// handlers to trigger onCapture, which creates a build-order cycle
+// with @faremeter/test-harness.
 
 await t.test(
   "/response exception must not silently discard the capture event",

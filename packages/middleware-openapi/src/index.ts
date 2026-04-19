@@ -12,12 +12,18 @@ export {
   responseContext,
 } from "./handler";
 export type {
+  AuthorizeResponse,
+  CaptureError,
+  CapturePhase,
+  CaptureRequestInfo,
+  CaptureResponse,
   GatewayHandler,
   GatewayHandlerConfig,
+  GatewayRequestResult,
+  GatewayResponseResult,
   RequestContext,
-  GatewayResponse,
   ResponseContext,
-  CaptureResponse,
+  SettledPayment,
 } from "./handler";
 export type {
   Asset,

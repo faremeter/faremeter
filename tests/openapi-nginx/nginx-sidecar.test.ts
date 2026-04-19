@@ -549,7 +549,7 @@ await t.test("nginx sidecar integration", async (t) => {
       // Log phase still fires for capture telemetry.
       await cb.awaitCapture("POST /v1/images/generations");
       const cap = requireCapture(cb, "POST /v1/images/generations");
-      t.equal(cap.captured, true);
+      t.equal(cap.phase, "request");
       t.equal(cap.settled, true);
       t.equal(cap.amount.usdc, "1");
       t.end();
@@ -600,7 +600,7 @@ await t.test("nginx sidecar integration", async (t) => {
       t.equal(cb.x402SettleRecords[0]?.requirementsAmount, "30");
 
       const cap = requireCapture(cb, "POST /v1/chat/completions");
-      t.equal(cap.captured, true);
+      t.equal(cap.phase, "response");
       t.equal(cap.amount.usdc, "30");
       t.end();
     },
@@ -628,7 +628,7 @@ await t.test("nginx sidecar integration", async (t) => {
       t.ok(cb.x402SettleCount > 0, "settle must fire in log phase");
 
       const cap = requireCapture(cb, "POST /v1/chat/stream");
-      t.equal(cap.captured, true);
+      t.equal(cap.phase, "response");
       t.equal(cap.amount.usdc, "30");
       t.end();
     },
@@ -658,28 +658,29 @@ await t.test("nginx sidecar integration", async (t) => {
     t.end();
   });
 
-  // -- MPP: settles at access --
+  // -- MPP: one-phase settle at access --
 
   await t.test(
-    "MPP payment flow: 402 -> credential -> settle -> 200",
+    "MPP one-phase: settle at access via credential on images route",
     async (t) => {
       cb.reset();
-      const res = await mppFetch(`${NGINX_BASE}/v1/chat/completions`, {
+      const res = await mppFetch(`${NGINX_BASE}/v1/images/generations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "gpt-3.5", messages: [] }),
+        body: JSON.stringify({ prompt: "a cat" }),
       });
 
       t.equal(res.status, 200);
       t.ok(cb.mppSettleCount > 0, "MPP settle must fire");
 
-      const body = (await res.json()) as { object: string };
-      t.equal(body.object, "chat.completion");
+      const body = (await res.json()) as { data: unknown[] };
+      t.ok(Array.isArray(body.data));
 
-      await cb.awaitCapture("POST /v1/chat/completions");
-      const cap = requireCapture(cb, "POST /v1/chat/completions");
-      t.equal(cap.captured, true);
-      t.equal(cap.amount.usdc, "30");
+      await cb.awaitCapture("POST /v1/images/generations");
+      const cap = requireCapture(cb, "POST /v1/images/generations");
+      t.equal(cap.phase, "request");
+      t.equal(cap.settled, true);
+      t.equal(cap.amount.usdc, "1");
       t.end();
     },
   );
@@ -933,7 +934,7 @@ await t.test("nginx sidecar integration", async (t) => {
       // Wait for the async log-phase capture (timer-deferred).
       await cb.awaitCapture("GET /v1/ws/chat");
       const cap = requireCapture(cb, "GET /v1/ws/chat");
-      t.equal(cap.captured, true);
+      t.equal(cap.phase, "response");
       t.equal(cap.amount.usdc, "25", "capture from WebSocket frame");
       t.end();
     },

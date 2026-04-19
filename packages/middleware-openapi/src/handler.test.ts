@@ -8,7 +8,7 @@
 
 import t from "tap";
 import { createGatewayHandler } from "./handler";
-import type { Asset, FaremeterSpec, PricingRule } from "./types";
+import type { Asset, FaremeterSpec } from "./types";
 
 const DEFAULT_ASSETS: Record<string, Asset> = {
   "usdc-sol": {
@@ -279,7 +279,7 @@ await t.test(
 );
 
 await t.test(
-  "handleResponse returns captured amount when capture rule matches",
+  "handleResponse returns status 500 when two-phase rule matches but no handlers settle",
   async (t) => {
     const spec = makeSpec([
       {
@@ -295,16 +295,14 @@ await t.test(
         { model: "gpt-4o", messages: [] },
       ),
     );
-    t.equal(result.captured, true);
-    t.equal(result.amount["usdc-sol"], "100");
-    // No x402/mpp handlers configured, so nothing can actually settle.
-    t.equal(result.settled, false);
+    // No x402/mpp handlers configured, so settlement cannot succeed.
+    t.equal(result.status, 500);
     t.end();
   },
 );
 
 await t.test(
-  "handleResponse returns captured:false when no rule matches",
+  "handleResponse returns status 200 when no rule matches",
   async (t) => {
     const spec = makeSpec([
       {
@@ -320,14 +318,13 @@ await t.test(
         { model: "claude-sonnet", messages: [] },
       ),
     );
-    t.equal(result.captured, false);
-    t.equal(result.settled, false);
+    t.equal(result.status, 200);
     t.end();
   },
 );
 
 await t.test(
-  "handleResponse with unknown operationKey returns captured:false",
+  "handleResponse with unknown operationKey returns status 200",
   async (t) => {
     const spec = makeSpec([{ match: "$", capture: "1" }]);
     const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
@@ -335,8 +332,7 @@ await t.test(
       ...responsePayload({ anything: true }, {}),
       operationKey: "GET /nonexistent",
     });
-    t.equal(result.captured, false);
-    t.equal(result.settled, false);
+    t.equal(result.status, 200);
     t.end();
   },
 );
@@ -377,8 +373,9 @@ await t.test(
         { model: "gpt-4o", messages: [] },
       ),
     );
-    // 100 * 10 + 50 * 30 = 2500
-    t.equal(result.amount["usdc-sol"], "2500");
+    // Two-phase rule with no handlers: capture evaluates but
+    // settlement cannot succeed.
+    t.equal(result.status, 500);
     t.end();
   },
 );
@@ -455,11 +452,12 @@ await t.test(
     ]);
     const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
 
-    // Happy case — body forwarded verbatim — still works.
+    // Body forwarded verbatim — capture evaluates but no handlers
+    // means settlement fails.
     const withBody = await handler.handleResponse(
       responsePayload({ usage: { total_tokens: 50 } }, { tokens: 100 }),
     );
-    t.equal(withBody.captured, true);
+    t.equal(withBody.status, 500);
 
     // Body absent — must refuse, not re-derive a different amount.
     await t.rejects(
@@ -474,15 +472,11 @@ await t.test(
 );
 
 await t.test(
-  "handleResponse reports settled:true for one-phase rule with non-zero capture",
+  "handleResponse returns status 200 for one-phase rule with non-zero capture",
   async (t) => {
     // One-phase (capture-only) rules settle at /request time. When
     // handleResponse is called it means /request returned 200, which
-    // means settlement already succeeded. The CaptureResponse must
-    // reflect that so callers (e.g. the onCapture hook) can rely on
-    // settled:true for billing assertions without checking phase type.
-    // One-phase capture expressions must not reference $.response.*,
-    // so use a literal coefficient here.
+    // means settlement already succeeded.
     const spec = makeSpec([{ match: "$", capture: "50" }]);
     const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
     const result = await handler.handleResponse(
@@ -491,20 +485,18 @@ await t.test(
         { model: "gpt-4o", messages: [] },
       ),
     );
-    t.equal(result.captured, true);
-    t.equal(result.settled, true);
-    t.equal(result.amount["usdc-sol"], "50");
+    t.equal(result.status, 200);
     t.end();
   },
 );
 
 await t.test(
-  "handleResponse reports settled:false for one-phase rule with zero capture",
+  "handleResponse returns status 200 for one-phase rule with zero capture",
   async (t) => {
     // When the capture expression evaluates to zero, toPricing drops
     // the entry and handleRequest returns 200 without settling. The
     // log phase still runs (access.lua sets fm_paid on any 200), but
-    // no payment was taken, so settled must remain false.
+    // no payment was taken, so settled remains false.
     const spec = makeSpec([{ match: "$", capture: "0" }]);
     const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
     const result = await handler.handleResponse(
@@ -513,21 +505,46 @@ await t.test(
         { model: "gpt-4o", messages: [] },
       ),
     );
-    t.equal(result.captured, true);
-    t.equal(result.settled, false);
+    t.equal(result.status, 200);
     t.end();
   },
 );
 
 await t.test(
-  "handleResponse includes two-phase trace with authorize and capture bindings",
+  "handleResponse returns status 200 for two-phase rule with zero capture",
   async (t) => {
-    const rule: PricingRule = {
-      match: "$",
-      authorize: "$.request.body.max_tokens",
-      capture: "$.response.body.usage.total_tokens",
-    };
-    const spec = makeSpec([rule]);
+    // authorize evaluates to a non-zero hold at /request, but capture
+    // evaluates to zero at /response. toPricing drops zero-amount
+    // entries, so no settlement is attempted — this is not a failure.
+    const spec = makeSpec([
+      {
+        match: "$",
+        authorize: "100",
+        capture: "$.response.body.usage.total_tokens",
+      },
+    ]);
+    const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
+    const result = await handler.handleResponse(
+      responsePayload(
+        { usage: { total_tokens: 0 } },
+        { model: "gpt-4o", messages: [] },
+      ),
+    );
+    t.equal(result.status, 200);
+    t.end();
+  },
+);
+
+await t.test(
+  "handleResponse returns status 500 for two-phase rule without handlers",
+  async (t) => {
+    const spec = makeSpec([
+      {
+        match: "$",
+        authorize: "$.request.body.max_tokens",
+        capture: "$.response.body.usage.total_tokens",
+      },
+    ]);
     const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
     const result = await handler.handleResponse(
       responsePayload(
@@ -535,34 +552,15 @@ await t.test(
         { model: "gpt-4o", max_tokens: 100 },
       ),
     );
-    t.ok(result.trace, "trace must be defined when a rule matched");
-    t.equal(result.trace?.ruleIndex, 0, "first rule matched");
-    t.matchOnly(result.trace?.rule, rule, "rule must match the spec rule");
-    t.ok(
-      result.trace?.authorize,
-      "authorize trace must be present for two-phase rule",
-    );
-    t.match(result.trace?.authorize?.bindings, {
-      "$.request.body.max_tokens": 100,
-    });
-    t.equal(result.trace?.authorize?.coefficient, 100);
-    t.ok(result.trace?.capture, "capture trace must be present");
-    t.match(result.trace?.capture?.bindings, {
-      "$.response.body.usage.total_tokens": 42,
-    });
-    t.equal(result.trace?.capture?.coefficient, 42);
+    t.equal(result.status, 500);
     t.end();
   },
 );
 
 await t.test(
-  "handleResponse includes capture-only trace without authorize",
+  "handleResponse returns status 200 for capture-only rule",
   async (t) => {
-    const rule: PricingRule = {
-      match: "$",
-      capture: "50",
-    };
-    const spec = makeSpec([rule]);
+    const spec = makeSpec([{ match: "$", capture: "50" }]);
     const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
     const result = await handler.handleResponse(
       responsePayload(
@@ -570,36 +568,69 @@ await t.test(
         { model: "gpt-4o", messages: [] },
       ),
     );
-    t.ok(result.trace, "trace must be defined when a rule matched");
-    t.equal(result.trace?.ruleIndex, 0);
-    t.matchOnly(result.trace?.rule, rule);
-    t.equal(
-      result.trace?.authorize,
-      undefined,
-      "no authorize on capture-only rule",
-    );
-    t.ok(result.trace?.capture);
-    t.equal(result.trace?.capture?.coefficient, 50);
-    t.equal(result.trace?.rule.authorize, undefined);
+    t.equal(result.status, 200);
     t.end();
   },
 );
 
-await t.test("handleResponse omits trace when no rule matches", async (t) => {
-  const spec = makeSpec([
-    {
-      match: '$[?@.request.body.model == "gpt-4o"]',
-      authorize: "100",
-      capture: "$.response.body.usage.total_tokens",
-    },
-  ]);
-  const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
-  const result = await handler.handleResponse(
-    responsePayload(
-      { usage: { total_tokens: 50 } },
-      { model: "claude-sonnet", messages: [] },
-    ),
-  );
-  t.equal(result.trace, undefined, "trace must be absent when no rule matched");
-  t.end();
-});
+await t.test(
+  "handleResponse returns status 200 when no rule matches",
+  async (t) => {
+    const spec = makeSpec([
+      {
+        match: '$[?@.request.body.model == "gpt-4o"]',
+        authorize: "100",
+        capture: "$.response.body.usage.total_tokens",
+      },
+    ]);
+    const handler = createGatewayHandler({ spec, baseURL: BASE_URL });
+    const result = await handler.handleResponse(
+      responsePayload(
+        { usage: { total_tokens: 50 } },
+        { model: "claude-sonnet", messages: [] },
+      ),
+    );
+    t.equal(result.status, 200);
+    t.end();
+  },
+);
+
+await t.test(
+  "onCapture does not fire when no payment handlers are configured",
+  async (t) => {
+    // When no x402 or mpp handlers are configured, handleMiddlewareRequest
+    // returns without invoking the body callback, leaving paymentSettled=false
+    // and settlementError=undefined. The onCapture hook must not fire in
+    // this case — callers cannot distinguish "settlement failed" from
+    // "settlement was never attempted" if both produce settled:false,
+    // error:undefined.
+    const spec = makeSpec([
+      {
+        match: "$",
+        authorize: "100",
+        capture: "$.response.body.usage.total_tokens",
+      },
+    ]);
+    let captureFired = false;
+    const handler = createGatewayHandler({
+      spec,
+      baseURL: BASE_URL,
+      onCapture: () => {
+        captureFired = true;
+      },
+    });
+    const result = await handler.handleResponse(
+      responsePayload(
+        { usage: { total_tokens: 50 } },
+        { model: "gpt-4o", messages: [] },
+      ),
+    );
+    t.equal(result.status, 500, "no handlers means settlement cannot succeed");
+    t.equal(
+      captureFired,
+      false,
+      "onCapture must not fire when no handlers are configured",
+    );
+    t.end();
+  },
+);

@@ -1,34 +1,15 @@
 import { Hono } from "hono";
 import { isValidationError } from "@faremeter/types";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
   createGatewayHandler,
   requestContext,
   responseContext,
-  type CaptureResponse,
   type GatewayHandlerConfig,
 } from "@faremeter/middleware-openapi";
 import { logger } from "./logger.js";
 
-export type CreateAppOpts = GatewayHandlerConfig & {
-  /**
-   * Called once per successful `/response` with the capture envelope
-   * that will be returned to the Lua gateway. The hook fires for
-   * every matched capture. One-phase (capture-only) rules report
-   * `result.settled === true` when a non-zero amount was charged at
-   * request time; zero-amount captures and unmatched rules report
-   * `result.settled === false`. Consumers that only care about
-   * settled bills should gate on `result.settled`.
-   *
-   * The hook runs post-settlement and is awaited to catch async
-   * rejections. A throw or rejected promise is logged but must not
-   * corrupt the authoritative response: the capture envelope is
-   * returned to the gateway regardless of hook outcome.
-   */
-  onCapture?: (
-    operationKey: string,
-    result: CaptureResponse,
-  ) => void | Promise<void>;
-};
+export type CreateAppOpts = GatewayHandlerConfig;
 
 // The Lua gateway has two mutually incompatible contracts for the
 // sidecar's two endpoints:
@@ -76,8 +57,7 @@ async function parseJSON(request: Request): Promise<ParseJSONResult> {
 }
 
 export function createApp(config: CreateAppOpts) {
-  const { onCapture, ...handlerConfig } = config;
-  const handler = createGatewayHandler(handlerConfig);
+  const handler = createGatewayHandler(config);
   const app = new Hono();
 
   app.post("/request", async (c) => {
@@ -126,9 +106,9 @@ export function createApp(config: CreateAppOpts) {
     logger.debug("gateway /response", {
       operationKey: validated.operationKey,
     });
-    let result: CaptureResponse;
     try {
-      result = await handler.handleResponse(validated);
+      const result = await handler.handleResponse(validated);
+      return c.json(result, result.status as ContentfulStatusCode);
     } catch (cause) {
       logger.error("handleResponse threw", {
         operationKey: validated.operationKey,
@@ -146,23 +126,6 @@ export function createApp(config: CreateAppOpts) {
         422,
       );
     }
-    if (onCapture) {
-      // The hook runs post-settlement. A throw or async rejection must
-      // not corrupt the nginx contract by flipping a settled response
-      // to 5xx — log it and return the authoritative result anyway.
-      // Awaiting the hook (even when the signature is `=> void`) is the
-      // only way to catch async rejections, which would otherwise become
-      // process-level unhandled rejections.
-      try {
-        await onCapture(validated.operationKey, result);
-      } catch (cause) {
-        logger.error("onCapture hook threw", {
-          operationKey: validated.operationKey,
-          cause: cause instanceof Error ? cause.message : String(cause),
-        });
-      }
-    }
-    return c.json(result);
   });
 
   app.onError((err, c) => {

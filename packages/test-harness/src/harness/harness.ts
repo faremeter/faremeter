@@ -38,7 +38,7 @@ import type {
   ResourceContextV1,
   ResourceContextV2,
 } from "./resource";
-import { defaultResourceHandler } from "./resource";
+import { defaultResourceHandler, type ResourceContextMPP } from "./resource";
 
 /**
  * Type guard to check if a middleware context is v1.
@@ -422,6 +422,12 @@ export class TestHarness {
     let ctx: ResourceContext;
 
     if (context.protocolVersion === "mpp") {
+      let verifyReceipt: ResourceContextMPP["verifyReceipt"];
+      if (this.settleMode === "verify-then-settle" && context.verify) {
+        const verifyResult = await context.verify();
+        if (!verifyResult.success) return verifyResult.errorResponse;
+        verifyReceipt = verifyResult.receipt;
+      }
       const settleResult = await context.settle();
       if (!settleResult.success) return settleResult.errorResponse;
 
@@ -431,6 +437,7 @@ export class TestHarness {
         request: c.req.raw,
         credential: context.credential,
         receipt: settleResult.receipt,
+        verifyReceipt,
       };
     } else if (isV1Context(context)) {
       let verifyResponse: ResourceContextV1["verifyResponse"];

@@ -49,6 +49,7 @@ export type ResourceContextMPP = ResourceContextBase & {
   protocolVersion: "mpp";
   credential: mppCredential;
   receipt: mppReceipt;
+  verifyReceipt?: mppReceipt | undefined;
 };
 
 /**

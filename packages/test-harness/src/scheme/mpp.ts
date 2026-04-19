@@ -48,12 +48,14 @@ export type CreateTestMPPHandlerOpts = {
   method?: string;
   realm?: string;
   intents?: string[];
+  supportsVerify?: boolean;
   onChallenge?: (
     intent: string,
     pricing: ResourcePricing,
     resourceURL: string,
   ) => void;
   onSettle?: (credential: mppCredential) => void;
+  onVerify?: (credential: mppCredential) => void;
 };
 
 export function createTestMPPHandler(
@@ -64,7 +66,9 @@ export function createTestMPPHandler(
   const intents = opts.intents ?? [TEST_MPP_INTENT];
   const challengeStore = new Map<string, boolean>();
 
-  return {
+  const supportsVerify = opts.supportsVerify ?? false;
+
+  const handler: MPPMethodHandler = {
     method,
     capabilities: {
       networks: [],
@@ -116,6 +120,27 @@ export function createTestMPPHandler(
       };
     },
   };
+
+  if (supportsVerify) {
+    handler.handleVerify = async (credential) => {
+      opts.onVerify?.(credential);
+
+      if (credential.challenge.method !== method) return null;
+
+      if (!challengeStore.has(credential.challenge.id)) {
+        throw new Error("unknown challenge ID");
+      }
+
+      return {
+        status: "success" as const,
+        method,
+        timestamp: new Date().toISOString(),
+        reference: `test-verify-${Date.now()}`,
+      };
+    };
+  }
+
+  return handler;
 }
 
 export type CreateTestMPPPaymentHandlerOpts = {

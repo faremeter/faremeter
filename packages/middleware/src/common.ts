@@ -50,6 +50,7 @@ import {
   PAYMENT_RECEIPT_HEADER,
   resolveMPPChallenges,
   settleMPPPayment,
+  verifyMPPPayment,
 } from "@faremeter/types/mpp";
 import { normalizeNetworkId } from "@faremeter/info";
 import type { AgedLRUCacheOpts } from "./cache";
@@ -500,6 +501,13 @@ export type SettleResultMPP<MiddlewareResponse> =
   | { success: true; receipt: mppReceipt }
   | { success: false; errorResponse: MiddlewareResponse };
 
+export type VerifyResultMPP<MiddlewareResponse> =
+  | { success: true; receipt: mppReceipt }
+  | {
+      success: false;
+      errorResponse: MiddlewareResponse;
+    };
+
 /**
  * Context provided to the middleware body handler for MPP protocol requests.
  */
@@ -507,6 +515,7 @@ export type MiddlewareBodyContextMPP<MiddlewareResponse> = {
   protocolVersion: "mpp";
   credential: mppCredential;
   settle: () => Promise<SettleResultMPP<MiddlewareResponse>>;
+  verify?: (() => Promise<VerifyResultMPP<MiddlewareResponse>>) | undefined;
 };
 
 /**
@@ -978,9 +987,31 @@ async function handleMPPRequest<MiddlewareResponse>(
     }
   };
 
+  const method = credential.challenge.method;
+  const hasVerifyHandlers = mppHandlers.some(
+    (h) => h.method === method && h.handleVerify !== undefined,
+  );
+
+  const verify = hasVerifyHandlers
+    ? async (): Promise<VerifyResultMPP<MiddlewareResponse>> => {
+        try {
+          const receipt = await verifyMPPPayment(mppHandlers, credential);
+          return { success: true, receipt };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          logger.warning("failed to verify MPP payment", { error: msg });
+          return {
+            success: false,
+            errorResponse: await sendPaymentRequired(),
+          };
+        }
+      }
+    : undefined;
+
   return await args.body({
     protocolVersion: "mpp",
     credential,
     settle,
+    verify,
   });
 }

@@ -35,6 +35,7 @@
     "@logtape/logtape": "catalog:",
     "@tapjs/asserts": "catalog:",
     "@tapjs/tsx": "catalog:",
+    "@types/node": "catalog:",
     "@types/web": "catalog:",
     "@typescript/lib-dom": "catalog:",
     "eslint": "catalog:",

@@ -470,10 +470,13 @@ importers:
         version: 1.0.4
       '@tapjs/asserts':
         specifier: 'catalog:'
-        version: 4.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.0.1(@tapjs/core@4.0.1(@types/node@22.19.17)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tapjs/tsx':
         specifier: 'catalog:'
-        version: 3.0.1(@tapjs/core@4.0.1(@types/node@24.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 3.0.1(@tapjs/core@4.0.1(@types/node@22.19.17)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.17
       '@types/web':
         specifier: 'catalog:'
         version: 0.0.246
@@ -488,7 +491,7 @@ importers:
         version: 3.6.2
       tap:
         specifier: 'catalog:'
-        version: 21.1.0(@types/node@24.3.0)(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)(utf-8-validate@5.0.10)
+        version: 21.1.0(@types/node@22.19.17)(bufferutil@4.0.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)(utf-8-validate@5.0.10)
       tsc-esm-fix:
         specifier: 'catalog:'
         version: 3.1.2
@@ -7672,6 +7675,11 @@ snapshots:
       - '@types/node'
       - react
       - react-dom
+
+  '@tapjs/tsx@3.0.1(@tapjs/core@4.0.1(@types/node@22.19.17)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+    dependencies:
+      '@tapjs/core': 4.0.1(@types/node@22.19.17)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      tsx: 4.20.5
 
   '@tapjs/tsx@3.0.1(@tapjs/core@4.0.1(@types/node@22.19.17)(react@18.3.1))':
     dependencies:

@@ -391,12 +391,12 @@ await t.test(
 
     t.match(
       result.block,
-      /^ {2}proxy_read_timeout 3600s;$/m,
+      /^ {4}proxy_read_timeout 3600s;$/m,
       "first line is indented",
     );
     t.match(
       result.block,
-      /^ {2}proxy_send_timeout 3600s;$/m,
+      /^ {4}proxy_send_timeout 3600s;$/m,
       "second line after newline split is indented",
     );
     t.end();

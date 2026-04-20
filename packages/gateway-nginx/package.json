@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/gateway-nginx",
-  "version": "0.20.1",
+  "version": "0.21.0",
   "description": "Nginx and Lua configuration generator from OpenAPI specs with x-faremeter extensions",
   "license": "LGPL-3.0-only",
   "type": "module",

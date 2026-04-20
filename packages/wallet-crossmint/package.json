@@ -1,6 +1,6 @@
 {
   "name": "@faremeter/wallet-crossmint",
-  "version": "0.20.1",
+  "version": "0.21.0",
   "description": "Crossmint custodial smart wallet integration for Faremeter payments",
   "keywords": [
     "faremeter",

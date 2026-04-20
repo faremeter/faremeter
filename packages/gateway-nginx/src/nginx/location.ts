@@ -71,11 +71,11 @@ function generatePaidHTTPLocation(
   const hasSSE = routes.some((r) => r.transportType === "sse");
   lines.push(`location ${pathDirective} {`);
   if (hasSSE) {
-    lines.push("  proxy_buffering off;");
+    lines.push("    proxy_buffering off;");
   }
 
   if (opts.extraDirectives?.length) {
-    lines.push(indent(opts.extraDirectives.map((d) => d.trim()).join("\n"), 2));
+    lines.push(indent(opts.extraDirectives.map((d) => d.trim()).join("\n"), 4));
   }
 
   // Upgrade-detection block injected by the mixed HTTP+WebSocket
@@ -142,7 +142,7 @@ function generatePaidWebSocketLocation(
   lines.push(`location ${pathDirective} {`);
 
   if (opts.extraDirectives?.length) {
-    lines.push(indent(opts.extraDirectives.map((d) => d.trim()).join("\n"), 2));
+    lines.push(indent(opts.extraDirectives.map((d) => d.trim()).join("\n"), 4));
   }
 
   lines.push("");
@@ -186,9 +186,12 @@ function generatePaidWebSocketUpgradeLocation(
   wsLines.push(`location ${wsLocationName} {`);
 
   if (opts.extraDirectives?.length) {
-    wsLines.push(indent(opts.extraDirectives.map((d) => d.trim()).join("\n"), 2));
+    wsLines.push(
+      indent(opts.extraDirectives.map((d) => d.trim()).join("\n"), 4),
+    );
   }
 
+  wsLines.push("");
   wsLines.push(indent(luaBlock("access_by_lua_block", wsAccessCode), 4));
   wsLines.push("");
   wsLines.push(indent(luaBlock("content_by_lua_block", contentCode), 4));
@@ -201,12 +204,15 @@ function generatePaidWebSocketUpgradeLocation(
   // unlikely to collide with any real upstream status) to the named
   // WS location, then `return 418` from the conditional to take
   // that jump.
-  const upgradeRedirect = [
-    `  error_page 418 = ${wsLocationName};`,
-    `  if ($http_upgrade ~* "websocket") {`,
-    "    return 418;",
-    "  }",
-  ].join("\n");
+  const upgradeRedirect = indent(
+    [
+      `error_page 418 = ${wsLocationName};`,
+      `if ($http_upgrade ~* "websocket") {`,
+      "  return 418;",
+      "}",
+    ].join("\n"),
+    4,
+  );
 
   const httpLocation = generatePaidHTTPLocation(
     pathDirective,

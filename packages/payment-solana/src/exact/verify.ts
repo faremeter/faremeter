@@ -133,12 +133,17 @@ async function verifyTransferInstruction(
   return false;
 }
 
+export interface TransactionValidationOptions {
+  maxPriorityFee?: number;
+  requireMemo?: boolean;
+}
+
 export async function isValidTransaction(
   transactionMessage: CompilableTransactionMessage,
   paymentRequirements: x402PaymentRequirements,
   facilitatorAddress: string,
   tokenProgram: Address,
-  maxPriorityFee?: number,
+  options?: TransactionValidationOptions,
 ): Promise<{ payer: string } | false> {
   const extra = PaymentRequirementsExtra(paymentRequirements.extra);
   if (isValidationError(extra)) {
@@ -172,6 +177,8 @@ export async function isValidTransaction(
   if (!limitResult.valid || !priceResult.valid) {
     return false;
   }
+
+  const { maxPriorityFee, requireMemo = true } = options ?? {};
 
   if (
     maxPriorityFee !== undefined &&
@@ -210,7 +217,12 @@ export async function isValidTransaction(
 
   const memoInstructions = rest.filter(isMemoInstruction);
 
-  if (memoInstructions.length !== 1) {
+  if (memoInstructions.length > 1) {
+    logger.error("Expected at most one Memo instruction");
+    return false;
+  }
+
+  if (requireMemo && memoInstructions.length !== 1) {
     logger.error("Expected exactly one Memo instruction");
     return false;
   }
@@ -218,6 +230,7 @@ export async function isValidTransaction(
   if (extra.memo !== undefined) {
     const memoIx = memoInstructions[0];
     if (!memoIx) {
+      logger.error("extra.memo is set but no Memo instruction found");
       return false;
     }
 

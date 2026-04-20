@@ -5,10 +5,18 @@ import t from "tap";
 import * as logtape from "@logtape/logtape";
 import type { Sink, LogRecord } from "@logtape/logtape";
 import { ConsoleBackend } from "./console";
-import { LogtapeBackend } from "./logtape";
+import { LogtapeBackend, isLogtapeAvailable } from "./logtape";
 import { configureApp, getLogger } from "./index";
 import type { LogArgs, Logger, LoggingBackend, LogLevel } from "./types";
 import { shouldLog, LogLevels } from "./types";
+
+await t.test(
+  "isLogtapeAvailable resolves true when logtape is installed",
+  async (t) => {
+    t.equal(await isLogtapeAvailable(), true);
+    t.end();
+  },
+);
 
 await t.test("getLogger without configureApp", async (t) => {
   const logger = await getLogger(["faremeter", "auto", "test"]);

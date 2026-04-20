@@ -31,11 +31,14 @@ let activeBackend: LoggingBackend | null = null;
 
 async function resolveBackend() {
   try {
-    const { LogtapeBackend } = await import("./logtape");
-    return LogtapeBackend;
+    const mod = await import("./logtape");
+    if (await mod.isLogtapeAvailable()) {
+      return mod.LogtapeBackend;
+    }
   } catch {
-    return ConsoleBackend;
+    // fall through to ConsoleBackend
   }
+  return ConsoleBackend;
 }
 
 /**

@@ -1,6 +1,31 @@
-import * as logtape from "@logtape/logtape";
 import type { Sink } from "@logtape/logtape";
 import type { LogArgs, LoggingBackend, LogLevel, Context } from "./types";
+
+type LogtapeModule = typeof import("@logtape/logtape");
+let logtapeCache: LogtapeModule | null = null;
+
+async function loadLogtape(): Promise<LogtapeModule> {
+  if (logtapeCache) return logtapeCache;
+  // Variable specifier keeps this import opaque to bundlers like esbuild and
+  // wrangler. Consumers that do not install @logtape/logtape (e.g. a
+  // Cloudflare Workers app using ConsoleBackend only) can still bundle
+  // @faremeter/logs without a build-time "Could not resolve" error. On any
+  // runtime without the module available, the import rejects at runtime and
+  // the caller is expected to fall back (see resolveBackend in index.ts).
+  const spec = ["@logtape", "logtape"].join("/");
+  const mod = (await import(spec)) as LogtapeModule;
+  logtapeCache = mod;
+  return mod;
+}
+
+export async function isLogtapeAvailable(): Promise<boolean> {
+  try {
+    await loadLogtape();
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function convertArgs([msg, context]: LogArgs): [string, Context?] {
   if (context !== undefined) {
@@ -20,12 +45,17 @@ function convertArgs([msg, context]: LogArgs): [string, Context?] {
  * Provides structured logging with configurable sinks. When available,
  * this backend is preferred over {@link ConsoleBackend} for its richer
  * formatting and sink flexibility.
+ *
+ * The @logtape/logtape module is loaded lazily via a bundler-opaque dynamic
+ * import. Consumers that never use LogtapeBackend do not need the module
+ * installed and can bundle for environments like Cloudflare Workers cleanly.
  */
 export const LogtapeBackend: LoggingBackend<{
   level: LogLevel;
   sink?: Sink;
 }> = {
   async configureApp(args: { level: LogLevel; sink?: Sink }) {
+    const logtape = await loadLogtape();
     const lowestLevel = args.level;
 
     await logtape.configure({
@@ -42,7 +72,14 @@ export const LogtapeBackend: LoggingBackend<{
   },
 
   getLogger(subsystem: readonly string[]) {
-    const impl = logtape.getLogger(subsystem);
+    if (!logtapeCache) {
+      throw new Error(
+        "LogtapeBackend.getLogger called before configureApp. " +
+          "Call await LogtapeBackend.configureApp() first, " +
+          "or install @logtape/logtape alongside @faremeter/logs.",
+      );
+    }
+    const impl = logtapeCache.getLogger(subsystem);
 
     return {
       debug: (...args) => {

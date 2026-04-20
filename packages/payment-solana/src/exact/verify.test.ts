@@ -358,7 +358,7 @@ await t.test("isValidTransaction", async (t) => {
       f.requirements,
       f.facilitator.address,
       f.tokenProgram,
-      100_000,
+      { maxPriorityFee: 100_000 },
     );
     t.ok(result);
     t.equal(result && result.payer, f.sender.address);
@@ -385,7 +385,7 @@ await t.test("isValidTransaction", async (t) => {
           f.requirements,
           f.facilitator.address,
           f.tokenProgram,
-          100,
+          { maxPriorityFee: 100 },
         ),
         false,
       );
@@ -419,7 +419,7 @@ await t.test("isValidTransaction", async (t) => {
           f.requirements,
           f.facilitator.address,
           f.tokenProgram,
-          100,
+          { maxPriorityFee: 100 },
         ),
         false,
       );
@@ -862,6 +862,213 @@ await t.test("isValidTransaction", async (t) => {
           requirements,
           f.facilitator.address,
           f.tokenProgram,
+        ),
+        false,
+      );
+      t.end();
+    },
+  );
+
+  await t.test(
+    "rejects transaction without memo when requireMemo defaults to true",
+    async (t) => {
+      const f = await createFixtures();
+
+      // Older clients build exactly 3 instructions:
+      //   1. SetComputeUnitLimit
+      //   2. SetComputeUnitPrice
+      //   3. TransferChecked
+      // No memo instruction is included.  With requireMemo defaulting to
+      // true, the facilitator rejects these transactions.
+      const txMsg = buildTxMessage(
+        [f.computeLimitIx, f.computePriceIx, f.transferIx],
+        f.facilitator,
+      );
+
+      t.equal(
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+        ),
+        false,
+      );
+
+      t.equal(
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+          { requireMemo: true },
+        ),
+        false,
+      );
+
+      t.end();
+    },
+  );
+
+  await t.test(
+    "accepts transaction without memo when requireMemo is false",
+    async (t) => {
+      const f = await createFixtures();
+
+      const txMsg = buildTxMessage(
+        [f.computeLimitIx, f.computePriceIx, f.transferIx],
+        f.facilitator,
+      );
+
+      const result = await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+        { requireMemo: false },
+      );
+
+      t.ok(result);
+      t.equal(result && result.payer, f.sender.address);
+      t.end();
+    },
+  );
+
+  await t.test(
+    "accepts transaction with lighthouse but no memo when requireMemo is false",
+    async (t) => {
+      const f = await createFixtures();
+
+      const txMsg = buildTxMessage(
+        [f.computeLimitIx, f.computePriceIx, f.transferIx, makeLighthouseIx()],
+        f.facilitator,
+      );
+
+      const result = await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+        { requireMemo: false },
+      );
+
+      t.ok(result);
+      t.equal(result && result.payer, f.sender.address);
+      t.end();
+    },
+  );
+
+  await t.test(
+    "accepts transaction with memo when requireMemo is false",
+    async (t) => {
+      const f = await createFixtures();
+
+      const txMsg = buildTxMessage(
+        [f.computeLimitIx, f.computePriceIx, f.transferIx, makeMemoIx("nonce")],
+        f.facilitator,
+      );
+
+      const result = await isValidTransaction(
+        txMsg,
+        f.requirements,
+        f.facilitator.address,
+        f.tokenProgram,
+        { requireMemo: false },
+      );
+
+      t.ok(result);
+      t.equal(result && result.payer, f.sender.address);
+      t.end();
+    },
+  );
+
+  await t.test(
+    "rejects multiple memos even when requireMemo is false",
+    async (t) => {
+      const f = await createFixtures();
+
+      const txMsg = buildTxMessage(
+        [
+          f.computeLimitIx,
+          f.computePriceIx,
+          f.transferIx,
+          makeMemoIx("a"),
+          makeMemoIx("b"),
+        ],
+        f.facilitator,
+      );
+
+      t.equal(
+        await isValidTransaction(
+          txMsg,
+          f.requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+          { requireMemo: false },
+        ),
+        false,
+      );
+      t.end();
+    },
+  );
+
+  await t.test(
+    "rejects memo mismatch when requireMemo is false and extra.memo is set",
+    async (t) => {
+      const f = await createFixtures();
+      const requirements = {
+        ...f.requirements,
+        extra: { ...f.requirements.extra, memo: "expected-value" },
+      };
+
+      const txMsg = buildTxMessage(
+        [
+          f.computeLimitIx,
+          f.computePriceIx,
+          f.transferIx,
+          makeMemoIx("wrong-value"),
+        ],
+        f.facilitator,
+      );
+
+      t.equal(
+        await isValidTransaction(
+          txMsg,
+          requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+          { requireMemo: false },
+        ),
+        false,
+      );
+      t.end();
+    },
+  );
+
+  await t.test(
+    "rejects missing memo when requireMemo is false but extra.memo is set",
+    async (t) => {
+      const f = await createFixtures();
+      const requirements = {
+        ...f.requirements,
+        extra: { ...f.requirements.extra, memo: "invoice-789" },
+      };
+
+      // An older client cannot supply a memo instruction, so a seller
+      // that requires a specific memo value should still reject the
+      // transaction regardless of the requireMemo setting.
+      const txMsg = buildTxMessage(
+        [f.computeLimitIx, f.computePriceIx, f.transferIx],
+        f.facilitator,
+      );
+
+      t.equal(
+        await isValidTransaction(
+          txMsg,
+          requirements,
+          f.facilitator.address,
+          f.tokenProgram,
+          { requireMemo: false },
         ),
         false,
       );

@@ -99,6 +99,10 @@ interface FacilitatorOptions {
   // Calculated as: (CU limit * CU price in microlamports) / 1,000,000
   maxPriorityFee?: number;
   maxTransactionAge?: number;
+  // When false, accept transactions without a Memo instruction so that
+  // older clients that do not include one can still pay.  Defaults to
+  // true for spec compliance.
+  requireMemo?: boolean;
   features?: {
     enableSettlementAccounts?: boolean;
     enableDuplicateCheck?: boolean;
@@ -379,7 +383,7 @@ export const createFacilitatorHandler = async (
         requirements,
         feePayerSigner.address,
         tokenProgram,
-        maxPriorityFee,
+        { maxPriorityFee, requireMemo: config?.requireMemo ?? true },
       );
       if (!validResult) {
         logger.error("Invalid transaction");

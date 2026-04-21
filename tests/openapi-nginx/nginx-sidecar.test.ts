@@ -248,6 +248,13 @@ function createMockUpstream(): Hono {
   // coalesce/jsonSize: same shape as chat completions.
   app.post("/v1/estimate", (c) => c.json({ usage: { total_tokens: 40 } }));
 
+  app.post("/v1/:provider/completions", (c) =>
+    c.json({
+      provider: c.req.param("provider"),
+      usage: { total_tokens: 15 },
+    }),
+  );
+
   app.get("/health", (c) => c.json({ status: "ok" }));
 
   return app;
@@ -970,6 +977,79 @@ await t.test("nginx sidecar integration", async (t) => {
       t.end();
     },
   );
+
+  // -- Parameterized path: regex location with {provider} --
+
+  await t.test(
+    "parameterized path: x402 payment through regex location",
+    async (t) => {
+      cb.reset();
+      const res = await x402Fetch(`${NGINX_BASE}/v1/openai/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: "hello" }),
+      });
+
+      t.equal(res.status, 200);
+      t.ok(cb.x402VerifyCount > 0, "verify must fire at access time");
+
+      const body = (await res.json()) as {
+        provider: string;
+        usage: { total_tokens: number };
+      };
+      t.equal(body.provider, "openai", "upstream must receive the actual path");
+      t.equal(body.usage.total_tokens, 15);
+
+      await cb.awaitX402Settle();
+      t.ok(cb.x402SettleCount > 0, "settle must fire in log phase");
+
+      const lastSettle = cb.x402SettleRecords[cb.x402SettleRecords.length - 1];
+      t.equal(lastSettle?.requirementsAmount, "15");
+
+      const cap = requireCapture(cb, "POST /v1/{provider}/completions");
+      t.equal(cap.phase, "response");
+      t.equal(cap.amount.usdc, "15");
+      t.end();
+    },
+  );
+
+  await t.test(
+    "parameterized path: different provider value routes to same operation",
+    async (t) => {
+      cb.reset();
+      const res = await x402Fetch(`${NGINX_BASE}/v1/anthropic/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: "hello" }),
+      });
+
+      t.equal(res.status, 200);
+
+      const body = (await res.json()) as { provider: string };
+      t.equal(
+        body.provider,
+        "anthropic",
+        "upstream must receive the actual path",
+      );
+
+      await cb.awaitX402Settle();
+
+      const cap = requireCapture(cb, "POST /v1/{provider}/completions");
+      t.equal(cap.phase, "response");
+      t.equal(cap.amount.usdc, "15");
+      t.end();
+    },
+  );
+
+  await t.test("parameterized path: without payment returns 402", async (t) => {
+    const res = await fetch(`${NGINX_BASE}/v1/openai/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: "hello" }),
+    });
+    t.equal(res.status, 402, "parameterized path must require payment");
+    t.end();
+  });
 
   t.end();
 });

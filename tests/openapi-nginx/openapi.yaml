@@ -157,6 +157,22 @@ paths:
         "101":
           description: WebSocket upgrade
 
+  /v1/{provider}/completions:
+    post:
+      summary: Parameterized path (two-phase, regex location)
+      x-faremeter-pricing:
+        rules:
+          - match: "$"
+            authorize: "500"
+            capture: "$.response.body.usage.total_tokens"
+      responses:
+        "200":
+          description: Provider completion
+          content:
+            application/json:
+              schema:
+                type: object
+
   /health:
     get:
       summary: Unpaid health check (no x-faremeter-pricing)

@@ -18,25 +18,31 @@ The implication of this is:
 
 To get started with the tooling, take a look at the [quickstart guide](./QUICKSTART.md). To start developing, take a look at the [developer notes](./DEV.md).
 
-## Roadmap
+## Standards
 
-Faremeter aims to be compatible with the emerging industry standards:
+Faremeter supports the following industry standards today:
 
-- MPP (Machine Payments Protocol) - https://mpp.dev
-- Coinbase's x402 - https://github.com/coinbase/x402
-- Cloudflare's Pay-Per-Crawl - https://www.cloudflare.com/paypercrawl-signup/
-- L402 - https://www.l402.org
+- [Coinbase's x402](https://github.com/coinbase/x402) — both v1 and v2 of the protocol, negotiated automatically.
+- [MPP (Machine Payments Protocol)](https://mpp.dev) — the spec is still evolving; we currently ship the `charge` intent on Solana.
 
-Please see our [compatibility document](./COMPATIBILITY.md) for more information.
+We're tracking these for future support:
 
-We've started development, focusing on x402 and MPP while supporting both the Solana and EVM ecosystems. We're currently under active development, producing:
+- [Agent Payments Protocol (AP2)](https://github.com/google-agentic-commerce/AP2)
+- [Cloudflare's Pay-Per-Crawl](https://www.cloudflare.com/paypercrawl-signup/)
+- [L402](https://www.l402.org)
 
-- A pluggable [client library](./packages/fetch)
-- A configurable [middleware](./packages/middleware) with support for both remote and in-process payment handlers.
-- Support for various wallet SDKs (Solana, EVM).
-- A payment facilitator and legacy service proxy.
-- EIP-3009 gasless USDC transfers on Base Sepolia for EVM chains.
-- An [MPP](https://mpp.dev) protocol adapter built on x402v2.
+See the [compatibility document](./COMPATIBILITY.md) for the detailed status of each standard.
+
+## What's in the box
+
+Faremeter ships with payment support for both the Solana and EVM ecosystems:
+
+- A pluggable [client library](./packages/fetch).
+- A [middleware](./packages/middleware) with both remote and in-process payment handlers, plus an [OpenAPI-driven pricing middleware](./packages/middleware-openapi) for spec-driven endpoints.
+- Solana payment schemes (`flex`, `exact`, and the MPP `charge` intent) in [@faremeter/payment-solana](./packages/payment-solana).
+- EVM `exact` over EIP-3009 gasless USDC in [@faremeter/payment-evm](./packages/payment-evm), with network coverage including Base, Polygon, Monad, and Skale (mainnet and testnets).
+- A [payment facilitator](./packages/facilitator) and legacy service proxy, plus an [nginx gateway](./packages/gateway-nginx).
+- Wallet integrations for [Solana](./packages/wallet-solana), [EVM](./packages/wallet-evm), [Ledger](./packages/wallet-ledger), [Squads multisig](./packages/wallet-solana-squads), [Crossmint](./packages/wallet-crossmint), and [OWS](./packages/wallet-ows).
 
 ## Sponsorship
 

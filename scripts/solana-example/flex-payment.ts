@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { logResponse } from "../logger";
+import { logResponse, logger } from "../logger";
 import { clusterApiUrl } from "@solana/web3.js";
 import {
   type Instruction,
@@ -203,16 +203,21 @@ for (let i = 0; i < 30; i++) {
   await new Promise((r) => setTimeout(r, 1000));
 }
 
-const pendings = await findPendingSettlementsByEscrow(rpc, escrowAddress);
-for (const pending of pendings) {
-  const refundIx = getRefundInstruction({
-    escrow: escrowAddress,
-    facilitator,
-    pending: pending.address,
-    refundAmount: pending.account.amount,
-  });
-  await sendInstructions(facilitator, [refundIx]);
+async function refundAllPending(): Promise<number> {
+  const pendings = await findPendingSettlementsByEscrow(rpc, escrowAddress);
+  for (const pending of pendings) {
+    const refundIx = getRefundInstruction({
+      escrow: escrowAddress,
+      facilitator,
+      pending: pending.address,
+      refundAmount: pending.account.amount,
+    });
+    await sendInstructions(facilitator, [refundIx]);
+  }
+  return pendings.length;
 }
+
+await refundAllPending();
 
 const revokeIx = getRevokeSessionKeyInstruction({
   owner,
@@ -248,4 +253,42 @@ const closeEscrowIx = {
     { address: sourceTokenAccount, role: AccountRole.WRITABLE as const },
   ],
 };
-await sendInstructions(owner, [closeEscrowIx]);
+
+// CloseEscrow fails if any settlement is still pending. A settlement
+// the facilitator created during/after the payment may not have been
+// visible at the first refund pass, and a settlement can only be
+// refunded by the facilitator before its refund window elapses or
+// captured by the facilitator after; either path clears pendingCount.
+// Retry after waiting at least one refund window, refunding any
+// newly-visible pendings on each attempt. If the escrow still has
+// pendings after the budget, treat teardown as a soft failure: the
+// payment itself already succeeded, and a stuck escrow does not
+// invalidate that signal.
+const CLOSE_ATTEMPTS = 3;
+let closed = false;
+for (let attempt = 1; attempt <= CLOSE_ATTEMPTS; attempt++) {
+  try {
+    await sendInstructions(owner, [closeEscrowIx]);
+    closed = true;
+    break;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const escrow = await fetchEscrowAccount(rpc, escrowAddress);
+    const pendingCount = escrow?.pendingCount ?? 0;
+    logger.warning(
+      `CloseEscrow attempt ${attempt}/${CLOSE_ATTEMPTS} failed ` +
+        `(pendingCount=${pendingCount}): ${msg}`,
+    );
+    if (attempt === CLOSE_ATTEMPTS) break;
+    await waitSlots(REFUND_TIMEOUT_SLOTS + 1);
+    await refundAllPending();
+  }
+}
+
+if (!closed) {
+  logger.warning(
+    `Escrow ${escrowAddress} left open with in-flight settlements; ` +
+      "the flex payment itself succeeded, but on-chain teardown was " +
+      "deferred. Inspect/clean manually if this escrow needs to be reclaimed.",
+  );
+}

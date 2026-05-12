@@ -51,15 +51,17 @@ Augment an evaluation context with HTTP response data for capture phase.
 
 ### createPricingEvaluator
 
-Evaluates pricing rules from an OpenAPI spec against request/response context.
+Evaluates pricing rules against request/response context. Each
+caller (typically a {@link HandlerBinding }) gets its own evaluator
+instance keyed by that binding's operations map.
 
-| Function                 | Type                                                                                                          |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `createPricingEvaluator` | `(spec: FaremeterSpec, opts?: { onError?: EvalErrorHandler or undefined; } or undefined) => PricingEvaluator` |
+| Function                 | Type                                                                                                                   |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `createPricingEvaluator` | `(input: PricingEvaluatorInput, opts?: { onError?: EvalErrorHandler or undefined; } or undefined) => PricingEvaluator` |
 
 Parameters:
 
-- `spec`: - Parsed faremeter spec with assets, operations, and rates
+- `input`: - Assets and per-operation pricing for the binding
 - `opts`: - Optional configuration including error handler
 
 ### createGatewayHandler
@@ -70,11 +72,14 @@ Parameters:
 
 ### loadSpec
 
-Load and parse an OpenAPI spec file, extracting x-faremeter pricing extensions.
+Load and parse an OpenAPI spec file, extracting x-faremeter pricing
+extensions. Returns the operation-shape spec and the per-operation
+pricing extracted from the document — callers pair the pricing with
+handlers to build {@link HandlerBinding }s.
 
-| Function   | Type                                           |
-| ---------- | ---------------------------------------------- |
-| `loadSpec` | `(filePath: string) => Promise<FaremeterSpec>` |
+| Function   | Type                                        |
+| ---------- | ------------------------------------------- |
+| `loadSpec` | `(filePath: string) => Promise<LoadedSpec>` |
 
 Parameters:
 
@@ -82,11 +87,14 @@ Parameters:
 
 ### extractSpec
 
-Extract x-faremeter pricing extensions from a dereferenced OpenAPI document.
+Extract operation shapes and the default per-operation pricing from
+a dereferenced OpenAPI document. Pricing inheritance rules
+(operation > path > document) are applied here; the resulting
+`defaultPricing` is the merged view per operation key.
 
-| Function      | Type                                              |
-| ------------- | ------------------------------------------------- |
-| `extractSpec` | `(doc: Record<string, unknown>) => FaremeterSpec` |
+| Function      | Type                                           |
+| ------------- | ---------------------------------------------- |
+| `extractSpec` | `(doc: Record<string, unknown>) => LoadedSpec` |
 
 Parameters:
 
@@ -115,8 +123,12 @@ Parameters:
 - [Rates](#rates)
 - [PricingRule](#pricingrule)
 - [TransportType](#transporttype)
-- [OperationPricing](#operationpricing)
+- [OperationShape](#operationshape)
+- [BindingPricing](#bindingpricing)
 - [FaremeterSpec](#faremeterspec)
+- [HandlerBinding](#handlerbinding)
+- [MPPBinding](#mppbinding)
+- [LoadedSpec](#loadedspec)
 - [EvalContext](#evalcontext)
 - [PhaseTrace](#phasetrace)
 - [EvalTrace](#evaltrace)
@@ -124,6 +136,7 @@ Parameters:
 - [EvalError](#evalerror)
 - [EvalErrorHandler](#evalerrorhandler)
 - [PricingEvaluator](#pricingevaluator)
+- [PricingEvaluatorInput](#pricingevaluatorinput)
 - [GatewayHandlerConfig](#gatewayhandlerconfig)
 - [AuthorizeResponse](#authorizeresponse)
 - [SettledPayment](#settledpayment)
@@ -166,17 +179,78 @@ lose precision to IEEE-754 rounding.
 | --------------- | ------------------------------ |
 | `TransportType` | `json" or "sse" or "websocket` |
 
-### OperationPricing
+### OperationShape
 
-| Type               | Type                                                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `OperationPricing` | `{ method: string; path: string; transport: TransportType; rates?: Rates; rules?: PricingRule[] or undefined; }` |
+The shape of an operation the gateway protects. Carries only the
+routing fields (method, path, transport); pricing rules live on the
+handler bindings, not on the spec.
+
+The spec is the orientation document — "these are the operations we
+serve and how requests/responses are shaped." Pricing semantics
+("how do we charge for settlement through handler X") belong on
+the binding because they cannot exist independently of which
+handler is settling.
+
+| Type             | Type                                                          |
+| ---------------- | ------------------------------------------------------------- |
+| `OperationShape` | `{ method: string; path: string; transport: TransportType; }` |
+
+### BindingPricing
+
+Operation-level pricing on a single handler binding. A binding's
+`rates` and `rules` apply only to settlement through that binding's
+handler — sibling bindings can declare different rules for the same
+operation without any cross-talk.
+
+| Type             | Type                                        |
+| ---------------- | ------------------------------------------- |
+| `BindingPricing` | `{ rates?: Rates; rules?: PricingRule[]; }` |
 
 ### FaremeterSpec
 
-| Type            | Type                                                                               |
-| --------------- | ---------------------------------------------------------------------------------- |
-| `FaremeterSpec` | `{ assets: Record<string, Asset>; operations: Record<string, OperationPricing>; }` |
+| Type            | Type                                                                             |
+| --------------- | -------------------------------------------------------------------------------- |
+| `FaremeterSpec` | `{ assets: Record<string, Asset>; operations: Record<string, OperationShape>; }` |
+
+### HandlerBinding
+
+An x402 handler bound to its own per-operation pricing. The handler's
+`capabilities.schemes` determines which payment payloads this binding
+serves; the `operations` map says how settlement is priced for each.
+
+Operations not listed in `operations` are not served by this binding —
+the gateway will simply not advertise this handler's schemes for those
+operations.
+
+| Type             | Type                                                                           |
+| ---------------- | ------------------------------------------------------------------------------ |
+| `HandlerBinding` | `{ handler: FacilitatorHandler; operations: Record<string, BindingPricing>; }` |
+
+### MPPBinding
+
+An MPP method handler bound to its own per-operation pricing. Same
+structure as {@link HandlerBinding} but for MPP-protocol handlers.
+
+| Type         | Type                                                                         |
+| ------------ | ---------------------------------------------------------------------------- |
+| `MPPBinding` | `{ handler: MPPMethodHandler; operations: Record<string, BindingPricing>; }` |
+
+### LoadedSpec
+
+Result of parsing an OpenAPI document. The spec carries operation
+shapes; pricing extracted from `x-faremeter-pricing` extensions is
+returned separately as a per-operation default that callers can
+apply to whichever bindings they construct.
+
+Pre-binding refactor, the parser folded rates and rules into
+operations directly. That coupled spec shape to handler-specific
+settlement concerns, which is exactly what the binding model is
+meant to undo — so callers now pair `defaultPricing` with handlers
+explicitly to form {@link HandlerBinding}s.
+
+| Type         | Type                                                                       |
+| ------------ | -------------------------------------------------------------------------- |
+| `LoadedSpec` | `{ spec: FaremeterSpec; defaultPricing: Record<string, BindingPricing>; }` |
 
 ### EvalContext
 
@@ -216,15 +290,21 @@ lose precision to IEEE-754 rounding.
 
 ### PricingEvaluator
 
-| Type               | Type                                                                                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PricingEvaluator` | `{ authorize(operationKey: string, ctx: EvalContext): PriceResult; capture(operationKey: string, ctx: EvalContext): PriceResult; getAssets(): FaremeterSpec["assets"]; }` |
+| Type               | Type                                                                                                                                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PricingEvaluator` | `{ authorize(operationKey: string, ctx: EvalContext): PriceResult; capture(operationKey: string, ctx: EvalContext): PriceResult; getAssets(): Record<string, Asset>; }` |
+
+### PricingEvaluatorInput
+
+| Type                    | Type                                                                             |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| `PricingEvaluatorInput` | `{ assets: Record<string, Asset>; operations: Record<string, BindingPricing>; }` |
 
 ### GatewayHandlerConfig
 
-| Type                   | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GatewayHandlerConfig` | `{ spec: FaremeterSpec; baseURL: string; x402Handlers?: FacilitatorHandler[]; mppMethodHandlers?: MPPMethodHandler[]; supportedVersions?: SupportedVersionsConfig; /** * Called post-settlement when a pricing rule matched and produced * a non-empty capture amount. `result.phase`indicates whether * settlement happened at`/request`(one-phase) or`/response`* (two-phase). * * For two-phase rules the hook fires at`/response` when settlement * is attempted, regardless of whether it succeeded or failed * (`result.settled`and`result.error`distinguish the outcome). * For one-phase rules the hook fires at`/request` only on * successful settlement -- if the facilitator rejects the payment, * the request gets a 402 and the hook is not invoked. * * The hook does NOT fire when the capture expression evaluates to * zero across all assets. A zero-amount capture produces no * settlement and no hook invocation. * * The hook is awaited -- a slow async hook delays the caller. The * return value is computed before the hook is invoked, so a throw * or rejected promise is caught and logged without affecting it. * * Requires payment handlers (`x402Handlers`or`mppMethodHandlers`) * to be configured. Without them no settlement occurs and this * hook is never invoked. */ onCapture?: ( operationKey: string, result: CaptureResponse, ) => void or Promise<void>; /** * Called when a two-phase rule's payment is successfully verified at * `/request`time. Does not fire for one-phase (capture-only) rules, * which settle immediately and report through`onCapture` instead. * Does not fire when verification fails (the request gets a 402). * * The hook is awaited -- a slow async hook delays the caller. A * throw or rejected promise is caught and logged without affecting * the gateway response, which is already determined at this point. */ onAuthorize?: ( operationKey: string, result: AuthorizeResponse, ) => void or Promise<void>; }` |
+| Type                   | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GatewayHandlerConfig` | `{ spec: FaremeterSpec; baseURL: string; bindings?: HandlerBinding[]; mppBindings?: MPPBinding[]; supportedVersions?: SupportedVersionsConfig; /** * Called post-settlement when a binding's rule matched and produced * a non-empty capture amount. `result.phase`indicates whether * settlement happened at`/request`(one-phase) or`/response`* (two-phase). Phase is determined by the matched rule on the * dispatched binding — a rule with`authorize`runs as two-phase; * a rule without runs as one-phase. * * For two-phase rules the hook fires at`/response` when settlement * is attempted, regardless of whether it succeeded or failed * (`result.settled`and`result.error`distinguish the outcome). * For one-phase rules the hook fires at`/request`only on * successful settlement -- if the facilitator rejects the payment, * the request gets a 402 and the hook is not invoked. * * The hook does NOT fire when the capture expression evaluates to * zero across all assets. A zero-amount capture produces no * settlement and no hook invocation. * * The hook is awaited -- a slow async hook delays the caller. The * return value is computed before the hook is invoked, so a throw * or rejected promise is caught and logged without affecting it. */ onCapture?: ( operationKey: string, result: CaptureResponse, ) => void or Promise<void>; /** * Called when a two-phase rule's payment is successfully verified at *`/request`time. Does not fire for one-phase (capture-only) rules, * which settle immediately and report through`onCapture` instead. * Does not fire when verification fails (the request gets a 402). * * The hook is awaited -- a slow async hook delays the caller. A * throw or rejected promise is caught and logged without affecting * the gateway response, which is already determined at this point. */ onAuthorize?: ( operationKey: string, result: AuthorizeResponse, ) => void or Promise<void>; }` |
 
 ### AuthorizeResponse
 

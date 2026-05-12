@@ -392,6 +392,42 @@ export function createGatewayHandler(
     return { x402, mpp, pricing };
   }
 
+  function evaluateAllCapture(
+    operationKey: string,
+    ctx: EvalContext,
+    authResults: { x402: PriceResult[]; mpp: PriceResult[] },
+  ): {
+    x402: PriceResult[];
+    mpp: PriceResult[];
+    pricing: ResourcePricing[];
+  } {
+    // Only evaluate capture for bindings whose authorize matched
+    // with `hasAuthorize` (i.e. two-phase). One-phase bindings
+    // already settled at /request and have no /response capture.
+    const x402 = x402States.map((s, i) => {
+      const auth = authResults.x402[i];
+      if (!auth?.matched || !auth.hasAuthorize) {
+        return { matched: false, amount: {} } as PriceResult;
+      }
+      return s.evaluator.capture(operationKey, ctx);
+    });
+    const mpp = mppStates.map((s, i) => {
+      const auth = authResults.mpp[i];
+      if (!auth?.matched || !auth.hasAuthorize) {
+        return { matched: false, amount: {} } as PriceResult;
+      }
+      return s.evaluator.capture(operationKey, ctx);
+    });
+    const pricing: ResourcePricing[] = [];
+    for (const r of x402) {
+      if (r.matched) pricing.push(...toPricing(r.amount, spec.assets));
+    }
+    for (const r of mpp) {
+      if (r.matched) pricing.push(...toPricing(r.amount, spec.assets));
+    }
+    return { x402, mpp, pricing };
+  }
+
   async function handleRequest(
     ctx: RequestContext,
   ): Promise<GatewayRequestResult> {
@@ -463,7 +499,7 @@ export function createGatewayHandler(
           lookup.kind === "x402"
             ? x402[x402States.indexOf(lookup.state)]
             : mpp[mppStates.indexOf(lookup.state)];
-        if (!authResult || !authResult.matched) {
+        if (!authResult?.matched) {
           // The middleware advertised pricing this binding didn't
           // produce — same internal-error reasoning as above.
           throw new Error(
@@ -632,21 +668,44 @@ export function createGatewayHandler(
       },
     );
 
-    // Re-evaluate authorize-phase pricing so we can match the chosen
-    // binding back to its rule (needed for trace) and reproduce the
-    // accepts list for the middleware. Authorize is request-only, so
-    // the same evaluation that produced /request's pricing produces
-    // it here.
+    // Evaluate both authorize and capture across all bindings. The
+    // middleware dispatches against capture pricing (the amount the
+    // facilitator actually settles), and we use the authorize result
+    // to drive phase decisions and trace metadata.
     const reqEvalCtx = buildContext({
       body,
       headers,
       query,
       path: ctx.path,
     });
-    const reqResults = evaluateAllAuthorize(ctx.operationKey, reqEvalCtx);
+    const authResults = evaluateAllAuthorize(ctx.operationKey, reqEvalCtx);
+    const captureResults = evaluateAllCapture(
+      ctx.operationKey,
+      evalCtx,
+      authResults,
+    );
 
-    if (reqResults.pricing.length === 0) {
-      // No binding produced pricing; nothing to settle.
+    const anyMatched =
+      authResults.x402.some((r) => r.matched) ||
+      authResults.mpp.some((r) => r.matched);
+    if (!anyMatched) {
+      // No binding's rule matched at /request — there was no
+      // payment expectation. Nothing to settle.
+      return { status: 200 };
+    }
+
+    const anyTwoPhase =
+      authResults.x402.some((r) => r.matched && r.hasAuthorize === true) ||
+      authResults.mpp.some((r) => r.matched && r.hasAuthorize === true);
+    if (!anyTwoPhase) {
+      // Every matched binding is one-phase. /request already
+      // settled; /response has nothing to do.
+      return { status: 200 };
+    }
+
+    if (captureResults.pricing.length === 0) {
+      // Two-phase bindings matched but capture evaluated to zero.
+      // No settlement needed; not an error.
       return { status: 200 };
     }
 
@@ -660,7 +719,7 @@ export function createGatewayHandler(
     await handleMiddlewareRequest<GatewayResponseResult>({
       x402Handlers: bindings.map((b) => b.handler),
       mppMethodHandlers: mppBindings.map((b) => b.handler),
-      pricing: reqResults.pricing,
+      pricing: captureResults.pricing,
       resource: new URL(ctx.path, baseURL).toString(),
       supportedVersions,
       getHeader: makeHeaderGetter(headers),
@@ -689,34 +748,22 @@ export function createGatewayHandler(
             ? x402States.indexOf(lookup.state)
             : mppStates.indexOf(lookup.state);
         const authResult =
-          lookup.kind === "x402" ? reqResults.x402[idx] : reqResults.mpp[idx];
-        if (!authResult || !authResult.matched) {
+          lookup.kind === "x402" ? authResults.x402[idx] : authResults.mpp[idx];
+        const captureResult =
+          lookup.kind === "x402"
+            ? captureResults.x402[idx]
+            : captureResults.mpp[idx];
+        if (!authResult?.matched) {
           throw new Error(
             "gateway dispatched at /response to a binding that did not " +
               "advertise pricing — internal configuration error",
           );
         }
         authResultForBinding = authResult;
+        captureResultForBinding = captureResult;
 
         if (!authResult.hasAuthorize) {
           // One-phase: /request already settled. Nothing to do here.
-          return { status: 200 };
-        }
-
-        // Two-phase: evaluate the binding's capture against the
-        // response and settle the captured amount.
-        captureResultForBinding = lookup.state.evaluator.capture(
-          ctx.operationKey,
-          evalCtx,
-        );
-
-        const capturePricing = toPricing(
-          captureResultForBinding.amount,
-          spec.assets,
-        );
-        if (capturePricing.length === 0) {
-          // Zero capture: nothing to settle.
-          paymentSettled = true;
           return { status: 200 };
         }
 
@@ -788,14 +835,14 @@ export function createGatewayHandler(
       return { status: 200 };
     }
 
-    if (
-      !dispatchedBindingState ||
-      !authResultForBinding ||
-      !captureResultForBinding
-    ) {
-      // No dispatch happened (no payment header), or two-phase capture
-      // ran but produced zero amount. In either case there is no
-      // capture event to fire.
+    if (!dispatchedBindingState) {
+      // Two-phase binding required settlement but no payment was
+      // dispatched (the client/gateway did not forward the
+      // payment header to /response). Treat as a failure: the
+      // payment ledger is now inconsistent.
+      return { status: 500 };
+    }
+    if (!authResultForBinding || !captureResultForBinding) {
       return { status: paymentSettled ? 200 : 500 };
     }
 

@@ -304,8 +304,11 @@ await t.test(
 );
 
 await t.test(
-  "negative capture coefficient rejects handleResponse",
+  "negative capture coefficient rejects handleResponse at evaluation",
   async (t) => {
+    // The handler evaluates two-phase capture upfront at /response
+    // so spec bugs (like a negative coefficient) surface as a
+    // load-phase rejection rather than silently being skipped.
     const bindings = [
       makeBinding([
         {
@@ -325,15 +328,21 @@ await t.test(
         responsePayload({ a: 3, b: 8 }, { model: "gpt-4o" }),
       ),
       /pricing expression evaluation failed/i,
-      "negative capture coefficient must reject handleResponse",
     );
     t.end();
   },
 );
 
 await t.test(
-  "handleResponse returns status 500 when two-phase rule matches but no handlers settle",
+  "handleResponse returns 500 for two-phase rule without payment dispatch",
   async (t) => {
+    // /response is invoked by the Lua gateway after the upstream
+    // request succeeded. If a two-phase binding's authorize ran at
+    // /request (verifying a hold), the same payment header must
+    // reach /response so the capture amount can be settled. A
+    // missing header here means the gateway dropped the payment;
+    // the response phase cannot settle so the gateway returns
+    // non-2xx (Lua retries; the operator sees a real signal).
     const bindings = [
       makeBinding([
         {
@@ -354,7 +363,6 @@ await t.test(
         { model: "gpt-4o", messages: [] },
       ),
     );
-    // Stub handler returns null from handleSettle, so settlement fails.
     t.equal(result.status, 500);
     t.end();
   },
@@ -430,61 +438,11 @@ await t.test("handleResponse rejects a null request body", async (t) => {
   t.end();
 });
 
-await t.test(
-  "handleResponse evaluates capture expression with full response body",
-  async (t) => {
-    const bindings = [
-      makeBinding([
-        {
-          match: "$",
-          authorize: "100",
-          capture:
-            "$.response.body.usage.prompt_tokens * 10 + $.response.body.usage.completion_tokens * 30",
-        },
-      ]),
-    ];
-    const handler = createGatewayHandler({
-      spec: makeSpec(),
-      bindings,
-      baseURL: BASE_URL,
-    });
-    const result = await handler.handleResponse(
-      responsePayload(
-        { usage: { prompt_tokens: 100, completion_tokens: 50 } },
-        { model: "gpt-4o", messages: [] },
-      ),
-    );
-    // Two-phase rule with stub handler that returns null from settle.
-    t.equal(result.status, 500);
-    t.end();
-  },
-);
-
-await t.test(
-  "handleResponse rejects when capture expression fails dynamically",
-  async (t) => {
-    const bindings = [
-      makeBinding([
-        {
-          match: "$",
-          authorize: "100",
-          capture: "$.response.body.nonexistent * 1",
-        },
-      ]),
-    ];
-    const handler = createGatewayHandler({
-      spec: makeSpec(),
-      bindings,
-      baseURL: BASE_URL,
-    });
-    await t.rejects(
-      handler.handleResponse(
-        responsePayload({ other: "field" }, { model: "gpt-4o" }),
-      ),
-    );
-    t.end();
-  },
-);
+// Settlement-path behaviors (capture evaluation, dynamic failures,
+// negative coefficients, body integrity) require a real payment to
+// dispatch and live in tests/openapi/pricing-settlement.test.ts. The
+// unit tests here cover the gateway surface that does not depend on
+// the payment-protocol harness.
 
 await t.test(
   "null body must not silently bypass a body-matched rule",
@@ -514,8 +472,11 @@ await t.test(
 );
 
 await t.test(
-  "handleResponse must not silently re-evaluate authorize on a dropped body",
+  "handleResponse rejects null body for body-carrying methods",
   async (t) => {
+    // POST/PUT/PATCH must carry a body; the gateway forwards
+    // body: null only when it could not decode the client request.
+    // /response must surface this rather than silently coercing.
     const bindings = [
       makeBinding([
         {
@@ -531,17 +492,12 @@ await t.test(
       baseURL: BASE_URL,
     });
 
-    const withBody = await handler.handleResponse(
-      responsePayload({ usage: { total_tokens: 50 } }, { tokens: 100 }),
-    );
-    t.equal(withBody.status, 500);
-
     await t.rejects(
       handler.handleResponse(
         responsePayload({ usage: { total_tokens: 50 } }, null),
       ),
-      /body|authorize.*mismatch|missing/i,
-      "stripped body must surface as an error, not silently re-derive a new authorized amount",
+      /body|null|missing/i,
+      "null body on body-carrying method must surface as an error",
     );
     t.end();
   },
@@ -618,33 +574,9 @@ await t.test(
   },
 );
 
-await t.test(
-  "handleResponse returns status 500 for two-phase rule when settlement fails",
-  async (t) => {
-    const bindings = [
-      makeBinding([
-        {
-          match: "$",
-          authorize: "$.request.body.max_tokens",
-          capture: "$.response.body.usage.total_tokens",
-        },
-      ]),
-    ];
-    const handler = createGatewayHandler({
-      spec: makeSpec(),
-      bindings,
-      baseURL: BASE_URL,
-    });
-    const result = await handler.handleResponse(
-      responsePayload(
-        { usage: { total_tokens: 42 } },
-        { model: "gpt-4o", max_tokens: 100 },
-      ),
-    );
-    t.equal(result.status, 500);
-    t.end();
-  },
-);
+// Settlement-failure status (500) coverage lives in the integration
+// suite, where real payment headers drive dispatch through the
+// facilitator handler.
 
 await t.test(
   "handleResponse returns status 200 for capture-only rule",

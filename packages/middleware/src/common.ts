@@ -104,6 +104,7 @@ type MatchCriteria = {
   scheme: string;
   network: string;
   asset?: string;
+  amount?: string;
 };
 
 function findMatching<R extends MatchCriteria>(
@@ -127,6 +128,17 @@ function findMatching<R extends MatchCriteria>(
             x.scheme === criteria.scheme,
         );
 
+  // When the gateway advertises multiple accepts that share
+  // (scheme, network, asset) but differ by amount — which happens
+  // when independent bindings on the same operation each emit
+  // their own pricing — disambiguate by the amount the client
+  // signed for. Without this, the first match wins and the
+  // server settles the wrong amount for the chosen binding.
+  if (possible.length > 1 && criteria.amount !== undefined) {
+    const exact = possible.filter((x) => x.amount === criteria.amount);
+    if (exact.length > 0) return exact[0];
+  }
+
   if (possible.length > 1) {
     logger.warning(
       `found ${possible.length} ambiguous matching requirements for ${label} client payment`,
@@ -134,8 +146,6 @@ function findMatching<R extends MatchCriteria>(
     );
   }
 
-  // XXX - If there are more than one, this really should be an error.
-  // For now, err on the side of potential compatibility.
   return possible[0];
 }
 

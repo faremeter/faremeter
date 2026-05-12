@@ -435,20 +435,28 @@ await t.test("nginx sidecar integration", async (t) => {
     },
   );
 
-  const spec = await loadSpec(SPEC_PATH);
+  const { spec, defaultPricing } = await loadSpec(SPEC_PATH);
   const { app: sidecarApp } = createApp({
     spec,
     baseURL: NGINX_BASE,
     supportedVersions: { x402v1: true, x402v2: true },
-    x402Handlers: [
-      createTestFacilitatorHandler({
-        payTo: "test-receiver",
-        amountPolicy: (settle, signed) => settle <= signed,
-        onVerify: onX402Verify,
-        onSettle: onX402Settle,
-      }),
+    bindings: [
+      {
+        handler: createTestFacilitatorHandler({
+          payTo: "test-receiver",
+          amountPolicy: (settle, signed) => settle <= signed,
+          onVerify: onX402Verify,
+          onSettle: onX402Settle,
+        }),
+        operations: defaultPricing,
+      },
     ],
-    mppMethodHandlers: [createTestMPPHandler({ onSettle: onMPPSettle })],
+    mppBindings: [
+      {
+        handler: createTestMPPHandler({ onSettle: onMPPSettle }),
+        operations: defaultPricing,
+      },
+    ],
     onCapture,
   });
   const sidecarServer = serve({ fetch: sidecarApp.fetch, port: SIDECAR_PORT });

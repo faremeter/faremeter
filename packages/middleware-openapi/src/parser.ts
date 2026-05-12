@@ -9,8 +9,9 @@ import {
 import { dereference } from "@scalar/openapi-parser";
 import { isValidationError } from "@faremeter/types";
 import type {
-  FaremeterSpec,
-  OperationPricing,
+  BindingPricing,
+  LoadedSpec,
+  OperationShape,
   PricingRule,
   Rates,
   TransportType,
@@ -198,11 +199,14 @@ function detectTransport(operation: Record<string, unknown>): TransportType {
 }
 
 /**
- * Load and parse an OpenAPI spec file, extracting x-faremeter pricing extensions.
+ * Load and parse an OpenAPI spec file, extracting x-faremeter pricing
+ * extensions. Returns the operation-shape spec and the per-operation
+ * pricing extracted from the document — callers pair the pricing with
+ * handlers to build {@link HandlerBinding}s.
  *
  * @param filePath - Path to the OpenAPI YAML or JSON file
  */
-export async function loadSpec(filePath: string): Promise<FaremeterSpec> {
+export async function loadSpec(filePath: string): Promise<LoadedSpec> {
   const data = await bundle(resolve(filePath), {
     plugins: [readFiles(), parseYaml(), parseJson()],
     treeShake: false,
@@ -217,11 +221,14 @@ export async function loadSpec(filePath: string): Promise<FaremeterSpec> {
 }
 
 /**
- * Extract x-faremeter pricing extensions from a dereferenced OpenAPI document.
+ * Extract operation shapes and the default per-operation pricing from
+ * a dereferenced OpenAPI document. Pricing inheritance rules
+ * (operation > path > document) are applied here; the resulting
+ * `defaultPricing` is the merged view per operation key.
  *
  * @param doc - Dereferenced OpenAPI document as a plain object
  */
-export function extractSpec(doc: Record<string, unknown>): FaremeterSpec {
+export function extractSpec(doc: Record<string, unknown>): LoadedSpec {
   const rawAssets = doc["x-faremeter-assets"] ?? {};
   const assets = assetsValidator(rawAssets);
   if (isValidationError(assets)) {
@@ -236,11 +243,12 @@ export function extractSpec(doc: Record<string, unknown>): FaremeterSpec {
   const documentRules = documentPricing?.rules;
 
   if (!isRecord(doc.paths)) {
-    return { assets, operations: {} };
+    return { spec: { assets, operations: {} }, defaultPricing: {} };
   }
   const paths = doc.paths;
 
-  const operations: Record<string, OperationPricing> = {};
+  const operations: Record<string, OperationShape> = {};
+  const defaultPricing: Record<string, BindingPricing> = {};
 
   for (const [path, rawPathItem] of Object.entries(paths)) {
     if (!isRecord(rawPathItem)) {
@@ -278,11 +286,10 @@ export function extractSpec(doc: Record<string, unknown>): FaremeterSpec {
         method: upperMethod,
         path,
         transport,
-        rates,
-        rules,
       };
+      defaultPricing[key] = { rates, rules };
     }
   }
 
-  return { assets, operations };
+  return { spec: { assets, operations }, defaultPricing };
 }

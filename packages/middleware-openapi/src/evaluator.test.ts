@@ -1,9 +1,12 @@
 #!/usr/bin/env pnpm tsx
 
 import t from "tap";
-import { createPricingEvaluator } from "./evaluator";
+import {
+  createPricingEvaluator,
+  type PricingEvaluatorInput,
+} from "./evaluator";
 import { buildContext, withResponse } from "./context";
-import type { Asset, FaremeterSpec } from "./types";
+import type { Asset, PricingRule } from "./types";
 
 const DEFAULT_ASSETS: Record<string, Asset> = {
   "usdc-sol": {
@@ -15,19 +18,16 @@ const DEFAULT_ASSETS: Record<string, Asset> = {
 };
 
 function makeSpec(
-  rules: FaremeterSpec["operations"][string]["rules"],
+  rules: PricingRule[] | undefined,
   rates: Record<string, bigint> = { "usdc-sol": 1n },
   assets: Record<string, Asset> = DEFAULT_ASSETS,
-): FaremeterSpec {
+): PricingEvaluatorInput {
   return {
     assets,
     operations: {
       "POST /v1/chat/completions": {
-        method: "POST",
-        path: "/v1/chat/completions",
-        transport: "json",
         rates,
-        rules,
+        ...(rules !== undefined ? { rules } : {}),
       },
     },
   };

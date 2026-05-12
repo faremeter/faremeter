@@ -2,9 +2,9 @@ import { JSONPathEnvironment } from "json-p3";
 import { Parser } from "expr-eval";
 import { JSONPATH_REF, extractPlainRefs, findInnermostCoalesce } from "./expr";
 import type {
+  Asset,
+  BindingPricing,
   EvalContext,
-  FaremeterSpec,
-  OperationPricing,
   PriceResult,
   PricingRule,
   Rates,
@@ -227,7 +227,7 @@ function resolveExpression(
 
 function validateRateKeys(
   operations: Record<string, PreparedOperation>,
-  assets: FaremeterSpec["assets"],
+  assets: Record<string, Asset>,
 ): void {
   const assetKeys = new Set(Object.keys(assets));
   for (const [opKey, op] of Object.entries(operations)) {
@@ -375,26 +375,33 @@ function validateExpressions(
 export type PricingEvaluator = {
   authorize(operationKey: string, ctx: EvalContext): PriceResult;
   capture(operationKey: string, ctx: EvalContext): PriceResult;
-  getAssets(): FaremeterSpec["assets"];
+  getAssets(): Record<string, Asset>;
+};
+
+export type PricingEvaluatorInput = {
+  assets: Record<string, Asset>;
+  operations: Record<string, BindingPricing>;
 };
 
 /**
- * Evaluates pricing rules from an OpenAPI spec against request/response context.
+ * Evaluates pricing rules against request/response context. Each
+ * caller (typically a {@link HandlerBinding}) gets its own evaluator
+ * instance keyed by that binding's operations map.
  *
- * @param spec - Parsed faremeter spec with assets, operations, and rates
+ * @param input - Assets and per-operation pricing for the binding
  * @param opts - Optional configuration including error handler
  */
 export function createPricingEvaluator(
-  spec: FaremeterSpec,
+  input: PricingEvaluatorInput,
   opts?: { onError?: EvalErrorHandler },
 ): PricingEvaluator {
-  const assets = spec.assets;
+  const assets = input.assets;
   const onError = opts?.onError;
   const jpEnv = new JSONPathEnvironment();
   const exprParser = createExprParser();
 
   const operations: Record<string, PreparedOperation> = {};
-  for (const [key, op] of Object.entries(spec.operations)) {
+  for (const [key, op] of Object.entries(input.operations)) {
     operations[key] = prepareOperation(op);
   }
 
@@ -490,7 +497,7 @@ export function createPricingEvaluator(
   };
 }
 
-function prepareOperation(op: OperationPricing): PreparedOperation {
+function prepareOperation(op: BindingPricing): PreparedOperation {
   const rules: PreparedRule[] = (op.rules ?? []).map((rule) => ({
     match: rule.match,
     matchIsFilter: rule.match.trimStart().startsWith("$["),

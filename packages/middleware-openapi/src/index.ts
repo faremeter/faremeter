@@ -27,10 +27,14 @@ export type {
 } from "./handler";
 export type {
   Asset,
+  BindingPricing,
   EvalContext,
   EvalTrace,
   FaremeterSpec,
-  OperationPricing,
+  HandlerBinding,
+  LoadedSpec,
+  MPPBinding,
+  OperationShape,
   PhaseTrace,
   PriceResult,
   PricingRule,

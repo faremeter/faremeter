@@ -17,7 +17,7 @@ await t.test("extractSpec extracts assets from document root", (t) => {
     paths: {},
   };
 
-  const spec = extractSpec(doc);
+  const { spec } = extractSpec(doc);
   t.same(spec.assets, {
     "usdc-sol": {
       chain: "solana:test",
@@ -43,8 +43,8 @@ await t.test("extractSpec resolves rates from document root", (t) => {
     },
   };
 
-  const spec = extractSpec(doc);
-  t.same(spec.operations["POST /test"]?.rates, { "usdc-sol": 1 });
+  const { defaultPricing } = extractSpec(doc);
+  t.same(defaultPricing["POST /test"]?.rates, { "usdc-sol": 1n });
   t.end();
 });
 
@@ -63,8 +63,8 @@ await t.test("extractSpec path-level rates override document rates", (t) => {
     },
   };
 
-  const spec = extractSpec(doc);
-  t.same(spec.operations["POST /test"]?.rates, { "usdc-base": 2 });
+  const { defaultPricing } = extractSpec(doc);
+  t.same(defaultPricing["POST /test"]?.rates, { "usdc-base": 2n });
   t.end();
 });
 
@@ -84,8 +84,8 @@ await t.test("extractSpec operation-level rates override path rates", (t) => {
     },
   };
 
-  const spec = extractSpec(doc);
-  t.same(spec.operations["POST /test"]?.rates, { "usdc-arb": 3 });
+  const { defaultPricing } = extractSpec(doc);
+  t.same(defaultPricing["POST /test"]?.rates, { "usdc-arb": 3n });
   t.end();
 });
 
@@ -103,8 +103,9 @@ await t.test(
         },
       },
     };
-    const spec = extractSpec(doc);
+    const { spec, defaultPricing } = extractSpec(doc);
     t.equal(spec.operations["POST /test"], undefined);
+    t.equal(defaultPricing["POST /test"], undefined);
     t.end();
   },
 );
@@ -175,9 +176,9 @@ await t.test(
         },
       },
     };
-    const spec = extractSpec(doc);
+    const { defaultPricing } = extractSpec(doc);
     t.equal(
-      spec.operations["POST /test"]?.rates?.["usdc-sol"],
+      defaultPricing["POST /test"]?.rates?.["usdc-sol"],
       9007199254740993n,
     );
     t.end();
@@ -219,11 +220,11 @@ await t.test("extractSpec handles multiple methods on the same path", (t) => {
     },
   };
 
-  const spec = extractSpec(doc);
+  const { spec, defaultPricing } = extractSpec(doc);
   t.ok(spec.operations["GET /test"]);
   t.ok(spec.operations["POST /test"]);
-  t.equal(spec.operations["GET /test"]?.rules?.[0]?.capture, "1");
-  t.equal(spec.operations["POST /test"]?.rules?.[0]?.capture, "2");
+  t.equal(defaultPricing["GET /test"]?.rules?.[0]?.capture, "1");
+  t.equal(defaultPricing["POST /test"]?.rules?.[0]?.capture, "2");
   t.end();
 });
 
@@ -252,11 +253,12 @@ await t.test(
         },
       },
     };
-    const spec = extractSpec(doc);
+    const { spec, defaultPricing } = extractSpec(doc);
     const op = spec.operations["POST /priced"];
+    const pricing = defaultPricing["POST /priced"];
     t.ok(op, "operation must be present");
-    t.equal(op?.rules?.[0]?.capture, "100", "must inherit document rules");
-    t.equal(op?.rates?.usdc, 1n, "must inherit document rates");
+    t.equal(pricing?.rules?.[0]?.capture, "100", "must inherit document rules");
+    t.equal(pricing?.rates?.usdc, 1n, "must inherit document rates");
     t.end();
   },
 );
@@ -281,11 +283,11 @@ await t.test(
         },
       },
     };
-    const spec = extractSpec(doc);
+    const { spec, defaultPricing } = extractSpec(doc);
     const op = spec.operations["POST /special"];
     t.ok(op, "operation must be present");
     t.equal(
-      op?.rules?.[0]?.capture,
+      defaultPricing["POST /special"]?.rules?.[0]?.capture,
       "200",
       "must inherit path rules, not document rules",
     );
@@ -310,9 +312,9 @@ await t.test("operation-level rules override inherited rules", (t) => {
       },
     },
   };
-  const spec = extractSpec(doc);
+  const { defaultPricing } = extractSpec(doc);
   t.equal(
-    spec.operations["POST /override"]?.rules?.[0]?.capture,
+    defaultPricing["POST /override"]?.rules?.[0]?.capture,
     "500",
     "must use operation rules, not document rules",
   );
@@ -336,11 +338,12 @@ await t.test(
         },
       },
     };
-    const spec = extractSpec(doc);
+    const { spec, defaultPricing } = extractSpec(doc);
     const op = spec.operations["GET /health"];
+    const pricing = defaultPricing["GET /health"];
     t.ok(op, "operation must inherit document rules");
-    t.equal(op?.rules?.[0]?.capture, "100");
-    t.equal(op?.rates?.usdc, 1n);
+    t.equal(pricing?.rules?.[0]?.capture, "100");
+    t.equal(pricing?.rates?.usdc, 1n);
     t.end();
   },
 );
@@ -362,11 +365,12 @@ await t.test("explicit empty rules array opts out of inherited rules", (t) => {
       },
     },
   };
-  const spec = extractSpec(doc);
+  const { spec, defaultPricing } = extractSpec(doc);
   t.equal(
     spec.operations["POST /free"],
     undefined,
     "empty rules array must opt out of inherited rules",
   );
+  t.equal(defaultPricing["POST /free"], undefined);
   t.end();
 });

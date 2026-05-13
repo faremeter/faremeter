@@ -14,6 +14,7 @@ import {
   parseWWWAuthenticate,
   serializeCredential,
 } from "@faremeter/types/mpp";
+import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 import { createGatewayHandler } from "@faremeter/middleware-openapi";
 import type {
   Asset,
@@ -182,6 +183,63 @@ await t.test("openapi gateway: pricing settlement", async (t) => {
         settleCalls[0]?.requirementsAmount,
         "50",
         "facilitator must receive the captured amount (actual cost), not the authorized hold",
+      );
+      t.end();
+    },
+  );
+
+  await t.test(
+    "forwarded /response body cannot raise the settled amount above the signed authorize",
+    async (t) => {
+      // The client signs a PAYMENT-SIGNATURE for amount=100. A
+      // misbehaving gateway forwards a /response body whose
+      // capture expression would compute 9999. The settlement
+      // must not exceed the originally-signed authorize -- the
+      // capture-derived amount reaches the facilitator unchanged
+      // and is rejected there by the amountPolicy, rather than
+      // being silently downscaled to the signed cap by the gateway.
+      const captureCalls: { result: CaptureResponse }[] = [];
+      const spec = makeSpec("100", "$.response.body.usage.total_tokens");
+      const handler = createGatewayHandler({
+        spec,
+        baseURL: BASE_URL,
+        supportedVersions: { x402v1: false, x402v2: true },
+        x402Handlers: [
+          createTestFacilitatorHandler({
+            payTo: PAY_TO,
+            amountPolicy: holdAndSettle,
+          }),
+        ],
+        onCapture: (_operationKey, result) => {
+          captureCalls.push({ result });
+        },
+      });
+
+      const result = await handler.handleResponse(
+        makeResponsePayload(9999, "100"),
+      );
+
+      t.not(
+        result.status,
+        200,
+        "settlement must fail when capture exceeds signed authorize",
+      );
+      t.equal(captureCalls.length, 1, "onCapture must fire once");
+      t.equal(
+        captureCalls[0]?.result.settled,
+        false,
+        "settlement must be marked unsuccessful",
+      );
+      t.equal(
+        captureCalls[0]?.result.amount.test,
+        "9999",
+        "capture-derived amount reaches settlement unchanged -- " +
+          "the gateway does not silently downscale to the signed cap",
+      );
+      t.match(
+        captureCalls[0]?.result.error?.message,
+        /Amount policy rejected.*settle=9999.*signed=100/,
+        "facilitator's amountPolicy is the enforcement point for the cap",
       );
       t.end();
     },
@@ -1620,6 +1678,155 @@ await t.test("openapi gateway: MPP verify-then-settle", async (t) => {
         settleCalls.length,
         1,
         "handleSettle must not fire again at /response",
+      );
+      t.end();
+    },
+  );
+
+  await t.test(
+    "x402v2 two-phase rule routes 1-phase and 2-phase handlers independently",
+    async (t) => {
+      // Two x402v2 handlers on different schemes registered against a
+      // single OpenAPI rule with authorize + capture. The rule looks
+      // 2-phase, but each handler declares (or implies) its own phase
+      // via capabilities. This is the Flex demo scenario: flex
+      // (2-phase: hold + capture) and exact (1-phase: single-shot)
+      // side by side. The chosen handler's phase is what governs the
+      // flow -- no runtime fallback, no rule re-evaluation, no
+      // double-settle.
+      const twoPhaseSettles: { amount: string }[] = [];
+      const onePhaseSettles: { amount: string }[] = [];
+
+      const twoPhaseHandler = createTestFacilitatorHandler({
+        payTo: PAY_TO,
+        amountPolicy: holdAndSettle,
+        onSettle: (r) => {
+          twoPhaseSettles.push({ amount: r.amount });
+        },
+      });
+
+      const ONE_PHASE_SCHEME = "test-one-phase";
+      const onePhaseHandler: FacilitatorHandler = {
+        capabilities: {
+          schemes: [ONE_PHASE_SCHEME],
+          networks: [TEST_NETWORK],
+          assets: [TEST_ASSET],
+        },
+        getRequirements: async ({ accepts }) =>
+          accepts
+            .filter((r) => r.scheme === ONE_PHASE_SCHEME)
+            .map((r) => ({ ...r, maxTimeoutSeconds: 300 })),
+        handleSettle: async (requirements) => {
+          if (requirements.scheme !== ONE_PHASE_SCHEME) return null;
+          onePhaseSettles.push({ amount: requirements.amount });
+          return {
+            success: true,
+            transaction: "one-phase-tx",
+            network: requirements.network,
+            payer: "test-payer",
+          };
+        },
+      };
+
+      const spec = makeSpec("100", "$.response.body.usage.total_tokens");
+      const handler = createGatewayHandler({
+        spec,
+        baseURL: BASE_URL,
+        supportedVersions: { x402v1: false, x402v2: true },
+        x402Handlers: [twoPhaseHandler, onePhaseHandler],
+      });
+
+      function makeOnePhaseHeader(amount: string): string {
+        return btoa(
+          JSON.stringify({
+            x402Version: 2,
+            resource: { url: `${BASE_URL}/v1/chat/completions` },
+            accepted: {
+              scheme: ONE_PHASE_SCHEME,
+              network: TEST_NETWORK,
+              amount,
+              asset: TEST_ASSET,
+              payTo: PAY_TO,
+              maxTimeoutSeconds: 300,
+            },
+            payload: {
+              testId: generateTestId(),
+              amount,
+              timestamp: Date.now(),
+            },
+          }),
+        );
+      }
+
+      // Client A signs for the 2-phase test scheme.
+      const reqA = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { "PAYMENT-SIGNATURE": makeV2PaymentHeader("100") },
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      t.equal(reqA.status, 200, "2-phase /request must verify and pass");
+      t.equal(twoPhaseSettles.length, 0, "2-phase must not settle at /request");
+      t.equal(
+        onePhaseSettles.length,
+        0,
+        "1-phase handler must not be touched by a 2-phase dispatch",
+      );
+
+      const respA = await handler.handleResponse(
+        makeResponsePayload(75, "100"),
+      );
+      t.equal(respA.status, 200, "2-phase /response must settle");
+      t.equal(twoPhaseSettles.length, 1, "2-phase settled exactly once");
+      t.equal(
+        twoPhaseSettles[0]?.amount,
+        "75",
+        "2-phase settled the captured amount, not the authorized hold",
+      );
+
+      // Client B signs for the 1-phase scheme. Pre-fix, this throws
+      // "no handler accepted the verification" because the rule's
+      // authorize forces a verify step that no handler can serve.
+      const reqB = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { "PAYMENT-SIGNATURE": makeOnePhaseHeader("42") },
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      t.equal(reqB.status, 200, "1-phase /request must settle and pass");
+      t.equal(
+        onePhaseSettles.length,
+        1,
+        "1-phase settled at /request (no /response dependency)",
+      );
+      t.equal(
+        twoPhaseSettles.length,
+        1,
+        "2-phase handler must not be touched by a 1-phase dispatch",
+      );
+
+      const respB = await handler.handleResponse({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { "PAYMENT-SIGNATURE": makeOnePhaseHeader("42") },
+        query: {},
+        body: { model: "gpt-4o" },
+        response: {
+          status: 200,
+          headers: {},
+          body: { usage: { total_tokens: 999 } },
+        },
+      });
+      t.equal(respB.status, 200, "1-phase /response is a no-op");
+      t.equal(
+        onePhaseSettles.length,
+        1,
+        "1-phase must not double-settle at /response",
       );
       t.end();
     },

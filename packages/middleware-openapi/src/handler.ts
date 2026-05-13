@@ -552,10 +552,12 @@ export function createGatewayHandler(
     let paymentSettled = false;
     let settlementError: CaptureError | undefined;
     let settledPayment: SettledPayment | undefined;
-    // Set when an MPP handler without handleVerify is encountered at
-    // /response. This means /request already settled as one-phase, so
+    // Set when the chosen handler declares (or implies) one-phase
+    // semantics. This means /request already settled as one-phase, so
     // /response must skip settlement entirely (no double-charge, no
-    // second onCapture fire).
+    // second onCapture fire). Applies to any scheme without verify --
+    // MPP handlers without handleVerify, x402v2 handlers that opt out
+    // of verify via `capabilities.phase: "one-phase"`, etc.
     let alreadySettledAtRequest = false;
 
     if (authResult.hasAuthorize) {
@@ -581,14 +583,10 @@ export function createGatewayHandler(
           sendJSONResponse: (status) => ({ status }),
 
           body: async (context) => {
-            // If the spec rule has authorize but the payment scheme
-            // did not support verify (e.g. MPP handler without
-            // handleVerify), /request already settled as one-phase.
+            // If the spec rule has authorize but the chosen handler
+            // is one-phase (no verify), /request already settled.
             // Skip settlement here to avoid double-charging.
-            if (
-              context.protocolVersion === "mpp" &&
-              !("verify" in context && context.verify)
-            ) {
+            if (!("verify" in context && context.verify)) {
               alreadySettledAtRequest = true;
               return { status: 200 };
             }

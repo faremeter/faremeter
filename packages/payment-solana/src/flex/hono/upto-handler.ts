@@ -79,6 +79,15 @@ export function createUptoHandler(opts: CreateUptoHandlerOpts): Handler {
         if (ctx.protocolVersion !== 2) {
           return c.json({ error: "upto requires x402 v2" }, 400);
         }
+        // upto is inherently two-phase (authorize a ceiling, then
+        // capture a sub-ceiling amount). If the chosen handler is
+        // one-phase, there's no authorize/capture split to perform.
+        if (!ctx.verify) {
+          return c.json(
+            { error: "upto requires a two-phase x402 v2 handler" },
+            400,
+          );
+        }
 
         const verifyResult = await ctx.verify();
         if (!verifyResult.success) return verifyResult.errorResponse;

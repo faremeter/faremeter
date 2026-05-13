@@ -460,7 +460,10 @@ export class TestHarness {
       };
     } else {
       let verifyResponse: ResourceContextV2["verifyResponse"];
-      if (this.settleMode === "verify-then-settle") {
+      // verify is absent when the chosen handler is one-phase; in that
+      // case there's nothing to verify and the harness goes straight
+      // to settle, regardless of settleMode.
+      if (this.settleMode === "verify-then-settle" && context.verify) {
         const verifyResult = await context.verify();
         if (!verifyResult.success) return verifyResult.errorResponse;
         verifyResponse = verifyResult.facilitatorResponse;

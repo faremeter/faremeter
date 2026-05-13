@@ -365,9 +365,9 @@ Contains payment information and functions to verify or settle the payment.
 Context provided to the middleware body handler for v2 protocol requests.
 Contains payment information and functions to verify or settle the payment.
 
-| Type                      | Type                                                                                                                                                                                                                              |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MiddlewareBodyContextV2` | `{ protocolVersion: 2; paymentRequirements: x402PaymentRequirements; paymentPayload: x402PaymentPayload; settle: () => Promise<SettleResultV2<MiddlewareResponse>>; verify: () => Promise<VerifyResultV2<MiddlewareResponse>>; }` |
+| Type                      | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MiddlewareBodyContextV2` | `{ protocolVersion: 2; paymentRequirements: x402PaymentRequirements; paymentPayload: x402PaymentPayload; settle: () => Promise<SettleResultV2<MiddlewareResponse>>; // Absent when the chosen handler declares (or implies) one-phase // semantics. Callers must check presence before invoking; absence // means the middleware will settle at /request and skip /response. verify?: (() => Promise<VerifyResultV2<MiddlewareResponse>>) or undefined; }` |
 
 ### SettleResultMPP
 

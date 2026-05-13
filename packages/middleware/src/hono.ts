@@ -73,7 +73,13 @@ export async function createMiddleware(
         }
 
         const { verify, settle } = context;
-        if (args.verifyBeforeSettle) {
+        // verify is absent when the chosen handler is one-phase (no
+        // verify step). Treat that as "settle immediately" regardless
+        // of args.verifyBeforeSettle -- there's nothing to verify and
+        // no hold to release after the downstream call.
+        const useVerifyBeforeSettle =
+          args.verifyBeforeSettle && verify !== undefined;
+        if (useVerifyBeforeSettle) {
           // If configured, try to verify the transaction before running
           // the next operation.
           const verifyResult = await verify();
@@ -91,7 +97,7 @@ export async function createMiddleware(
 
         await next();
 
-        if (args.verifyBeforeSettle) {
+        if (useVerifyBeforeSettle) {
           // Close out the verification, by actually settling the
           // payment.
           const settleResult = await settle();

@@ -27,9 +27,10 @@ import {
   adaptVerifyResponseV2ToV1,
 } from "@faremeter/types/x402-adapters";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
-import type {
-  ResourcePricing,
-  HandlerCapabilities,
+import {
+  capabilitiesMatch,
+  type ResourcePricing,
+  type HandlerCapabilities,
 } from "@faremeter/types/pricing";
 import {
   resolveX402Requirements,
@@ -510,7 +511,10 @@ export type MiddlewareBodyContextV2<MiddlewareResponse> = {
   paymentRequirements: x402PaymentRequirements;
   paymentPayload: x402PaymentPayload;
   settle: () => Promise<SettleResultV2<MiddlewareResponse>>;
-  verify: () => Promise<VerifyResultV2<MiddlewareResponse>>;
+  // Absent when the chosen handler declares (or implies) one-phase
+  // semantics. Callers must check presence before invoking; absence
+  // means the middleware will settle at /request and skip /response.
+  verify?: (() => Promise<VerifyResultV2<MiddlewareResponse>>) | undefined;
 };
 
 export type SettleResultMPP<MiddlewareResponse> =
@@ -939,30 +943,47 @@ async function handleV2Request<MiddlewareResponse>(
     return { success: true, facilitatorResponse: settlementResponse };
   };
 
-  const verify = async (): Promise<VerifyResultV2<MiddlewareResponse>> => {
-    const verifyResponse = await verifyX402Payment(
-      x402Handlers,
-      paymentRequirements,
-      paymentPayload,
-    );
+  // Narrow handlers to those whose capabilities declare the chosen
+  // scheme. Phase is decided by the narrowed set: a handler that
+  // explicitly declares `phase: "one-phase"` opts out of verify, even
+  // if it happens to implement `handleVerify`; otherwise we infer
+  // phase from `handleVerify` presence. If any narrowed handler is
+  // two-phase, we route through verify -- a single 2-phase handler
+  // drives the flow because verifyX402Payment iterates candidates.
+  const matched = x402Handlers.filter(
+    (h) =>
+      h.capabilities &&
+      capabilitiesMatch(h.capabilities, paymentRequirements) &&
+      h.capabilities.schemes?.includes(paymentRequirements.scheme),
+  );
+  const hasVerifyHandlers = matched.some((h) => handlerIsTwoPhase(h));
 
-    if (!verifyResponse.isValid) {
-      logger.warning(
-        "failed to verify v2 payment: {invalidReason}",
-        verifyResponse,
-      );
-      const result: VerifyResultV2<MiddlewareResponse> = {
-        success: false,
-        errorResponse: await sendPaymentRequired(),
-      };
-      if (verifyResponse.invalidReason) {
-        result.errorMessage = verifyResponse.invalidReason;
+  const verify = hasVerifyHandlers
+    ? async (): Promise<VerifyResultV2<MiddlewareResponse>> => {
+        const verifyResponse = await verifyX402Payment(
+          x402Handlers,
+          paymentRequirements,
+          paymentPayload,
+        );
+
+        if (!verifyResponse.isValid) {
+          logger.warning(
+            "failed to verify v2 payment: {invalidReason}",
+            verifyResponse,
+          );
+          const result: VerifyResultV2<MiddlewareResponse> = {
+            success: false,
+            errorResponse: await sendPaymentRequired(),
+          };
+          if (verifyResponse.invalidReason) {
+            result.errorMessage = verifyResponse.invalidReason;
+          }
+          return result;
+        }
+
+        return { success: true, facilitatorResponse: verifyResponse };
       }
-      return result;
-    }
-
-    return { success: true, facilitatorResponse: verifyResponse };
-  };
+    : undefined;
 
   return await args.body({
     protocolVersion: 2,
@@ -971,6 +992,18 @@ async function handleV2Request<MiddlewareResponse>(
     settle,
     verify,
   });
+}
+
+/**
+ * Returns true when the handler should be invoked as two-phase
+ * (verify at /request, settle at /response). Honors an explicit
+ * `capabilities.phase` declaration; otherwise infers from
+ * `handleVerify` presence.
+ */
+function handlerIsTwoPhase(h: FacilitatorHandler): boolean {
+  const declared = h.capabilities?.phase;
+  if (declared) return declared === "two-phase";
+  return h.handleVerify !== undefined;
 }
 
 /**

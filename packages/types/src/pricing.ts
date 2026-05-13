@@ -22,12 +22,21 @@ export type ResourcePricing = {
  * `MPPMethodHandler` (required).
  *
  * `schemes` is x402-specific -- MPP handlers do not use it.
+ *
+ * `phase` declares whether the handler wants to be invoked as one-phase
+ * (settle immediately at /request) or two-phase (verify at /request,
+ * settle later at /response with the captured amount). When omitted the
+ * middleware infers the phase from `handleVerify` presence: a handler
+ * that implements `handleVerify` is treated as two-phase, otherwise
+ * one-phase. The explicit field exists so a handler can declare
+ * one-phase semantics even while implementing verify as a sanity check.
  */
 export type HandlerCapabilities = {
   /** x402-specific. MPP handlers leave this empty or omit it. */
   schemes?: string[];
   networks: string[];
   assets: string[];
+  phase?: "one-phase" | "two-phase";
 };
 
 function lowerIncludes(list: string[], value: string): boolean {

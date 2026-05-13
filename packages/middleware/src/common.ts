@@ -27,9 +27,10 @@ import {
   adaptVerifyResponseV2ToV1,
 } from "@faremeter/types/x402-adapters";
 import type { FacilitatorHandler } from "@faremeter/types/facilitator";
-import type {
-  ResourcePricing,
-  HandlerCapabilities,
+import {
+  type ResourcePricing,
+  type HandlerCapabilities,
+  capabilitiesMatch,
 } from "@faremeter/types/pricing";
 import {
   resolveX402Requirements,
@@ -514,13 +515,18 @@ export type MiddlewareBodyContextV1<MiddlewareResponse> = {
 /**
  * Context provided to the middleware body handler for v2 protocol requests.
  * Contains payment information and functions to verify or settle the payment.
+ *
+ * `verify` is undefined when no matched scheme handler implements
+ * `handleVerify`. Callers driving two-phase settlement must handle the
+ * undefined case (typically by falling back to one-phase or rejecting
+ * as a misconfiguration).
  */
 export type MiddlewareBodyContextV2<MiddlewareResponse> = {
   protocolVersion: 2;
   paymentRequirements: x402PaymentRequirements;
   paymentPayload: x402PaymentPayload;
   settle: () => Promise<SettleResultV2<MiddlewareResponse>>;
-  verify: () => Promise<VerifyResultV2<MiddlewareResponse>>;
+  verify?: (() => Promise<VerifyResultV2<MiddlewareResponse>>) | undefined;
 };
 
 export type SettleResultMPP<MiddlewareResponse> =
@@ -949,30 +955,45 @@ async function handleV2Request<MiddlewareResponse>(
     return { success: true, facilitatorResponse: settlementResponse };
   };
 
-  const verify = async (): Promise<VerifyResultV2<MiddlewareResponse>> => {
-    const verifyResponse = await verifyX402Payment(
-      x402Handlers,
-      paymentRequirements,
-      paymentPayload,
-    );
+  // Narrow handlers to those that can serve the chosen scheme. Only
+  // construct `verify` when at least one of them implements
+  // `handleVerify`. A direct middleware caller (hono, upto, harness)
+  // that drives two-phase settlement can then check whether `verify`
+  // is present and fall back to one-phase if it isn't.
+  const matched = x402Handlers.filter(
+    (h) =>
+      h.capabilities &&
+      capabilitiesMatch(h.capabilities, paymentRequirements) &&
+      h.capabilities.schemes?.includes(paymentRequirements.scheme),
+  );
+  const hasVerifyHandlers = matched.some((h) => h.handleVerify);
 
-    if (!verifyResponse.isValid) {
-      logger.warning(
-        "failed to verify v2 payment: {invalidReason}",
-        verifyResponse,
-      );
-      const result: VerifyResultV2<MiddlewareResponse> = {
-        success: false,
-        errorResponse: await sendPaymentRequired(),
-      };
-      if (verifyResponse.invalidReason) {
-        result.errorMessage = verifyResponse.invalidReason;
+  const verify = hasVerifyHandlers
+    ? async (): Promise<VerifyResultV2<MiddlewareResponse>> => {
+        const verifyResponse = await verifyX402Payment(
+          x402Handlers,
+          paymentRequirements,
+          paymentPayload,
+        );
+
+        if (!verifyResponse.isValid) {
+          logger.warning(
+            "failed to verify v2 payment: {invalidReason}",
+            verifyResponse,
+          );
+          const result: VerifyResultV2<MiddlewareResponse> = {
+            success: false,
+            errorResponse: await sendPaymentRequired(),
+          };
+          if (verifyResponse.invalidReason) {
+            result.errorMessage = verifyResponse.invalidReason;
+          }
+          return result;
+        }
+
+        return { success: true, facilitatorResponse: verifyResponse };
       }
-      return result;
-    }
-
-    return { success: true, facilitatorResponse: verifyResponse };
-  };
+    : undefined;
 
   return await args.body({
     protocolVersion: 2,

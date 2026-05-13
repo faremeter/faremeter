@@ -80,6 +80,16 @@ export function createUptoHandler(opts: CreateUptoHandlerOpts): Handler {
           return c.json({ error: "upto requires x402 v2" }, 400);
         }
 
+        if (!ctx.verify) {
+          // Server-side misconfiguration: upto requires a scheme that
+          // can verify before settle, so reaching here means the
+          // operator wired in a handler that does not implement verify.
+          return c.json(
+            { error: "upto requires a scheme handler that implements verify" },
+            500,
+          );
+        }
+
         const verifyResult = await ctx.verify();
         if (!verifyResult.success) return verifyResult.errorResponse;
 

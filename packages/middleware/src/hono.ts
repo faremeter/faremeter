@@ -6,13 +6,18 @@ import {
   resolveSupportedVersions,
   resolveConfig,
 } from "./common";
+import { logger } from "./logger";
 import type { MiddlewareHandler } from "hono";
 
 /**
  * Configuration arguments for creating Hono payment middleware.
  */
 type CreateMiddlewareArgs = {
-  /** If true, verifies payment before running the handler, then settles after. */
+  /**
+   * If true, verifies payment before running the handler, then settles
+   * after. Falls back to one-phase settle with a logged warning when
+   * the chosen scheme handler does not implement verify.
+   */
   verifyBeforeSettle?: boolean;
 } & CommonMiddlewareArgs;
 
@@ -73,9 +78,15 @@ export async function createMiddleware(
         }
 
         const { verify, settle } = context;
-        if (args.verifyBeforeSettle) {
-          // If configured, try to verify the transaction before running
-          // the next operation.
+        // verify-before-settle is only possible when the chosen handler
+        // implements verify; otherwise fall back to one-phase settle.
+        const twoPhase = args.verifyBeforeSettle && verify !== undefined;
+        if (args.verifyBeforeSettle && verify === undefined) {
+          logger.warning(
+            "verifyBeforeSettle is configured but the chosen scheme handler does not implement verify; falling back to one-phase settle",
+          );
+        }
+        if (twoPhase) {
           const verifyResult = await verify();
           if (!verifyResult.success) {
             return verifyResult.errorResponse;
@@ -91,7 +102,7 @@ export async function createMiddleware(
 
         await next();
 
-        if (args.verifyBeforeSettle) {
+        if (twoPhase) {
           // Close out the verification, by actually settling the
           // payment.
           const settleResult = await settle();

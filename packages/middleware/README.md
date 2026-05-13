@@ -365,9 +365,14 @@ Contains payment information and functions to verify or settle the payment.
 Context provided to the middleware body handler for v2 protocol requests.
 Contains payment information and functions to verify or settle the payment.
 
-| Type                      | Type                                                                                                                                                                                                                              |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MiddlewareBodyContextV2` | `{ protocolVersion: 2; paymentRequirements: x402PaymentRequirements; paymentPayload: x402PaymentPayload; settle: () => Promise<SettleResultV2<MiddlewareResponse>>; verify: () => Promise<VerifyResultV2<MiddlewareResponse>>; }` |
+`verify` is undefined when no matched scheme handler implements
+`handleVerify`. Callers driving two-phase settlement must handle the
+undefined case (typically by falling back to one-phase or rejecting
+as a misconfiguration).
+
+| Type                      | Type                                                                                                                                                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MiddlewareBodyContextV2` | `{ protocolVersion: 2; paymentRequirements: x402PaymentRequirements; paymentPayload: x402PaymentPayload; settle: () => Promise<SettleResultV2<MiddlewareResponse>>; verify?: (() => Promise<VerifyResultV2<MiddlewareResponse>>) or undefined; }` |
 
 ### SettleResultMPP
 

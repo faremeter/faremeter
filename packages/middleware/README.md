@@ -263,16 +263,16 @@ capacity (least recently used entries are removed first).
 - [CommonMiddlewareArgs](#commonmiddlewareargs)
 - [CreateRemoteX402HandlersArgs](#createremotex402handlersargs)
 - [ResolvedConfig](#resolvedconfig)
-- [SettleResultV1](#settleresultv1)
-- [SettleResultV2](#settleresultv2)
-- [SettleResult](#settleresult)
-- [VerifyResultV1](#verifyresultv1)
-- [VerifyResultV2](#verifyresultv2)
-- [VerifyResult](#verifyresult)
+- [CaptureResultV1](#captureresultv1)
+- [CaptureResultV2](#captureresultv2)
+- [CaptureResult](#captureresult)
+- [AuthorizeResultV1](#authorizeresultv1)
+- [AuthorizeResultV2](#authorizeresultv2)
+- [AuthorizeResult](#authorizeresult)
 - [MiddlewareBodyContextV1](#middlewarebodycontextv1)
 - [MiddlewareBodyContextV2](#middlewarebodycontextv2)
-- [SettleResultMPP](#settleresultmpp)
-- [VerifyResultMPP](#verifyresultmpp)
+- [CaptureResultMPP](#captureresultmpp)
+- [AuthorizeResultMPP](#authorizeresultmpp)
 - [MiddlewareBodyContextMPP](#middlewarebodycontextmpp)
 - [MiddlewareBodyContext](#middlewarebodycontext)
 - [HandleMiddlewareRequestArgs](#handlemiddlewarerequestargs)
@@ -327,79 +327,89 @@ Supports two mutually exclusive modes: in-process handlers or remote facilitator
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `ResolvedConfig` | `{ handlers: FacilitatorHandler[]; pricing: ResourcePricing[]; mppHandlers: MPPMethodHandler[]; resourceInfo?: x402ResourceInfo; }` |
 
-### SettleResultV1
+### CaptureResultV1
 
-| Type             | Type |
-| ---------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SettleResultV1` | `    | { success: true; facilitatorResponse: x402SettleResponseV1 } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
+| Type              | Type |
+| ----------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CaptureResultV1` | `    | { success: true; facilitatorResponse: x402SettleResponseV1 } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
-### SettleResultV2
+### CaptureResultV2
 
-| Type             | Type |
-| ---------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SettleResultV2` | `    | { success: true; facilitatorResponse: x402SettleResponse } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
+| Type              | Type |
+| ----------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CaptureResultV2` | `    | { success: true; facilitatorResponse: x402SettleResponse } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
-### SettleResult
+### CaptureResult
 
-| Type           | Type |
-| -------------- | ---- | ------------------------------------------------------------------------- |
-| `SettleResult` | `    | SettleResultV1<MiddlewareResponse> or SettleResultV2<MiddlewareResponse>` |
+| Type            | Type |
+| --------------- | ---- | --------------------------------------------------------------------------- |
+| `CaptureResult` | `    | CaptureResultV1<MiddlewareResponse> or CaptureResultV2<MiddlewareResponse>` |
 
-### VerifyResultV1
+### AuthorizeResultV1
 
-| Type             | Type |
-| ---------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VerifyResultV1` | `    | { success: true; facilitatorResponse: x402VerifyResponseV1 } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
+| Type                | Type |
+| ------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AuthorizeResultV1` | `    | { success: true; facilitatorResponse: x402VerifyResponseV1 } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
-### VerifyResultV2
+### AuthorizeResultV2
 
-| Type             | Type |
-| ---------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VerifyResultV2` | `    | { success: true; facilitatorResponse: x402VerifyResponse } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
+| Type                | Type |
+| ------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AuthorizeResultV2` | `    | { success: true; facilitatorResponse: x402VerifyResponse } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
-### VerifyResult
+### AuthorizeResult
 
-| Type           | Type |
-| -------------- | ---- | ------------------------------------------------------------------------- |
-| `VerifyResult` | `    | VerifyResultV1<MiddlewareResponse> or VerifyResultV2<MiddlewareResponse>` |
+| Type              | Type |
+| ----------------- | ---- | ------------------------------------------------------------------------------- |
+| `AuthorizeResult` | `    | AuthorizeResultV1<MiddlewareResponse> or AuthorizeResultV2<MiddlewareResponse>` |
 
 ### MiddlewareBodyContextV1
 
 Context provided to the middleware body handler for v1 protocol requests.
-Contains payment information and functions to verify or settle the payment.
+Contains payment information and the industry-standard `authorize` /
+`capture` operations. Under the hood these dispatch to the matched
+x402 facilitator handler's `handleVerify` / `handleSettle`.
 
-| Type                      | Type                                                                                                                                                                                                                                  |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MiddlewareBodyContextV1` | `{ protocolVersion: 1; paymentRequirements: x402PaymentRequirementsV1; paymentPayload: x402PaymentPayloadV1; settle: () => Promise<SettleResultV1<MiddlewareResponse>>; verify: () => Promise<VerifyResultV1<MiddlewareResponse>>; }` |
+| Type                      | Type                                                                                                                                                                                                                                          |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MiddlewareBodyContextV1` | `{ protocolVersion: 1; paymentRequirements: x402PaymentRequirementsV1; paymentPayload: x402PaymentPayloadV1; capture: () => Promise<CaptureResultV1<MiddlewareResponse>>; authorize: () => Promise<AuthorizeResultV1<MiddlewareResponse>>; }` |
 
 ### MiddlewareBodyContextV2
 
 Context provided to the middleware body handler for v2 protocol requests.
-Contains payment information and functions to verify or settle the payment.
+Contains payment information and the industry-standard `authorize` /
+`capture` operations. Under the hood these dispatch to the matched
+x402 facilitator handler's `handleVerify` / `handleSettle`.
 
-| Type                      | Type                                                                                                                                                                                                                              |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MiddlewareBodyContextV2` | `{ protocolVersion: 2; paymentRequirements: x402PaymentRequirements; paymentPayload: x402PaymentPayload; settle: () => Promise<SettleResultV2<MiddlewareResponse>>; verify: () => Promise<VerifyResultV2<MiddlewareResponse>>; }` |
+| Type                      | Type                                                                                                                                                                                                                                      |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MiddlewareBodyContextV2` | `{ protocolVersion: 2; paymentRequirements: x402PaymentRequirements; paymentPayload: x402PaymentPayload; capture: () => Promise<CaptureResultV2<MiddlewareResponse>>; authorize: () => Promise<AuthorizeResultV2<MiddlewareResponse>>; }` |
 
-### SettleResultMPP
+### CaptureResultMPP
 
-| Type              | Type |
-| ----------------- | ---- | ------------------------------------------------------------------------------------------------------------------------ |
-| `SettleResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
+| Type               | Type |
+| ------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------ |
+| `CaptureResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
-### VerifyResultMPP
+### AuthorizeResultMPP
 
-| Type              | Type |
-| ----------------- | ---- | ------------------------------------------------------------------------------------------------------------------------ |
-| `VerifyResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
+| Type                 | Type |
+| -------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------ |
+| `AuthorizeResultMPP` | `    | { success: true; receipt: mppReceipt } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### MiddlewareBodyContextMPP
 
 Context provided to the middleware body handler for MPP protocol requests.
 
-| Type                       | Type                                                                                                                                                                                             |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `MiddlewareBodyContextMPP` | `{ protocolVersion: "mpp"; credential: mppCredential; settle: () => Promise<SettleResultMPP<MiddlewareResponse>>; verify?: (() => Promise<VerifyResultMPP<MiddlewareResponse>>) or undefined; }` |
+`authorize` is optional because not every MPP method handler implements
+`handleVerify`. Consumers that need a guaranteed authorize path should
+gate on `authorize !== undefined` or rely on a higher-level dispatcher
+(e.g. the OpenAPI gateway's `capturesAt` resolution) that only chooses
+the authorize path when at least one matching handler can verify.
+
+| Type                       | Type                                                                                                                                                                                                        |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MiddlewareBodyContextMPP` | `{ protocolVersion: "mpp"; credential: mppCredential; capture: () => Promise<CaptureResultMPP<MiddlewareResponse>>; authorize?: or (() => Promise<AuthorizeResultMPP<MiddlewareResponse>>) or undefined; }` |
 
 ### MiddlewareBodyContext
 

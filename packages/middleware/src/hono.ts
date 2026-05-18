@@ -12,8 +12,11 @@ import type { MiddlewareHandler } from "hono";
  * Configuration arguments for creating Hono payment middleware.
  */
 type CreateMiddlewareArgs = {
-  /** If true, verifies payment before running the handler, then settles after. */
-  verifyBeforeSettle?: boolean;
+  /**
+   * If true, authorize the payment before running the handler and
+   * capture it after. Otherwise capture once up-front.
+   */
+  authorizeBeforeCapture?: boolean;
 } & CommonMiddlewareArgs;
 
 /**
@@ -64,46 +67,46 @@ export async function createMiddleware(
       },
       body: async (context) => {
         if (context.protocolVersion === "mpp") {
-          const settleResult = await context.settle();
-          if (!settleResult.success) {
-            return settleResult.errorResponse;
+          const captureResult = await context.capture();
+          if (!captureResult.success) {
+            return captureResult.errorResponse;
           }
           await next();
           return;
         }
 
-        const { verify, settle } = context;
-        if (args.verifyBeforeSettle) {
-          // If configured, try to verify the transaction before running
+        const { authorize, capture } = context;
+        if (args.authorizeBeforeCapture) {
+          // If configured, authorize the payment before running
           // the next operation.
-          const verifyResult = await verify();
-          if (!verifyResult.success) {
-            return verifyResult.errorResponse;
+          const authorizeResult = await authorize();
+          if (!authorizeResult.success) {
+            return authorizeResult.errorResponse;
           }
         } else {
-          // Otherwise just settle the payment beforehand, like we've
+          // Otherwise just capture the payment beforehand, like we've
           // done historically.
-          const settleResult = await settle();
-          if (!settleResult.success) {
-            return settleResult.errorResponse;
+          const captureResult = await capture();
+          if (!captureResult.success) {
+            return captureResult.errorResponse;
           }
         }
 
         await next();
 
-        if (args.verifyBeforeSettle) {
-          // Close out the verification, by actually settling the
+        if (args.authorizeBeforeCapture) {
+          // Close out the authorization by actually capturing the
           // payment.
-          const settleResult = await settle();
-          if (!settleResult.success) {
-            // If the settlement fails, we need to explicitly
+          const captureResult = await capture();
+          if (!captureResult.success) {
+            // If the capture fails, we need to explicitly
             // overwrite the downstream result.  See:
             //
             // https://hono.dev/docs/guides/middleware#modify-the-response-after-next
             //
 
             c.res = undefined;
-            c.res = settleResult.errorResponse;
+            c.res = captureResult.errorResponse;
           }
         }
       },

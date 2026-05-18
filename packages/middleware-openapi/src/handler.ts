@@ -379,12 +379,16 @@ export function createGatewayHandler(
       },
 
       body: async (context) => {
-        if (authResult.hasAuthorize && "verify" in context && context.verify) {
+        if (
+          authResult.hasAuthorize &&
+          "authorize" in context &&
+          context.authorize
+        ) {
           // authorize + capture: verify the payment now, settle
           // later at /response with the captured amount.
           switch (context.protocolVersion) {
             case 1: {
-              const r = await context.verify();
+              const r = await context.authorize();
               if (!r.success) return r.errorResponse;
               authorizeResponse = {
                 protocol: "x402v1",
@@ -393,7 +397,7 @@ export function createGatewayHandler(
               break;
             }
             case 2: {
-              const r = await context.verify();
+              const r = await context.authorize();
               if (!r.success) return r.errorResponse;
               authorizeResponse = {
                 protocol: "x402v2",
@@ -402,7 +406,7 @@ export function createGatewayHandler(
               break;
             }
             case "mpp": {
-              const r = await context.verify();
+              const r = await context.authorize();
               if (!r.success) return r.errorResponse;
               authorizeResponse = {
                 protocol: "mpp",
@@ -420,7 +424,7 @@ export function createGatewayHandler(
           // verify: settle immediately.
           switch (context.protocolVersion) {
             case 1: {
-              const r = await context.settle();
+              const r = await context.capture();
               if (!r.success) return r.errorResponse;
               settledPayment = {
                 protocol: "x402v1",
@@ -429,7 +433,7 @@ export function createGatewayHandler(
               break;
             }
             case 2: {
-              const r = await context.settle();
+              const r = await context.capture();
               if (!r.success) return r.errorResponse;
               settledPayment = {
                 protocol: "x402v2",
@@ -438,7 +442,7 @@ export function createGatewayHandler(
               break;
             }
             case "mpp": {
-              const r = await context.settle();
+              const r = await context.capture();
               if (!r.success) return r.errorResponse;
               settledPayment = {
                 protocol: "mpp",
@@ -587,7 +591,7 @@ export function createGatewayHandler(
             // Skip settlement here to avoid double-charging.
             if (
               context.protocolVersion === "mpp" &&
-              !("verify" in context && context.verify)
+              !("authorize" in context && context.authorize)
             ) {
               alreadySettledAtRequest = true;
               return { status: 200 };
@@ -595,7 +599,7 @@ export function createGatewayHandler(
 
             switch (context.protocolVersion) {
               case 1: {
-                const r = await context.settle();
+                const r = await context.capture();
                 paymentSettled = r.success;
                 if (!r.success) {
                   settlementError = toCaptureError(
@@ -611,7 +615,7 @@ export function createGatewayHandler(
                 break;
               }
               case 2: {
-                const r = await context.settle();
+                const r = await context.capture();
                 paymentSettled = r.success;
                 if (!r.success) {
                   settlementError = toCaptureError(
@@ -627,7 +631,7 @@ export function createGatewayHandler(
                 break;
               }
               case "mpp": {
-                const r = await context.settle();
+                const r = await context.capture();
                 paymentSettled = r.success;
                 if (!r.success) {
                   settlementError = toCaptureError(

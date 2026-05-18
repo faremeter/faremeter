@@ -7,7 +7,7 @@ import {
   deriveResourceInfo,
   acceptsToPricing,
   relaxedRequirementsToV2,
-  type SettleResultV2,
+  type CaptureResultV2,
   type MiddlewareBodyContext,
   type RelaxedRequirements,
   type HandleMiddlewareRequestArgs,
@@ -83,8 +83,8 @@ export function createUptoHandler(opts: CreateUptoHandlerOpts): Handler {
           return c.json({ error: "upto requires x402 v2" }, 400);
         }
 
-        const verifyResult = await ctx.verify();
-        if (!verifyResult.success) return verifyResult.errorResponse;
+        const authorizeResult = await ctx.authorize();
+        if (!authorizeResult.success) return authorizeResult.errorResponse;
 
         const body: unknown = await c.req.json();
         const ceiling = await opts.authorize(body);
@@ -103,9 +103,9 @@ export function createUptoHandler(opts: CreateUptoHandlerOpts): Handler {
             );
           }
           settled = true;
-          // XXX - Mutate in place: ctx.settle() closes over the original object reference
+          // XXX - Mutate in place: ctx.capture() closes over the original object reference
           ctx.paymentRequirements.amount = amount.toString();
-          const result: SettleResultV2<Response> = await ctx.settle();
+          const result: CaptureResultV2<Response> = await ctx.capture();
           if (!result.success) {
             throw new Error(
               `Settlement failed for amount ${amount} (ceiling ${ceiling})`,

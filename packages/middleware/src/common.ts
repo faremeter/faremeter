@@ -460,7 +460,7 @@ export function resolveConfig(args: CommonMiddlewareArgs): ResolvedConfig {
   throw new Error("failed to resolve middleware configuration");
 }
 
-export type SettleResultV1<MiddlewareResponse> =
+export type CaptureResultV1<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402SettleResponseV1 }
   | {
       success: false;
@@ -468,7 +468,7 @@ export type SettleResultV1<MiddlewareResponse> =
       errorMessage?: string;
     };
 
-export type SettleResultV2<MiddlewareResponse> =
+export type CaptureResultV2<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402SettleResponse }
   | {
       success: false;
@@ -476,11 +476,11 @@ export type SettleResultV2<MiddlewareResponse> =
       errorMessage?: string;
     };
 
-export type SettleResult<MiddlewareResponse> =
-  | SettleResultV1<MiddlewareResponse>
-  | SettleResultV2<MiddlewareResponse>;
+export type CaptureResult<MiddlewareResponse> =
+  | CaptureResultV1<MiddlewareResponse>
+  | CaptureResultV2<MiddlewareResponse>;
 
-export type VerifyResultV1<MiddlewareResponse> =
+export type AuthorizeResultV1<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402VerifyResponseV1 }
   | {
       success: false;
@@ -488,7 +488,7 @@ export type VerifyResultV1<MiddlewareResponse> =
       errorMessage?: string;
     };
 
-export type VerifyResultV2<MiddlewareResponse> =
+export type AuthorizeResultV2<MiddlewareResponse> =
   | { success: true; facilitatorResponse: x402VerifyResponse }
   | {
       success: false;
@@ -496,35 +496,39 @@ export type VerifyResultV2<MiddlewareResponse> =
       errorMessage?: string;
     };
 
-export type VerifyResult<MiddlewareResponse> =
-  | VerifyResultV1<MiddlewareResponse>
-  | VerifyResultV2<MiddlewareResponse>;
+export type AuthorizeResult<MiddlewareResponse> =
+  | AuthorizeResultV1<MiddlewareResponse>
+  | AuthorizeResultV2<MiddlewareResponse>;
 
 /**
  * Context provided to the middleware body handler for v1 protocol requests.
- * Contains payment information and functions to verify or settle the payment.
+ * Contains payment information and the industry-standard `authorize` /
+ * `capture` operations. Under the hood these dispatch to the matched
+ * x402 facilitator handler's `handleVerify` / `handleSettle`.
  */
 export type MiddlewareBodyContextV1<MiddlewareResponse> = {
   protocolVersion: 1;
   paymentRequirements: x402PaymentRequirementsV1;
   paymentPayload: x402PaymentPayloadV1;
-  settle: () => Promise<SettleResultV1<MiddlewareResponse>>;
-  verify: () => Promise<VerifyResultV1<MiddlewareResponse>>;
+  capture: () => Promise<CaptureResultV1<MiddlewareResponse>>;
+  authorize: () => Promise<AuthorizeResultV1<MiddlewareResponse>>;
 };
 
 /**
  * Context provided to the middleware body handler for v2 protocol requests.
- * Contains payment information and functions to verify or settle the payment.
+ * Contains payment information and the industry-standard `authorize` /
+ * `capture` operations. Under the hood these dispatch to the matched
+ * x402 facilitator handler's `handleVerify` / `handleSettle`.
  */
 export type MiddlewareBodyContextV2<MiddlewareResponse> = {
   protocolVersion: 2;
   paymentRequirements: x402PaymentRequirements;
   paymentPayload: x402PaymentPayload;
-  settle: () => Promise<SettleResultV2<MiddlewareResponse>>;
-  verify: () => Promise<VerifyResultV2<MiddlewareResponse>>;
+  capture: () => Promise<CaptureResultV2<MiddlewareResponse>>;
+  authorize: () => Promise<AuthorizeResultV2<MiddlewareResponse>>;
 };
 
-export type SettleResultMPP<MiddlewareResponse> =
+export type CaptureResultMPP<MiddlewareResponse> =
   | { success: true; receipt: mppReceipt }
   | {
       success: false;
@@ -532,7 +536,7 @@ export type SettleResultMPP<MiddlewareResponse> =
       errorMessage?: string;
     };
 
-export type VerifyResultMPP<MiddlewareResponse> =
+export type AuthorizeResultMPP<MiddlewareResponse> =
   | { success: true; receipt: mppReceipt }
   | {
       success: false;
@@ -542,12 +546,20 @@ export type VerifyResultMPP<MiddlewareResponse> =
 
 /**
  * Context provided to the middleware body handler for MPP protocol requests.
+ *
+ * `authorize` is optional because not every MPP method handler implements
+ * `handleVerify`. Consumers that need a guaranteed authorize path should
+ * gate on `authorize !== undefined` or rely on a higher-level dispatcher
+ * (e.g. the OpenAPI gateway's `capturesAt` resolution) that only chooses
+ * the authorize path when at least one matching handler can verify.
  */
 export type MiddlewareBodyContextMPP<MiddlewareResponse> = {
   protocolVersion: "mpp";
   credential: mppCredential;
-  settle: () => Promise<SettleResultMPP<MiddlewareResponse>>;
-  verify?: (() => Promise<VerifyResultMPP<MiddlewareResponse>>) | undefined;
+  capture: () => Promise<CaptureResultMPP<MiddlewareResponse>>;
+  authorize?:
+    | (() => Promise<AuthorizeResultMPP<MiddlewareResponse>>)
+    | undefined;
 };
 
 /**
@@ -825,7 +837,7 @@ async function handleV1Request<MiddlewareResponse>(
     resource: v2Response.resource,
   };
 
-  const settle = async (): Promise<SettleResultV1<MiddlewareResponse>> => {
+  const capture = async (): Promise<CaptureResultV1<MiddlewareResponse>> => {
     const v2Result = await settleX402Payment(
       x402Handlers,
       v2Requirements,
@@ -846,7 +858,7 @@ async function handleV1Request<MiddlewareResponse>(
         "failed to settle payment: {errorReason}",
         settlementResponse,
       );
-      const result: SettleResultV1<MiddlewareResponse> = {
+      const result: CaptureResultV1<MiddlewareResponse> = {
         success: false,
         errorResponse: await sendPaymentRequired(),
       };
@@ -859,7 +871,9 @@ async function handleV1Request<MiddlewareResponse>(
     return { success: true, facilitatorResponse: settlementResponse };
   };
 
-  const verify = async (): Promise<VerifyResultV1<MiddlewareResponse>> => {
+  const authorize = async (): Promise<
+    AuthorizeResultV1<MiddlewareResponse>
+  > => {
     const v2Result = await verifyX402Payment(
       x402Handlers,
       v2Requirements,
@@ -873,7 +887,7 @@ async function handleV1Request<MiddlewareResponse>(
         "failed to verify payment: {invalidReason}",
         verifyResponse,
       );
-      const result: VerifyResultV1<MiddlewareResponse> = {
+      const result: AuthorizeResultV1<MiddlewareResponse> = {
         success: false,
         errorResponse: await sendPaymentRequired(),
       };
@@ -890,8 +904,8 @@ async function handleV1Request<MiddlewareResponse>(
     protocolVersion: 1,
     paymentRequirements: v1Requirements,
     paymentPayload,
-    settle,
-    verify,
+    capture,
+    authorize,
   });
 }
 
@@ -918,7 +932,7 @@ async function handleV2Request<MiddlewareResponse>(
     return await sendPaymentRequired();
   }
 
-  const settle = async (): Promise<SettleResultV2<MiddlewareResponse>> => {
+  const capture = async (): Promise<CaptureResultV2<MiddlewareResponse>> => {
     const settlementResponse = await settleX402Payment(
       x402Handlers,
       paymentRequirements,
@@ -937,7 +951,7 @@ async function handleV2Request<MiddlewareResponse>(
         "failed to settle v2 payment: {errorReason}",
         settlementResponse,
       );
-      const result: SettleResultV2<MiddlewareResponse> = {
+      const result: CaptureResultV2<MiddlewareResponse> = {
         success: false,
         errorResponse: await sendPaymentRequired(),
       };
@@ -950,7 +964,9 @@ async function handleV2Request<MiddlewareResponse>(
     return { success: true, facilitatorResponse: settlementResponse };
   };
 
-  const verify = async (): Promise<VerifyResultV2<MiddlewareResponse>> => {
+  const authorize = async (): Promise<
+    AuthorizeResultV2<MiddlewareResponse>
+  > => {
     const verifyResponse = await verifyX402Payment(
       x402Handlers,
       paymentRequirements,
@@ -962,7 +978,7 @@ async function handleV2Request<MiddlewareResponse>(
         "failed to verify v2 payment: {invalidReason}",
         verifyResponse,
       );
-      const result: VerifyResultV2<MiddlewareResponse> = {
+      const result: AuthorizeResultV2<MiddlewareResponse> = {
         success: false,
         errorResponse: await sendPaymentRequired(),
       };
@@ -979,8 +995,8 @@ async function handleV2Request<MiddlewareResponse>(
     protocolVersion: 2,
     paymentRequirements,
     paymentPayload,
-    settle,
-    verify,
+    capture,
+    authorize,
   });
 }
 
@@ -1028,7 +1044,7 @@ async function handleMPPRequest<MiddlewareResponse>(
     }
   }
 
-  const settle = async (): Promise<SettleResultMPP<MiddlewareResponse>> => {
+  const capture = async (): Promise<CaptureResultMPP<MiddlewareResponse>> => {
     try {
       const receipt = await settleMPPPayment(mppHandlers, credential);
 
@@ -1056,8 +1072,8 @@ async function handleMPPRequest<MiddlewareResponse>(
     (h) => h.method === method && h.handleVerify !== undefined,
   );
 
-  const verify = hasVerifyHandlers
-    ? async (): Promise<VerifyResultMPP<MiddlewareResponse>> => {
+  const authorize = hasVerifyHandlers
+    ? async (): Promise<AuthorizeResultMPP<MiddlewareResponse>> => {
         try {
           const receipt = await verifyMPPPayment(mppHandlers, credential);
           return { success: true, receipt };
@@ -1076,7 +1092,7 @@ async function handleMPPRequest<MiddlewareResponse>(
   return await args.body({
     protocolVersion: "mpp",
     credential,
-    settle,
-    verify,
+    capture,
+    authorize,
   });
 }

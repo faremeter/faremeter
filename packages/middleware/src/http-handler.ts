@@ -36,6 +36,7 @@ import { logger } from "./logger";
 
 type CreateHTTPFacilitatorHandlerOpts = {
   capabilities: HandlerCapabilities;
+  schemes: string[];
   fetch?: typeof fetch;
   cacheConfig?: AgedLRUCacheOpts & { disable?: boolean };
   /**
@@ -56,9 +57,9 @@ type CreateHTTPFacilitatorHandlerOpts = {
  * via HTTP.
  *
  * The glue layer constructs valid `x402PaymentRequirements` from
- * `ResourcePricing` using `capabilities.schemes`, then passes them to
- * `getRequirements`. This handler POSTs those to the facilitator's
- * `/accepts` endpoint for enrichment.
+ * `ResourcePricing` using the handler's declared `schemes`, then passes
+ * them to `getRequirements`. This handler POSTs those to the
+ * facilitator's `/accepts` endpoint for enrichment.
  *
  * Cache key stability: caching assumes that identical `accepts` arrays
  * produce identical facilitator responses. If the facilitator returns
@@ -75,6 +76,7 @@ export function createHTTPFacilitatorHandler(
 
   return {
     capabilities: opts.capabilities,
+    schemes: opts.schemes,
 
     async getRequirements(args) {
       const acceptsToSend = acceptsOverride ?? args.accepts;

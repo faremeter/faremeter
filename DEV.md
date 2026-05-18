@@ -74,6 +74,13 @@ Setup your environment using the [quickstart guide](./QUICKSTART.md). Then you c
 cd scripts && pnpm tsx solana-example/run-examples.ts
 ```
 
+The flex payment example is opt-in via `--flex`; it adds roughly 60 seconds
+of wall-clock wait per run for the on-chain refund window to elapse:
+
+```
+cd scripts && pnpm tsx solana-example/run-examples.ts --flex
+```
+
 #### EVM
 
 ```

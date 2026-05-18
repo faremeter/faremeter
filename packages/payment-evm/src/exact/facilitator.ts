@@ -376,7 +376,9 @@ export async function createFacilitatorHandler(
       ],
     });
 
-    // Build and send the transaction
+    // Broadcast the transaction. A failure here means nothing was
+    // submitted on-chain, so we can safely surface the error.
+    let txHash: `0x${string}`;
     try {
       const request = await walletClient.prepareTransactionRequest({
         to: useForwarder ? domain.verifyingContract : asset,
@@ -386,26 +388,70 @@ export async function createFacilitatorHandler(
 
       const serializedTransaction = await walletClient.signTransaction(request);
 
-      const txHash = await publicClient.sendRawTransaction({
+      txHash = await publicClient.sendRawTransaction({
         serializedTransaction,
       });
+    } catch (cause) {
+      throw new Error("Transaction execution failed", { cause });
+    }
 
-      const receipt = await publicClient.waitForTransactionReceipt({
+    // Wait for inclusion. Once the broadcast has succeeded, a failure in
+    // the receipt wait (RPC timeout, transient JSON-RPC error, etc.) does
+    // not mean the transaction failed -- the authorization may still have
+    // landed. Falling through to the on-chain authorizationState check
+    // below keeps the HTTP response coupled to the actual settlement
+    // outcome (OPS-519).
+    let receipt:
+      | Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>>
+      | undefined;
+    let waitCause: unknown;
+    try {
+      receipt = await publicClient.waitForTransactionReceipt({
         hash: txHash,
       });
+    } catch (cause) {
+      waitCause = cause;
+    }
 
-      if (receipt.status !== "success") {
-        return errorResponse("Transaction failed");
-      }
-
+    if (receipt?.status === "success") {
       return {
         success: true,
         transaction: txHash,
         network: payment.accepted.network,
       };
-    } catch (cause) {
-      throw new Error("Transaction execution failed", { cause });
     }
+
+    if (receipt !== undefined) {
+      return errorResponse("Transaction failed");
+    }
+
+    // Receipt unavailable. Consult the contract: a consumed EIP-3009
+    // nonce is an authoritative success signal because USDC marks the
+    // nonce used in the same call that performs the transfer, and any
+    // revert rolls both back atomically.
+    let onChainUsed: boolean;
+    try {
+      onChainUsed = await publicClient.readContract({
+        address: useForwarder ? domain.verifyingContract : asset,
+        abi: TRANSFER_WITH_AUTHORIZATION_ABI,
+        functionName: "authorizationState",
+        args: [authorization.from, authorization.nonce],
+      });
+    } catch (cause) {
+      throw new Error("Transaction execution failed", {
+        cause: waitCause ?? cause,
+      });
+    }
+
+    if (onChainUsed) {
+      return {
+        success: true,
+        transaction: txHash,
+        network: payment.accepted.network,
+      };
+    }
+
+    throw new Error("Transaction execution failed", { cause: waitCause });
   };
 
   return {

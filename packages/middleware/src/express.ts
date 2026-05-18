@@ -56,9 +56,9 @@ export async function createMiddleware(args: createMiddlewareArgs) {
         return res.end();
       },
       body: async (context) => {
-        const settleResult = await context.settle();
-        if (!settleResult.success) {
-          return settleResult.errorResponse;
+        const captureResult = await context.capture();
+        if (!captureResult.success) {
+          return captureResult.errorResponse;
         }
 
         next();

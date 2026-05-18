@@ -426,31 +426,31 @@ export class TestHarness {
 
     if (context.protocolVersion === "mpp") {
       let verifyReceipt: ResourceContextMPP["verifyReceipt"];
-      if (this.settleMode === "verify-then-settle" && context.verify) {
-        const verifyResult = await context.verify();
-        if (!verifyResult.success) return verifyResult.errorResponse;
-        verifyReceipt = verifyResult.receipt;
+      if (this.settleMode === "verify-then-settle" && context.authorize) {
+        const authorizeResult = await context.authorize();
+        if (!authorizeResult.success) return authorizeResult.errorResponse;
+        verifyReceipt = authorizeResult.receipt;
       }
-      const settleResult = await context.settle();
-      if (!settleResult.success) return settleResult.errorResponse;
+      const captureResult = await context.capture();
+      if (!captureResult.success) return captureResult.errorResponse;
 
       ctx = {
         protocolVersion: "mpp",
         resource: c.req.url,
         request: c.req.raw,
         credential: context.credential,
-        receipt: settleResult.receipt,
+        receipt: captureResult.receipt,
         verifyReceipt,
       };
     } else if (isV1Context(context)) {
       let verifyResponse: ResourceContextV1["verifyResponse"];
       if (this.settleMode === "verify-then-settle") {
-        const verifyResult = await context.verify();
-        if (!verifyResult.success) return verifyResult.errorResponse;
-        verifyResponse = verifyResult.facilitatorResponse;
+        const authorizeResult = await context.authorize();
+        if (!authorizeResult.success) return authorizeResult.errorResponse;
+        verifyResponse = authorizeResult.facilitatorResponse;
       }
-      const settleResult = await context.settle();
-      if (!settleResult.success) return settleResult.errorResponse;
+      const captureResult = await context.capture();
+      if (!captureResult.success) return captureResult.errorResponse;
 
       ctx = {
         protocolVersion: 1,
@@ -458,18 +458,18 @@ export class TestHarness {
         request: c.req.raw,
         paymentRequirements: context.paymentRequirements,
         paymentPayload: context.paymentPayload,
-        settleResponse: settleResult.facilitatorResponse,
+        settleResponse: captureResult.facilitatorResponse,
         verifyResponse,
       };
     } else {
       let verifyResponse: ResourceContextV2["verifyResponse"];
       if (this.settleMode === "verify-then-settle") {
-        const verifyResult = await context.verify();
-        if (!verifyResult.success) return verifyResult.errorResponse;
-        verifyResponse = verifyResult.facilitatorResponse;
+        const authorizeResult = await context.authorize();
+        if (!authorizeResult.success) return authorizeResult.errorResponse;
+        verifyResponse = authorizeResult.facilitatorResponse;
       }
-      const settleResult = await context.settle();
-      if (!settleResult.success) return settleResult.errorResponse;
+      const captureResult = await context.capture();
+      if (!captureResult.success) return captureResult.errorResponse;
 
       ctx = {
         protocolVersion: 2,
@@ -477,7 +477,7 @@ export class TestHarness {
         request: c.req.raw,
         paymentRequirements: context.paymentRequirements,
         paymentPayload: context.paymentPayload,
-        settleResponse: settleResult.facilitatorResponse,
+        settleResponse: captureResult.facilitatorResponse,
         verifyResponse,
       };
     }

@@ -89,7 +89,7 @@ app.get("/protected", async (c) => {
     setResponseHeader: (key, value) => c.header(key, value),
     sendJSONResponse,
     body: async (context) => {
-      const result = await context.settle();
+      const result = await context.capture();
       if (!result.success) {
         return result.errorResponse;
       }

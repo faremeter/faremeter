@@ -20,12 +20,8 @@ export type ResourcePricing = {
  *
  * Used by both x402 `FacilitatorHandler` (optional) and MPP
  * `MPPMethodHandler` (required).
- *
- * `schemes` is x402-specific -- MPP handlers do not use it.
  */
 export type HandlerCapabilities = {
-  /** x402-specific. MPP handlers leave this empty or omit it. */
-  schemes?: string[];
   networks: string[];
   assets: string[];
 };

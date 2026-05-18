@@ -95,7 +95,7 @@ export async function resolveX402Requirements(
       continue;
     }
 
-    const schemes = handler.capabilities.schemes ?? [];
+    const schemes = handler.schemes ?? [];
     if (schemes.length === 0) {
       opts?.logger?.warning(
         "skipping handler with no schemes for in-process resolution",

@@ -2,7 +2,7 @@
 
 import t from "tap";
 import type { FacilitatorHandler } from "./facilitator";
-import type { ResourcePricing } from "./pricing";
+import type { HandlerCapabilities, ResourcePricing } from "./pricing";
 import {
   narrowHandlers,
   resolveX402Requirements,
@@ -10,12 +10,16 @@ import {
   verifyX402Payment,
 } from "./x402-handlers";
 
-function mockHandler(
-  overrides?: Omit<Partial<FacilitatorHandler>, "capabilities"> & {
-    capabilities?: FacilitatorHandler["capabilities"] | null;
-  },
-): FacilitatorHandler {
-  const { capabilities = undefined, ...rest } = overrides ?? {};
+type MockHandlerOverrides = Omit<
+  Partial<FacilitatorHandler>,
+  "capabilities" | "schemes"
+> & {
+  capabilities?: HandlerCapabilities | null;
+  schemes?: string[];
+};
+
+function mockHandler(overrides?: MockHandlerOverrides): FacilitatorHandler {
+  const { capabilities = undefined, schemes, ...rest } = overrides ?? {};
   const base: FacilitatorHandler = {
     getRequirements: async ({ accepts }) => accepts,
     handleSettle: async () => ({
@@ -32,10 +36,10 @@ function mockHandler(
   }
 
   base.capabilities = capabilities ?? {
-    schemes: ["exact"],
     networks: ["solana:devnet"],
     assets: ["USDC"],
   };
+  base.schemes = schemes ?? ["exact"];
 
   return base;
 }
@@ -53,14 +57,12 @@ await t.test("narrowHandlers filters by network and asset", async (t) => {
   const matching = mockHandler();
   const noNetwork = mockHandler({
     capabilities: {
-      schemes: ["exact"],
       networks: ["eip155:1"],
       assets: ["USDC"],
     },
   });
   const noAsset = mockHandler({
     capabilities: {
-      schemes: ["exact"],
       networks: ["solana:devnet"],
       assets: ["SOL"],
     },
@@ -80,7 +82,6 @@ await t.test("narrowHandlers filters by network and asset", async (t) => {
 await t.test("narrowHandlers matches case-insensitively", async (t) => {
   const handler = mockHandler({
     capabilities: {
-      schemes: ["exact"],
       networks: ["Solana:Devnet"],
       assets: ["usdc"],
     },
@@ -136,10 +137,10 @@ await t.test(
   async (t) => {
     const handler = mockHandler({
       capabilities: {
-        schemes: ["exact", "flex"],
         networks: ["solana:devnet"],
         assets: ["USDC"],
       },
+      schemes: ["exact", "flex"],
       getRequirements: async ({ accepts }) => accepts,
     });
 
@@ -192,7 +193,6 @@ await t.test(
   async (t) => {
     const handler = mockHandler({
       capabilities: {
-        schemes: ["exact"],
         networks: ["eip155:1"],
         assets: ["USDC"],
       },

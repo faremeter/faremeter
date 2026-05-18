@@ -327,22 +327,33 @@ export function validateMiddlewareArgs(args: CommonMiddlewareArgs): void {
 export function deriveCapabilities(
   accepts: RelaxedRequirements[],
 ): HandlerCapabilities {
-  const schemes = new Set<string>();
   const networks = new Set<string>();
   const assets = new Set<string>();
 
   for (const a of accepts) {
-    if (a.scheme !== undefined && a.scheme !== "") schemes.add(a.scheme);
     if (a.network !== undefined && a.network !== "")
       networks.add(normalizeNetworkId(a.network));
     if (a.asset !== undefined && a.asset !== "") assets.add(a.asset);
   }
 
   return {
-    schemes: [...schemes],
     networks: [...networks],
     assets: [...assets],
   };
+}
+
+/**
+ * Derives the distinct set of x402 schemes from relaxed v1 requirements.
+ * Sibling of {@link deriveCapabilities}; kept separate because schemes are
+ * x402-specific and live on the handler rather than on
+ * {@link HandlerCapabilities}.
+ */
+export function deriveSchemes(accepts: RelaxedRequirements[]): string[] {
+  const schemes = new Set<string>();
+  for (const a of accepts) {
+    if (a.scheme !== undefined && a.scheme !== "") schemes.add(a.scheme);
+  }
+  return [...schemes];
 }
 
 /**
@@ -398,10 +409,10 @@ export function createRemoteX402Handlers(
   args: CreateRemoteX402HandlersArgs,
 ): FacilitatorHandler[] {
   const flatAccepts = args.accepts.flat();
-  const capabilities = deriveCapabilities(flatAccepts);
   return [
     createHTTPFacilitatorHandler(args.facilitatorURL, {
-      capabilities,
+      capabilities: deriveCapabilities(flatAccepts),
+      schemes: deriveSchemes(flatAccepts),
       acceptsOverride: flatAccepts.map(relaxedRequirementsToV2),
       cacheConfig: args.cacheConfig ?? {},
     }),
@@ -432,9 +443,9 @@ export function resolveConfig(args: CommonMiddlewareArgs): ResolvedConfig {
 
   if (args.facilitatorURL && args.accepts) {
     const flatAccepts = args.accepts.flat();
-    const capabilities = deriveCapabilities(flatAccepts);
     const httpOpts: Parameters<typeof createHTTPFacilitatorHandler>[1] = {
-      capabilities,
+      capabilities: deriveCapabilities(flatAccepts),
+      schemes: deriveSchemes(flatAccepts),
       acceptsOverride: flatAccepts.map(relaxedRequirementsToV2),
       cacheConfig: args.cacheConfig ?? {},
     };

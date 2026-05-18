@@ -8,6 +8,7 @@ import {
   type HandleMiddlewareRequestArgs,
   resolveSupportedVersions,
   deriveCapabilities,
+  deriveSchemes,
   acceptsToPricing,
   relaxedRequirementsToV2,
   deriveResourceInfo,
@@ -175,6 +176,7 @@ export class TestHarness {
 
     const flatAccepts = config.accepts.flat();
     const capabilities = deriveCapabilities(flatAccepts);
+    const schemes = deriveSchemes(flatAccepts);
     const pricing = acceptsToPricing(flatAccepts);
     const v2Accepts = flatAccepts.map(relaxedRequirementsToV2);
     const configResourceInfo: x402ResourceInfo | undefined =
@@ -190,6 +192,7 @@ export class TestHarness {
         {
           fetch: middlewareFetch,
           capabilities,
+          schemes,
           acceptsOverride: v2Accepts,
         },
       );

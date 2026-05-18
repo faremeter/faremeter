@@ -29,6 +29,7 @@ pnpm install @faremeter/middleware
 - [resolveSupportedVersions](#resolvesupportedversions)
 - [validateMiddlewareArgs](#validatemiddlewareargs)
 - [deriveCapabilities](#derivecapabilities)
+- [deriveSchemes](#deriveschemes)
 - [deriveResourceInfo](#deriveresourceinfo)
 - [acceptsToPricing](#acceptstopricing)
 - [createRemoteX402Handlers](#createremotex402handlers)
@@ -43,9 +44,9 @@ Creates a `FacilitatorHandler` that delegates to a remote facilitator
 via HTTP.
 
 The glue layer constructs valid `x402PaymentRequirements` from
-`ResourcePricing` using `capabilities.schemes`, then passes them to
-`getRequirements`. This handler POSTs those to the facilitator's
-`/accepts` endpoint for enrichment.
+`ResourcePricing` using the handler's declared `schemes`, then passes
+them to `getRequirements`. This handler POSTs those to the
+facilitator's `/accepts` endpoint for enrichment.
 
 Cache key stability: caching assumes that identical `accepts` arrays
 produce identical facilitator responses. If the facilitator returns
@@ -126,6 +127,17 @@ from the legacy `accepts` configuration.
 | Function             | Type                                                            |
 | -------------------- | --------------------------------------------------------------- |
 | `deriveCapabilities` | `(accepts: x402PaymentRequirementsV1[]) => HandlerCapabilities` |
+
+### deriveSchemes
+
+Derives the distinct set of x402 schemes from relaxed v1 requirements.
+Sibling of {@link deriveCapabilities}; kept separate because schemes are
+x402-specific and live on the handler rather than on
+{@link HandlerCapabilities }.
+
+| Function        | Type                                                 |
+| --------------- | ---------------------------------------------------- |
+| `deriveSchemes` | `(accepts: x402PaymentRequirementsV1[]) => string[]` |
 
 ### deriveResourceInfo
 

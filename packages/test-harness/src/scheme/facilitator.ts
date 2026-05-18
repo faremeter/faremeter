@@ -202,10 +202,10 @@ export function createTestFacilitatorHandler(
 
   return {
     capabilities: {
-      schemes: [TEST_SCHEME],
       networks: [TEST_NETWORK],
       assets: [TEST_ASSET],
     },
+    schemes: [TEST_SCHEME],
     getSupported,
     getRequirements,
     handleVerify,

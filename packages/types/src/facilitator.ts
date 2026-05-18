@@ -27,6 +27,14 @@ export interface GetRequirementsArgs {
 export interface FacilitatorHandler {
   /** Declares what this handler can settle. Required for in-process usage. */
   capabilities?: HandlerCapabilities;
+  /**
+   * x402 schemes this handler can settle. Required for in-process
+   * resolution; handlers without it are skipped by the middleware's
+   * dispatch path. Distinct from {@link getSupported}, which exists for
+   * the facilitator `/supported` HTTP route and may fan out to remote
+   * backends with per-kind timeouts.
+   */
+  schemes?: string[];
   /** Returns the payment schemes this handler supports */
   getSupported?: () => Promise<x402SupportedKind>[];
   /** Filters and enriches payment requirements this handler can process */

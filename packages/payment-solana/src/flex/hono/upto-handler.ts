@@ -3,6 +3,7 @@ import {
   handleMiddlewareRequest,
   resolveSupportedVersions,
   deriveCapabilities,
+  deriveSchemes,
   deriveResourceInfo,
   acceptsToPricing,
   relaxedRequirementsToV2,
@@ -45,8 +46,10 @@ export function createUptoHandler(opts: CreateUptoHandlerOpts): Handler {
     }),
   );
   const capabilities = deriveCapabilities(middlewareAccepts);
+  const schemes = deriveSchemes(middlewareAccepts);
   const handler = createHTTPFacilitatorHandler(opts.facilitatorURL, {
     capabilities,
+    schemes,
     acceptsOverride: middlewareAccepts.map(relaxedRequirementsToV2),
     ...(opts.fetch ? { fetch: opts.fetch } : {}),
   });

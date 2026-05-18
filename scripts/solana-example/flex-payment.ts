@@ -194,7 +194,7 @@ const fetchWithPayer = wrapFetch(fetch, { handlers: [handler] });
 const req = await fetchWithPayer("http://127.0.0.1:3000/protected");
 await logResponse(req);
 
-// --- Cleanup: refund pending settlements, revoke session key, close everything ---
+// --- Cleanup: refund the settlement, let the facilitator finalize it, then close everything ---
 
 // Wait for the facilitator to submit the authorization on-chain.
 for (let i = 0; i < 30; i++) {
@@ -205,6 +205,7 @@ for (let i = 0; i < 30; i++) {
 
 const pendings = await findPendingSettlementsByEscrow(rpc, escrowAddress);
 for (const pending of pendings) {
+  if (pending.account.amount === 0n) continue;
   const refundIx = getRefundInstruction({
     escrow: escrowAddress,
     facilitator,
@@ -212,6 +213,24 @@ for (const pending of pendings) {
     refundAmount: pending.account.amount,
   });
   await sendInstructions(facilitator, [refundIx]);
+}
+
+// Wait for the facilitator's auto-finalize loop to close each zero-amount
+// pending settlement; only finalize (or the deadman-gated voidPending) clears
+// pending_count on-chain. Calling finalize from here would race the facilitator
+// and leave it looping on a vanished PDA, so we just poll until the count
+// drops to zero.
+for (let i = 0; i < 120; i++) {
+  const escrow = await fetchEscrowAccount(rpc, escrowAddress);
+  if (escrow && escrow.pendingCount === 0n) break;
+  await new Promise((r) => setTimeout(r, 1000));
+}
+
+const finalEscrow = await fetchEscrowAccount(rpc, escrowAddress);
+if (!finalEscrow || finalEscrow.pendingCount !== 0n) {
+  throw new Error(
+    `pending settlements did not drain (pendingCount=${finalEscrow?.pendingCount ?? "missing"})`,
+  );
 }
 
 const revokeIx = getRevokeSessionKeyInstruction({

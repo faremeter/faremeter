@@ -23,6 +23,7 @@ import type {
   FaremeterSpec,
   PricingRule,
 } from "@faremeter/middleware-openapi";
+import type { FacilitatorHandler } from "@faremeter/types/facilitator";
 
 const OP = "POST /v1/chat/completions";
 const PAY_TO = "test-receiver";
@@ -1674,6 +1675,579 @@ await t.test("openapi gateway: errorMessage propagation", async (t) => {
         error?.message,
         /Amount policy rejected/,
         "error.message must propagate the facilitator errorReason",
+      );
+      t.end();
+    },
+  );
+
+  t.end();
+});
+
+await t.test("openapi gateway: capturesAt resolution", async (t) => {
+  // These tests pin the resolution table for `capturesAt`. They
+  // assert the *phase* in which each handler operation fires, not
+  // just the count -- a buggy implementation that silently
+  // demotes two-phase to one-phase still passes count assertions
+  // and overcharges the client.
+  //
+  // | Handler can authorize | Rule has authorize | capturesAt |
+  // |-----------------------|--------------------|------------|
+  // | no                    | any                | "request"  |
+  // | yes                   | no                 | "request"  |
+  // | yes                   | yes                | "response" |
+
+  function makeSettleOnlyX402Handler(opts: {
+    payTo: string;
+    onSettle?: Parameters<typeof createTestFacilitatorHandler>[0]["onSettle"];
+    onVerify?: Parameters<typeof createTestFacilitatorHandler>[0]["onVerify"];
+  }) {
+    const constructorOpts: Parameters<typeof createTestFacilitatorHandler>[0] =
+      {
+        payTo: opts.payTo,
+        amountPolicy: holdAndSettle,
+      };
+    if (opts.onSettle) constructorOpts.onSettle = opts.onSettle;
+    if (opts.onVerify) constructorOpts.onVerify = opts.onVerify;
+    const handler = createTestFacilitatorHandler(constructorOpts);
+    // Strip handleVerify to simulate a handler that cannot authorize
+    // (e.g. a facilitator that only supports immediate settlement).
+    delete (handler as { handleVerify?: unknown }).handleVerify;
+    return handler;
+  }
+
+  await t.test(
+    "settle-only x402 handler on two-phase rule captures once at /request",
+    async (t) => {
+      // Resolution: canAuthorize=false, hasAuthorize=true -> "request".
+      // Body must settle once at /request for the authorize amount and
+      // /response must be a no-op (no double-charge).
+      const verifyCalls: { amount: string }[] = [];
+      const settleCalls: { phase: "request" | "response"; amount: string }[] =
+        [];
+      let phase: "request" | "response" = "request";
+
+      const spec = makeSpec("100", "100");
+      const handler = createGatewayHandler({
+        spec,
+        baseURL: BASE_URL,
+        supportedVersions: { x402v1: false, x402v2: true },
+        x402Handlers: [
+          makeSettleOnlyX402Handler({
+            payTo: PAY_TO,
+            onVerify: (r) => verifyCalls.push({ amount: r.amount }),
+            onSettle: (r) => settleCalls.push({ phase, amount: r.amount }),
+          }),
+        ],
+      });
+
+      const requestResult = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { "PAYMENT-SIGNATURE": makeV2PaymentHeader("100") },
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      t.equal(requestResult.status, 200, "/request must succeed");
+      t.equal(
+        verifyCalls.length,
+        0,
+        "settle-only handler cannot authorize at /request",
+      );
+      t.equal(settleCalls.length, 1, "exactly one capture at /request");
+      t.equal(
+        settleCalls[0]?.phase,
+        "request",
+        "capture must fire at /request, not /response",
+      );
+      t.equal(
+        settleCalls[0]?.amount,
+        "100",
+        "capture amount at /request is the authorize amount",
+      );
+
+      phase = "response";
+      const responseResult = await handler.handleResponse(
+        makeResponsePayload(100, "100"),
+      );
+      t.equal(responseResult.status, 200, "/response must succeed");
+      t.equal(
+        settleCalls.length,
+        1,
+        "/response must not fire a second capture (no double-charge)",
+      );
+      t.equal(verifyCalls.length, 0, "/response must not authorize");
+      t.end();
+    },
+  );
+
+  await t.test(
+    "verify-capable x402 handler on two-phase rule authorizes at /request and captures at /response",
+    async (t) => {
+      // Resolution: canAuthorize=true, hasAuthorize=true -> "response".
+      // Body must authorize at /request and capture at /response with
+      // the captured (not authorize) amount.
+      const verifyCalls: { phase: "request" | "response"; amount: string }[] =
+        [];
+      const settleCalls: { phase: "request" | "response"; amount: string }[] =
+        [];
+      let phase: "request" | "response" = "request";
+
+      const spec = makeSpec("100", "$.response.body.usage.total_tokens");
+      const handler = createGatewayHandler({
+        spec,
+        baseURL: BASE_URL,
+        supportedVersions: { x402v1: false, x402v2: true },
+        x402Handlers: [
+          createTestFacilitatorHandler({
+            payTo: PAY_TO,
+            amountPolicy: holdAndSettle,
+            onVerify: (r) => verifyCalls.push({ phase, amount: r.amount }),
+            onSettle: (r) => settleCalls.push({ phase, amount: r.amount }),
+          }),
+        ],
+      });
+
+      const requestResult = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { "PAYMENT-SIGNATURE": makeV2PaymentHeader("100") },
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      t.equal(requestResult.status, 200, "/request must succeed");
+      t.equal(verifyCalls.length, 1, "exactly one authorize at /request");
+      t.equal(
+        verifyCalls[0]?.phase,
+        "request",
+        "authorize must fire at /request",
+      );
+      t.equal(
+        settleCalls.length,
+        0,
+        "no capture at /request for two-phase rule",
+      );
+
+      phase = "response";
+      const responseResult = await handler.handleResponse(
+        makeResponsePayload(75, "100"),
+      );
+      t.equal(responseResult.status, 200, "/response must succeed");
+      t.equal(settleCalls.length, 1, "exactly one capture at /response");
+      t.equal(
+        settleCalls[0]?.phase,
+        "response",
+        "capture must fire at /response, not /request",
+      );
+      t.equal(
+        settleCalls[0]?.amount,
+        "75",
+        "capture amount at /response is the captured amount, not the authorize amount",
+      );
+      t.equal(
+        verifyCalls.length,
+        1,
+        "/response must not fire a second authorize",
+      );
+      t.end();
+    },
+  );
+
+  await t.test(
+    "settle-only MPP handler on two-phase rule captures once at /request",
+    async (t) => {
+      // Resolution: canAuthorize=false, hasAuthorize=true -> "request".
+      // Mirror of the x402 settle-only case for MPP.
+      const verifyCalls: unknown[] = [];
+      const settleCalls: { phase: "request" | "response" }[] = [];
+      let phase: "request" | "response" = "request";
+
+      const spec = makeSpec("100", "$.response.body.usage.total_tokens");
+      const mppHandler = createTestMPPHandler({
+        supportsVerify: false,
+        onVerify: (credential) => verifyCalls.push(credential),
+        onSettle: () => settleCalls.push({ phase }),
+      });
+
+      const handler = createGatewayHandler({
+        spec,
+        baseURL: BASE_URL,
+        mppMethodHandlers: [mppHandler],
+      });
+
+      // Build a credential from the 402 challenge.
+      const challengeResult = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: {},
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      t.equal(challengeResult.status, 402);
+      const wwwAuth = challengeResult.headers?.["WWW-Authenticate"];
+      if (!wwwAuth) throw new Error("no WWW-Authenticate header");
+      const challenges = parseWWWAuthenticate(wwwAuth);
+      const challenge = challenges[0];
+      if (!challenge) throw new Error("no challenge parsed");
+      const clientHandler = createTestMPPPaymentHandler();
+      const execer = await clientHandler(challenge);
+      if (!execer) throw new Error("client handler did not match challenge");
+      const credential = await execer.exec();
+      const authHeader = `Payment ${serializeCredential(credential)}`;
+
+      const requestResult = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { Authorization: authHeader },
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      t.equal(requestResult.status, 200, "/request must succeed");
+      t.equal(
+        verifyCalls.length,
+        0,
+        "settle-only MPP handler cannot authorize",
+      );
+      t.equal(settleCalls.length, 1, "exactly one capture at /request");
+      t.equal(
+        settleCalls[0]?.phase,
+        "request",
+        "capture must fire at /request",
+      );
+
+      phase = "response";
+      const responseResult = await handler.handleResponse({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { Authorization: authHeader },
+        query: {},
+        body: { model: "gpt-4o" },
+        response: {
+          status: 200,
+          headers: {},
+          body: { usage: { total_tokens: 75 } },
+        },
+      });
+      t.equal(responseResult.status, 200, "/response must succeed");
+      t.equal(
+        settleCalls.length,
+        1,
+        "/response must not fire a second capture (no double-charge)",
+      );
+      t.equal(verifyCalls.length, 0, "/response must not authorize");
+      t.end();
+    },
+  );
+
+  await t.test(
+    "verify-capable MPP handler on two-phase rule authorizes at /request and captures at /response",
+    async (t) => {
+      // Resolution: canAuthorize=true, hasAuthorize=true -> "response".
+      // Mirror of the verify-capable x402 case for MPP. This duplicates
+      // some of the existing "MPP verify-then-settle" coverage but
+      // exercises the resolution table explicitly with both phases
+      // tagged at the assertion site.
+      const verifyCalls: { phase: "request" | "response" }[] = [];
+      const settleCalls: { phase: "request" | "response" }[] = [];
+      let phase: "request" | "response" = "request";
+
+      const spec = makeSpec("100", "$.response.body.usage.total_tokens");
+      const mppHandler = createTestMPPHandler({
+        supportsVerify: true,
+        onVerify: () => verifyCalls.push({ phase }),
+        onSettle: () => settleCalls.push({ phase }),
+      });
+
+      const handler = createGatewayHandler({
+        spec,
+        baseURL: BASE_URL,
+        mppMethodHandlers: [mppHandler],
+      });
+
+      const challengeResult = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: {},
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      const wwwAuth = challengeResult.headers?.["WWW-Authenticate"];
+      if (!wwwAuth) throw new Error("no WWW-Authenticate header");
+      const challenges = parseWWWAuthenticate(wwwAuth);
+      const challenge = challenges[0];
+      if (!challenge) throw new Error("no challenge parsed");
+      const clientHandler = createTestMPPPaymentHandler();
+      const execer = await clientHandler(challenge);
+      if (!execer) throw new Error("client handler did not match challenge");
+      const credential = await execer.exec();
+      const authHeader = `Payment ${serializeCredential(credential)}`;
+
+      const requestResult = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { Authorization: authHeader },
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      t.equal(requestResult.status, 200, "/request must succeed");
+      t.equal(verifyCalls.length, 1, "exactly one authorize at /request");
+      t.equal(
+        verifyCalls[0]?.phase,
+        "request",
+        "authorize must fire at /request",
+      );
+      t.equal(settleCalls.length, 0, "no capture at /request");
+
+      phase = "response";
+      const responseResult = await handler.handleResponse({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { Authorization: authHeader },
+        query: {},
+        body: { model: "gpt-4o" },
+        response: {
+          status: 200,
+          headers: {},
+          body: { usage: { total_tokens: 75 } },
+        },
+      });
+      t.equal(responseResult.status, 200, "/response must succeed");
+      t.equal(settleCalls.length, 1, "exactly one capture at /response");
+      t.equal(
+        settleCalls[0]?.phase,
+        "response",
+        "capture must fire at /response",
+      );
+      t.equal(
+        verifyCalls.length,
+        1,
+        "/response must not fire a second authorize",
+      );
+      t.end();
+    },
+  );
+
+  await t.test(
+    "one-phase rule captures at /request for both verify-capable and settle-only handlers",
+    async (t) => {
+      // Resolution: hasAuthorize=false. Both canAuthorize=true and
+      // canAuthorize=false produce capturesAt="request". The body
+      // must capture once at /request regardless of handler capability;
+      // /response has nothing to do for a one-phase rule.
+      const verifyCallsCapable: { phase: "request" | "response" }[] = [];
+      const settleCallsCapable: { phase: "request" | "response" }[] = [];
+      const verifyCallsSettleOnly: { phase: "request" | "response" }[] = [];
+      const settleCallsSettleOnly: { phase: "request" | "response" }[] = [];
+      let phase: "request" | "response" = "request";
+
+      // One-phase: no authorize expression on the rule.
+      const spec: FaremeterSpec = {
+        assets: TEST_SPEC_ASSETS,
+        operations: {
+          [OP]: {
+            method: "POST",
+            path: "/v1/chat/completions",
+            transport: "json",
+            rates: { test: 1n },
+            rules: [{ match: "$", capture: "100" }],
+          },
+        },
+      };
+
+      // Sub-case A: verify-capable handler.
+      const capableHandler = createGatewayHandler({
+        spec,
+        baseURL: BASE_URL,
+        supportedVersions: { x402v1: false, x402v2: true },
+        x402Handlers: [
+          createTestFacilitatorHandler({
+            payTo: PAY_TO,
+            onVerify: () => verifyCallsCapable.push({ phase }),
+            onSettle: () => settleCallsCapable.push({ phase }),
+          }),
+        ],
+      });
+
+      const capableRequest = await capableHandler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { "PAYMENT-SIGNATURE": makeV2PaymentHeader("100") },
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      t.equal(capableRequest.status, 200, "capable: /request must succeed");
+      t.equal(
+        verifyCallsCapable.length,
+        0,
+        "capable: no authorize on one-phase rule",
+      );
+      t.equal(
+        settleCallsCapable.length,
+        1,
+        "capable: exactly one capture at /request",
+      );
+      t.equal(
+        settleCallsCapable[0]?.phase,
+        "request",
+        "capable: capture fires at /request",
+      );
+
+      phase = "response";
+      // One-phase: /response is a structural no-op (the gateway
+      // does not call handleMiddlewareRequest because hasAuthorize
+      // is false). We don't exercise it -- the absence is the point.
+
+      // Sub-case B: settle-only handler.
+      phase = "request";
+      const settleOnlyHandler = createGatewayHandler({
+        spec,
+        baseURL: BASE_URL,
+        supportedVersions: { x402v1: false, x402v2: true },
+        x402Handlers: [
+          makeSettleOnlyX402Handler({
+            payTo: PAY_TO,
+            onVerify: () => verifyCallsSettleOnly.push({ phase }),
+            onSettle: () => settleCallsSettleOnly.push({ phase }),
+          }),
+        ],
+      });
+
+      const settleOnlyRequest = await settleOnlyHandler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { "PAYMENT-SIGNATURE": makeV2PaymentHeader("100") },
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      t.equal(
+        settleOnlyRequest.status,
+        200,
+        "settle-only: /request must succeed",
+      );
+      t.equal(verifyCallsSettleOnly.length, 0, "settle-only: cannot authorize");
+      t.equal(
+        settleCallsSettleOnly.length,
+        1,
+        "settle-only: exactly one capture at /request",
+      );
+      t.equal(
+        settleCallsSettleOnly[0]?.phase,
+        "request",
+        "settle-only: capture fires at /request",
+      );
+
+      t.end();
+    },
+  );
+
+  await t.test(
+    "canAuthorize ignores verify-capable handlers that do not support the matched scheme",
+    async (t) => {
+      // Regression: narrowHandlers filters by network+asset only, so
+      // without scheme narrowing, a verify-capable handler for scheme
+      // B leaks into the canAuthorize calculation for an incoming
+      // scheme-A payment. Resolved capturesAt would then be "response"
+      // for an effectively settle-only handler set, the body would
+      // call authorize(), and verifyX402Payment would throw "no
+      // handler accepted the verification".
+      const verifyCalls: { amount: string }[] = [];
+      const settleCalls: { phase: "request" | "response"; amount: string }[] =
+        [];
+      let phase: "request" | "response" = "request";
+
+      // H1: scheme "test", settle-only. Built by stripping handleVerify
+      // from the standard test facilitator -- the helper to do this
+      // cleanly via an opt is being introduced in a follow-up commit.
+      const settleOnlyTestSchemeHandler = createTestFacilitatorHandler({
+        payTo: PAY_TO,
+        amountPolicy: holdAndSettle,
+        onSettle: (r) => settleCalls.push({ phase, amount: r.amount }),
+      });
+      delete (settleOnlyTestSchemeHandler as { handleVerify?: unknown })
+        .handleVerify;
+
+      // H2: scheme "other-scheme", verify-capable. Same network/asset
+      // as H1 so narrowHandlers includes it in the candidate pool;
+      // canAuthorize must NOT pick H2 for a TEST_SCHEME payment.
+      const verifyCapableOtherSchemeHandler: FacilitatorHandler = {
+        capabilities: { networks: [TEST_NETWORK], assets: [TEST_ASSET] },
+        schemes: ["other-scheme"],
+        getRequirements: async ({ accepts }) => accepts,
+        handleVerify: async () => {
+          verifyCalls.push({ amount: "leak" });
+          return { isValid: true, payer: "should-not-be-called" };
+        },
+        handleSettle: async (req) => ({
+          success: true,
+          transaction: "should-not-be-called",
+          network: req.network,
+          payer: "should-not-be-called",
+        }),
+      };
+
+      const spec = makeSpec("100", "$.response.body.usage.total_tokens");
+      const handler = createGatewayHandler({
+        spec,
+        baseURL: BASE_URL,
+        supportedVersions: { x402v1: false, x402v2: true },
+        x402Handlers: [
+          settleOnlyTestSchemeHandler,
+          verifyCapableOtherSchemeHandler,
+        ],
+      });
+
+      const requestResult = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { "PAYMENT-SIGNATURE": makeV2PaymentHeader("100") },
+        query: {},
+        body: { model: "gpt-4o" },
+      });
+      t.equal(
+        requestResult.status,
+        200,
+        "/request must succeed (must not throw 'no handler accepted the verification')",
+      );
+      t.equal(
+        verifyCalls.length,
+        0,
+        "verify must not be called on the wrong-scheme handler",
+      );
+      t.equal(
+        settleCalls.length,
+        1,
+        "settle-only handler must capture once at /request",
+      );
+      t.equal(
+        settleCalls[0]?.phase,
+        "request",
+        "capturesAt must resolve to 'request' when the only scheme-matching handler is settle-only",
+      );
+      t.equal(
+        settleCalls[0]?.amount,
+        "100",
+        "captures the authorize amount because capturesAt is 'request'",
+      );
+
+      phase = "response";
+      const responseResult = await handler.handleResponse(
+        makeResponsePayload(75, "100"),
+      );
+      t.equal(responseResult.status, 200, "/response must succeed");
+      t.equal(
+        settleCalls.length,
+        1,
+        "/response must not fire a second capture",
       );
       t.end();
     },

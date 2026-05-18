@@ -34,6 +34,7 @@ pnpm install @faremeter/middleware
 - [acceptsToPricing](#acceptstopricing)
 - [createRemoteX402Handlers](#createremotex402handlers)
 - [resolveConfig](#resolveconfig)
+- [resolveCapturesAt](#resolvecapturesat)
 - [handleMiddlewareRequest](#handlemiddlewarerequest)
 - [createMiddleware](#createmiddleware)
 - [createMiddleware](#createmiddleware)
@@ -182,6 +183,33 @@ creates an HTTP handler wrapper and converts accepts to pricing.
 | --------------- | ------------------------------------------------ |
 | `resolveConfig` | `(args: CommonMiddlewareArgs) => ResolvedConfig` |
 
+### resolveCapturesAt
+
+Resolves whether the body callback should capture at `/request`
+(one-phase) or defer to `/response` (two-phase).
+
+| `canAuthorize` | `hasAuthorize` | `capturesAt` |
+| -------------- | -------------- | ------------ |
+| false          | any            | `request`    |
+| true           | false          | `request`    |
+| true           | true           | `response`   |
+
+`canAuthorize` is "any handler that actually accepts THIS scheme /
+method declares verification". For x402 the candidate set is
+`narrowHandlers(handlers, requirements)` further filtered by
+`h.schemes?.includes(requirements.scheme)` — the scheme filter is
+load-bearing because `narrowHandlers` only checks network and
+asset, so without it a multi-scheme handler set with one verify-
+capable handler would leak `canAuthorize = true` to schemes
+served only by settle-only handlers. For MPP the candidate set is
+the handlers filtered by exact `method` match. The middleware
+computes the predicate per request before invoking `body`, so the
+body callback only has to read `context.capturesAt`.
+
+| Function            | Type                                                           |
+| ------------------- | -------------------------------------------------------------- |
+| `resolveCapturesAt` | `(canAuthorize: boolean, hasAuthorize: boolean) => CapturesAt` |
+
 ### handleMiddlewareRequest
 
 Core middleware request handler that processes x402 and MPP payment flows.
@@ -269,6 +297,7 @@ capacity (least recently used entries are removed first).
 - [AuthorizeResultV1](#authorizeresultv1)
 - [AuthorizeResultV2](#authorizeresultv2)
 - [AuthorizeResult](#authorizeresult)
+- [CapturesAt](#capturesat)
 - [MiddlewareBodyContextV1](#middlewarebodycontextv1)
 - [MiddlewareBodyContextV2](#middlewarebodycontextv2)
 - [CaptureResultMPP](#captureresultmpp)
@@ -363,6 +392,26 @@ Supports two mutually exclusive modes: in-process handlers or remote facilitator
 | ----------------- | ---- | ------------------------------------------------------------------------------- |
 | `AuthorizeResult` | `    | AuthorizeResultV1<MiddlewareResponse> or AuthorizeResultV2<MiddlewareResponse>` |
 
+### CapturesAt
+
+When the body callback should drive capture.
+
+`"request"` — one-phase: body calls `capture()` immediately and the
+payment clears before the resource is produced.
+
+`"response"` — two-phase: body calls `authorize()` now and defers
+capture to a later phase (the OpenAPI gateway captures at
+`/response` once the final amount is known).
+
+The middleware resolves this per-request via {@link resolveCapturesAt}
+from the matched handler's authorize capability and the rule's
+`hasAuthorize` flag, so the body callback never has to inspect the
+context shape to decide which path to take.
+
+| Type         | Type                    |
+| ------------ | ----------------------- |
+| `CapturesAt` | `request" or "response` |
+
 ### MiddlewareBodyContextV1
 
 Context provided to the middleware body handler for v1 protocol requests.
@@ -370,9 +419,9 @@ Contains payment information and the industry-standard `authorize` /
 `capture` operations. Under the hood these dispatch to the matched
 x402 facilitator handler's `handleVerify` / `handleSettle`.
 
-| Type                      | Type                                                                                                                                                                                                                                          |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MiddlewareBodyContextV1` | `{ protocolVersion: 1; paymentRequirements: x402PaymentRequirementsV1; paymentPayload: x402PaymentPayloadV1; capture: () => Promise<CaptureResultV1<MiddlewareResponse>>; authorize: () => Promise<AuthorizeResultV1<MiddlewareResponse>>; }` |
+| Type                      | Type                                                                                                                                                                                                                                                                  |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MiddlewareBodyContextV1` | `{ protocolVersion: 1; capturesAt: CapturesAt; paymentRequirements: x402PaymentRequirementsV1; paymentPayload: x402PaymentPayloadV1; capture: () => Promise<CaptureResultV1<MiddlewareResponse>>; authorize: () => Promise<AuthorizeResultV1<MiddlewareResponse>>; }` |
 
 ### MiddlewareBodyContextV2
 
@@ -381,9 +430,9 @@ Contains payment information and the industry-standard `authorize` /
 `capture` operations. Under the hood these dispatch to the matched
 x402 facilitator handler's `handleVerify` / `handleSettle`.
 
-| Type                      | Type                                                                                                                                                                                                                                      |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MiddlewareBodyContextV2` | `{ protocolVersion: 2; paymentRequirements: x402PaymentRequirements; paymentPayload: x402PaymentPayload; capture: () => Promise<CaptureResultV2<MiddlewareResponse>>; authorize: () => Promise<AuthorizeResultV2<MiddlewareResponse>>; }` |
+| Type                      | Type                                                                                                                                                                                                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MiddlewareBodyContextV2` | `{ protocolVersion: 2; capturesAt: CapturesAt; paymentRequirements: x402PaymentRequirements; paymentPayload: x402PaymentPayload; capture: () => Promise<CaptureResultV2<MiddlewareResponse>>; authorize: () => Promise<AuthorizeResultV2<MiddlewareResponse>>; }` |
 
 ### CaptureResultMPP
 
@@ -402,14 +451,13 @@ x402 facilitator handler's `handleVerify` / `handleSettle`.
 Context provided to the middleware body handler for MPP protocol requests.
 
 `authorize` is optional because not every MPP method handler implements
-`handleVerify`. Consumers that need a guaranteed authorize path should
-gate on `authorize !== undefined` or rely on a higher-level dispatcher
-(e.g. the OpenAPI gateway's `capturesAt` resolution) that only chooses
-the authorize path when at least one matching handler can verify.
+`handleVerify`. When `capturesAt === "response"` the middleware
+guarantees `authorize` is defined (the resolver only picks
+`"response"` when at least one matching handler can verify).
 
-| Type                       | Type                                                                                                                                                                                                        |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MiddlewareBodyContextMPP` | `{ protocolVersion: "mpp"; credential: mppCredential; capture: () => Promise<CaptureResultMPP<MiddlewareResponse>>; authorize?: or (() => Promise<AuthorizeResultMPP<MiddlewareResponse>>) or undefined; }` |
+| Type                       | Type                                                                                                                                                                                                                                |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MiddlewareBodyContextMPP` | `{ protocolVersion: "mpp"; capturesAt: CapturesAt; credential: mppCredential; capture: () => Promise<CaptureResultMPP<MiddlewareResponse>>; authorize?: or (() => Promise<AuthorizeResultMPP<MiddlewareResponse>>) or undefined; }` |
 
 ### MiddlewareBodyContext
 
@@ -426,9 +474,9 @@ Arguments for the core middleware request handler.
 Framework-specific middleware implementations adapt their request/response
 objects to this interface.
 
-| Type                          | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `HandleMiddlewareRequestArgs` | `{ /** x402 handlers for in-process settlement. */ x402Handlers?: FacilitatorHandler[]; /** MPP method handlers for in-process settlement. */ mppMethodHandlers?: MPPMethodHandler[]; /** Protocol-agnostic pricing entries for the current request. */ pricing: ResourcePricing[]; /** The resource URL being accessed. */ resource: string; /** Resolved supported versions configuration. */ supportedVersions: Required<SupportedVersionsConfig>; /** Function to retrieve a request header value. */ getHeader: (key: string) => string or undefined; /** Function to send a JSON response with optional headers. */ sendJSONResponse: ( status: PossibleStatusCodes, body?: PossibleJSONResponse, headers?: Record<string, string>, ) => MiddlewareResponse; /** Handler function called when a valid payment is received. */ body: ( context: MiddlewareBodyContext<MiddlewareResponse>, ) => Promise<MiddlewareResponse or undefined>; /** Optional function to set a response header. */ setResponseHeader?: (key: string, value: string) => void; /** Optional pre-built resource info for the 402 response. */ resourceInfo?: x402ResourceInfo; /** Optional accessor for the request body (for RFC 9530 digest). */ getBody?: () => Promise<ArrayBuffer or null>; }` |
+| Type                          | Type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HandleMiddlewareRequestArgs` | `{ /** x402 handlers for in-process settlement. */ x402Handlers?: FacilitatorHandler[]; /** MPP method handlers for in-process settlement. */ mppMethodHandlers?: MPPMethodHandler[]; /** Protocol-agnostic pricing entries for the current request. */ pricing: ResourcePricing[]; /** The resource URL being accessed. */ resource: string; /** Resolved supported versions configuration. */ supportedVersions: Required<SupportedVersionsConfig>; /** Function to retrieve a request header value. */ getHeader: (key: string) => string or undefined; /** Function to send a JSON response with optional headers. */ sendJSONResponse: ( status: PossibleStatusCodes, body?: PossibleJSONResponse, headers?: Record<string, string>, ) => MiddlewareResponse; /** Handler function called when a valid payment is received. */ body: ( context: MiddlewareBodyContext<MiddlewareResponse>, ) => Promise<MiddlewareResponse or undefined>; /** Optional function to set a response header. */ setResponseHeader?: (key: string, value: string) => void; /** Optional pre-built resource info for the 402 response. */ resourceInfo?: x402ResourceInfo; /** Optional accessor for the request body (for RFC 9530 digest). */ getBody?: () => Promise<ArrayBuffer or null>; /** * Whether the matched pricing rule has an explicit `authorize`* expression (i.e. is two-phase). Drives the per-handler`capturesAt`* decision resolved before each`body` invocation. Defaults to false; * non-OpenAPI callers that have no rule shape leave this unset and * the middleware treats every request as one-phase. */ hasAuthorize?: boolean; }` |
 
 <!-- TSDOC_END -->
 

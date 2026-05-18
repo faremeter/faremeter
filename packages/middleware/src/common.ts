@@ -32,6 +32,7 @@ import type {
   HandlerCapabilities,
 } from "@faremeter/types/pricing";
 import {
+  narrowHandlers,
   resolveX402Requirements,
   settleX402Payment,
   verifyX402Payment,
@@ -501,6 +502,23 @@ export type AuthorizeResult<MiddlewareResponse> =
   | AuthorizeResultV2<MiddlewareResponse>;
 
 /**
+ * When the body callback should drive capture.
+ *
+ * `"request"` — one-phase: body calls `capture()` immediately and the
+ * payment clears before the resource is produced.
+ *
+ * `"response"` — two-phase: body calls `authorize()` now and defers
+ * capture to a later phase (the OpenAPI gateway captures at
+ * `/response` once the final amount is known).
+ *
+ * The middleware resolves this per-request via {@link resolveCapturesAt}
+ * from the matched handler's authorize capability and the rule's
+ * `hasAuthorize` flag, so the body callback never has to inspect the
+ * context shape to decide which path to take.
+ */
+export type CapturesAt = "request" | "response";
+
+/**
  * Context provided to the middleware body handler for v1 protocol requests.
  * Contains payment information and the industry-standard `authorize` /
  * `capture` operations. Under the hood these dispatch to the matched
@@ -508,6 +526,7 @@ export type AuthorizeResult<MiddlewareResponse> =
  */
 export type MiddlewareBodyContextV1<MiddlewareResponse> = {
   protocolVersion: 1;
+  capturesAt: CapturesAt;
   paymentRequirements: x402PaymentRequirementsV1;
   paymentPayload: x402PaymentPayloadV1;
   capture: () => Promise<CaptureResultV1<MiddlewareResponse>>;
@@ -522,6 +541,7 @@ export type MiddlewareBodyContextV1<MiddlewareResponse> = {
  */
 export type MiddlewareBodyContextV2<MiddlewareResponse> = {
   protocolVersion: 2;
+  capturesAt: CapturesAt;
   paymentRequirements: x402PaymentRequirements;
   paymentPayload: x402PaymentPayload;
   capture: () => Promise<CaptureResultV2<MiddlewareResponse>>;
@@ -548,13 +568,13 @@ export type AuthorizeResultMPP<MiddlewareResponse> =
  * Context provided to the middleware body handler for MPP protocol requests.
  *
  * `authorize` is optional because not every MPP method handler implements
- * `handleVerify`. Consumers that need a guaranteed authorize path should
- * gate on `authorize !== undefined` or rely on a higher-level dispatcher
- * (e.g. the OpenAPI gateway's `capturesAt` resolution) that only chooses
- * the authorize path when at least one matching handler can verify.
+ * `handleVerify`. When `capturesAt === "response"` the middleware
+ * guarantees `authorize` is defined (the resolver only picks
+ * `"response"` when at least one matching handler can verify).
  */
 export type MiddlewareBodyContextMPP<MiddlewareResponse> = {
   protocolVersion: "mpp";
+  capturesAt: CapturesAt;
   credential: mppCredential;
   capture: () => Promise<CaptureResultMPP<MiddlewareResponse>>;
   authorize?:
@@ -605,7 +625,46 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = {
   resourceInfo?: x402ResourceInfo;
   /** Optional accessor for the request body (for RFC 9530 digest). */
   getBody?: () => Promise<ArrayBuffer | null>;
+  /**
+   * Whether the matched pricing rule has an explicit `authorize`
+   * expression (i.e. is two-phase). Drives the per-handler `capturesAt`
+   * decision resolved before each `body` invocation. Defaults to false;
+   * non-OpenAPI callers that have no rule shape leave this unset and
+   * the middleware treats every request as one-phase.
+   */
+  hasAuthorize?: boolean;
 };
+
+/**
+ * Resolves whether the body callback should capture at `/request`
+ * (one-phase) or defer to `/response` (two-phase).
+ *
+ * | `canAuthorize` | `hasAuthorize` | `capturesAt` |
+ * |----------------|----------------|--------------|
+ * | false          | any            | `request`    |
+ * | true           | false          | `request`    |
+ * | true           | true           | `response`   |
+ *
+ * `canAuthorize` is "any handler that actually accepts THIS scheme /
+ * method declares verification". For x402 the candidate set is
+ * `narrowHandlers(handlers, requirements)` further filtered by
+ * `h.schemes?.includes(requirements.scheme)` — the scheme filter is
+ * load-bearing because `narrowHandlers` only checks network and
+ * asset, so without it a multi-scheme handler set with one verify-
+ * capable handler would leak `canAuthorize = true` to schemes
+ * served only by settle-only handlers. For MPP the candidate set is
+ * the handlers filtered by exact `method` match. The middleware
+ * computes the predicate per request before invoking `body`, so the
+ * body callback only has to read `context.capturesAt`.
+ */
+export function resolveCapturesAt(
+  canAuthorize: boolean,
+  hasAuthorize: boolean,
+): CapturesAt {
+  if (!canAuthorize) return "request";
+  if (!hasAuthorize) return "request";
+  return "response";
+}
 
 /**
  * Core middleware request handler that processes x402 and MPP payment flows.
@@ -900,8 +959,25 @@ async function handleV1Request<MiddlewareResponse>(
     return { success: true, facilitatorResponse: verifyResponse };
   };
 
+  // narrowHandlers filters by network+asset only; narrow further by
+  // scheme so canAuthorize reflects "can a handler that actually
+  // accepts THIS scheme authorize?", not "is there any same-network
+  // handler with handleVerify anywhere in the candidate pool". Without
+  // the scheme narrowing, a multi-scheme handler set with one verify-
+  // capable handler causes canAuthorize=true for every scheme even
+  // when the scheme that's actually being dispatched is settle-only.
+  const candidates = narrowHandlers(x402Handlers, v2Requirements).filter((h) =>
+    (h.schemes ?? []).includes(v2Requirements.scheme),
+  );
+  const canAuthorize = candidates.some((h) => h.handleVerify !== undefined);
+  const capturesAt = resolveCapturesAt(
+    canAuthorize,
+    args.hasAuthorize ?? false,
+  );
+
   return await args.body({
     protocolVersion: 1,
+    capturesAt,
     paymentRequirements: v1Requirements,
     paymentPayload,
     capture,
@@ -991,8 +1067,21 @@ async function handleV2Request<MiddlewareResponse>(
     return { success: true, facilitatorResponse: verifyResponse };
   };
 
+  // Narrow by scheme as well so canAuthorize reflects the actual
+  // handler(s) that would dispatch this payment, not every same-
+  // network handler. See the v1 path above for the failure mode.
+  const candidates = narrowHandlers(x402Handlers, paymentRequirements).filter(
+    (h) => (h.schemes ?? []).includes(paymentRequirements.scheme),
+  );
+  const canAuthorize = candidates.some((h) => h.handleVerify !== undefined);
+  const capturesAt = resolveCapturesAt(
+    canAuthorize,
+    args.hasAuthorize ?? false,
+  );
+
   return await args.body({
     protocolVersion: 2,
+    capturesAt,
     paymentRequirements,
     paymentPayload,
     capture,
@@ -1068,11 +1157,11 @@ async function handleMPPRequest<MiddlewareResponse>(
   };
 
   const method = credential.challenge.method;
-  const hasVerifyHandlers = mppHandlers.some(
+  const canAuthorize = mppHandlers.some(
     (h) => h.method === method && h.handleVerify !== undefined,
   );
 
-  const authorize = hasVerifyHandlers
+  const authorize = canAuthorize
     ? async (): Promise<AuthorizeResultMPP<MiddlewareResponse>> => {
         try {
           const receipt = await verifyMPPPayment(mppHandlers, credential);
@@ -1089,8 +1178,14 @@ async function handleMPPRequest<MiddlewareResponse>(
       }
     : undefined;
 
+  const capturesAt = resolveCapturesAt(
+    canAuthorize,
+    args.hasAuthorize ?? false,
+  );
+
   return await args.body({
     protocolVersion: "mpp",
+    capturesAt,
     credential,
     capture,
     authorize,

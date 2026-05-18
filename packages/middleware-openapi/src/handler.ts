@@ -359,6 +359,7 @@ export function createGatewayHandler(
       pricing,
       resource: new URL(ctx.path, baseURL).toString(),
       supportedVersions,
+      hasAuthorize: authResult.hasAuthorize ?? false,
       getHeader: makeHeaderGetter(headers),
       getBody: makeBodyGetter(ctx.method, ctx.body),
 
@@ -379,13 +380,13 @@ export function createGatewayHandler(
       },
 
       body: async (context) => {
-        if (
-          authResult.hasAuthorize &&
-          "authorize" in context &&
-          context.authorize
-        ) {
-          // authorize + capture: verify the payment now, settle
-          // later at /response with the captured amount.
+        if (context.capturesAt === "response") {
+          // Two-phase: authorize the payment now, capture later at
+          // /response with the final amount. The middleware
+          // guarantees `authorize` is defined when capturesAt is
+          // "response" -- MPP's optional `authorize?` is only
+          // undefined when no matching handler can verify, in which
+          // case capturesAt would be "request".
           switch (context.protocolVersion) {
             case 1: {
               const r = await context.authorize();
@@ -406,6 +407,11 @@ export function createGatewayHandler(
               break;
             }
             case "mpp": {
+              if (!context.authorize) {
+                throw new Error(
+                  "invariant: capturesAt='response' on MPP context requires authorize",
+                );
+              }
               const r = await context.authorize();
               if (!r.success) return r.errorResponse;
               authorizeResponse = {
@@ -556,10 +562,11 @@ export function createGatewayHandler(
     let paymentSettled = false;
     let settlementError: CaptureError | undefined;
     let settledPayment: SettledPayment | undefined;
-    // Set when an MPP handler without handleVerify is encountered at
-    // /response. This means /request already settled as one-phase, so
-    // /response must skip settlement entirely (no double-charge, no
-    // second onCapture fire).
+    // Set when a matched handler cannot authorize (regardless of
+    // protocol). /request already captured as one-phase for that
+    // handler, so /response must skip capture entirely (no
+    // double-charge, no second onCapture fire). Uniform across x402
+    // and MPP -- the resolver's capturesAt encodes the decision.
     let alreadySettledAtRequest = false;
 
     if (authResult.hasAuthorize) {
@@ -577,6 +584,7 @@ export function createGatewayHandler(
           pricing,
           resource: new URL(ctx.path, baseURL).toString(),
           supportedVersions,
+          hasAuthorize: true,
           getHeader: makeHeaderGetter(headers),
           getBody: makeBodyGetter(ctx.method, ctx.body),
           setResponseHeader: (_key: string, _value: string) => {
@@ -585,14 +593,13 @@ export function createGatewayHandler(
           sendJSONResponse: (status) => ({ status }),
 
           body: async (context) => {
-            // If the spec rule has authorize but the payment scheme
-            // did not support verify (e.g. MPP handler without
-            // handleVerify), /request already settled as one-phase.
-            // Skip settlement here to avoid double-charging.
-            if (
-              context.protocolVersion === "mpp" &&
-              !("authorize" in context && context.authorize)
-            ) {
+            // If the matched handler can't authorize (e.g. an x402
+            // handler without handleVerify, or an MPP handler
+            // without handleVerify), /request already settled as
+            // one-phase for it. Skip capture here to avoid
+            // double-charging. The resolver's capturesAt encodes
+            // the decision uniformly across protocols.
+            if (context.capturesAt === "request") {
               alreadySettledAtRequest = true;
               return { status: 200 };
             }

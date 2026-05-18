@@ -18,6 +18,10 @@ real payment flows against testnets.
 - `/run-examples solana` -- run only the Solana examples
 - `/run-examples all` or `/run-examples` (no argument) -- run both
 
+Append `--flex` to also run the Solana flex example, which is skipped by
+default because it adds ~60 seconds of mandatory wait per run for the
+on-chain refund window (e.g. `/run-examples solana --flex`).
+
 ## Execution
 
 Each suite is run via `pnpm tsx` from the `scripts/` directory with a generous
@@ -29,6 +33,9 @@ pnpm tsx evm-example/run-examples.ts
 
 # Solana examples (SOL, Squads, Token, Exact payments via Hono + Express servers)
 pnpm tsx solana-example/run-examples.ts
+
+# Solana examples including the flex example (adds ~60s for the refund window)
+pnpm tsx solana-example/run-examples.ts --flex
 ```
 
 The working directory MUST be `scripts/` (i.e., use workdir parameter).
@@ -44,10 +51,12 @@ The working directory MUST be `scripts/` (i.e., use workdir parameter).
 
 Based on `$ARGUMENTS`:
 
-- If the argument is `evm`, run only the EVM examples.
-- If the argument is `solana`, run only the Solana examples.
+- If the argument contains `evm`, run only the EVM examples.
+- If the argument contains `solana`, run only the Solana examples.
 - If the argument is `all`, empty, or omitted, run both sequentially (EVM first,
   then Solana).
+- If the argument contains `--flex`, append `--flex` to the Solana
+  invocation so the flex example is included.
 
 Report a summary of results when done (which suites passed, how many payments
 settled).

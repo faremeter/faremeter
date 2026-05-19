@@ -296,9 +296,15 @@ await t.test(
     await t.test(
       "pin capturesAt=response against settle-only handler fails at startup",
       (t) => {
-        const spec = makeSpecWithPolicy({
-          pin: { [`x402:${TEST_SCHEME}`]: { capturesAt: "response" } },
-        });
+        // Use a two-phase rule (has authorize) so the pin-vs-rule
+        // check doesn't shadow the handleVerify check this test
+        // targets.
+        const spec = makeSpecWithPolicy(
+          {
+            pin: { [`x402:${TEST_SCHEME}`]: { capturesAt: "response" } },
+          },
+          [{ match: "$", authorize: "100", capture: "100" }],
+        );
         t.throws(
           () =>
             createGatewayHandler({
@@ -318,6 +324,98 @@ await t.test(
             ),
           },
           "must throw with actionable message",
+        );
+        t.end();
+      },
+    );
+
+    await t.test(
+      "pin capturesAt=response on one-phase rule fails at startup",
+      (t) => {
+        // The default makeSpecWithPolicy rule is one-phase (capture
+        // only, no authorize). Pinning a verify-capable scheme to
+        // "response" on that rule would produce authorize-without-
+        // capture at runtime because the gateway's /response handler
+        // only runs when the rule has `authorize`. Reject at
+        // construction.
+        const spec = makeSpecWithPolicy({
+          pin: { [`x402:${TEST_SCHEME}`]: { capturesAt: "response" } },
+        });
+        t.throws(
+          () =>
+            createGatewayHandler({
+              spec,
+              baseURL: BASE_URL,
+              supportedVersions: { x402v1: false, x402v2: true },
+              x402Handlers: [createTestFacilitatorHandler({ payTo: PAY_TO })],
+            }),
+          {
+            message: new RegExp(
+              `policy\\[${OP.replace(/[/]/g, "\\/")}\\]\\.pin\\["x402:${TEST_SCHEME}"\\]: capturesAt "response" requires every rule on this operation to define \`authorize\`; rule at index 0 has no \`authorize\` expression`,
+            ),
+          },
+          "must throw naming the offending rule index",
+        );
+        t.end();
+      },
+    );
+
+    await t.test(
+      "pin capturesAt=response on mixed rules fails at startup naming the offending rule",
+      (t) => {
+        // Pin: response is unsafe if ANY rule on the operation lacks
+        // authorize, because that rule could match and produce the
+        // authorize-without-capture bug. The error must name the
+        // offending rule index so the operator can find it.
+        const spec = makeSpecWithPolicy(
+          {
+            pin: { [`x402:${TEST_SCHEME}`]: { capturesAt: "response" } },
+          },
+          [
+            { match: "$", authorize: "100", capture: "100" },
+            { match: "$", capture: "50" }, // index 1: no authorize
+          ],
+        );
+        t.throws(
+          () =>
+            createGatewayHandler({
+              spec,
+              baseURL: BASE_URL,
+              supportedVersions: { x402v1: false, x402v2: true },
+              x402Handlers: [createTestFacilitatorHandler({ payTo: PAY_TO })],
+            }),
+          {
+            message: /rule at index 1 has no `authorize` expression/,
+          },
+          "must throw naming the offending mixed-rule index",
+        );
+        t.end();
+      },
+    );
+
+    await t.test(
+      "pin capturesAt=response on two-phase rule is accepted",
+      (t) => {
+        // Positive case: a verify-capable scheme + every-rule-has-
+        // authorize + pin: response is well-formed and construction
+        // must accept it. This is the documented motivating use case
+        // for pin: response (operator confirming two-phase intent on
+        // a verify-capable handler).
+        const spec = makeSpecWithPolicy(
+          {
+            pin: { [`x402:${TEST_SCHEME}`]: { capturesAt: "response" } },
+          },
+          [{ match: "$", authorize: "100", capture: "100" }],
+        );
+        t.doesNotThrow(
+          () =>
+            createGatewayHandler({
+              spec,
+              baseURL: BASE_URL,
+              supportedVersions: { x402v1: false, x402v2: true },
+              x402Handlers: [createTestFacilitatorHandler({ payTo: PAY_TO })],
+            }),
+          "well-formed pin: response on a two-phase rule must construct",
         );
         t.end();
       },

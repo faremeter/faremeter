@@ -417,11 +417,30 @@ function validateOperationPolicies(
               JSON.stringify(pinValue.capturesAt),
           );
         }
-        if (pinValue.capturesAt === "response" && !canAuthorize(entry)) {
-          throw new Error(
-            `policy[${opKey}].pin["${entry}"]: capturesAt "response" ` +
-              `requires a handler that implements handleVerify`,
-          );
+        if (pinValue.capturesAt === "response") {
+          if (!canAuthorize(entry)) {
+            throw new Error(
+              `policy[${opKey}].pin["${entry}"]: capturesAt "response" ` +
+                `requires a handler that implements handleVerify`,
+            );
+          }
+          // Pin chooses between protocol-supported phases; it does not
+          // synthesize an `authorize` expression on a rule that lacks
+          // one. Without per-rule `authorize`, a /request authorize()
+          // succeeds but the gateway's /response handler is a no-op
+          // (it gates on `authResult.hasAuthorize`), so the payment is
+          // verified but never captured. Reject the misconfig at
+          // construction.
+          const rules = operation.rules ?? [];
+          const orphanIndex = rules.findIndex((r) => r.authorize === undefined);
+          if (orphanIndex >= 0) {
+            throw new Error(
+              `policy[${opKey}].pin["${entry}"]: capturesAt "response" ` +
+                `requires every rule on this operation to define ` +
+                `\`authorize\`; rule at index ${orphanIndex} has no ` +
+                `\`authorize\` expression`,
+            );
+          }
         }
       }
     }

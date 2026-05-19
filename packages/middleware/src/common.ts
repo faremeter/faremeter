@@ -839,12 +839,10 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
       if (credential) {
         // Reject credentials for disallowed methods. The 402 only
         // advertises allowed methods, so a well-behaved client never
-        // reaches this branch; a malicious or stale client gets a
-        // re-challenge instead of having its disallowed method
-        // honoured.
-        if (allowedSet && !allowedSet.mpp.has(credential.challenge.method)) {
-          // Fall through to sendPaymentRequired below (re-challenge).
-        } else {
+        // reaches the fall-through; a malicious or stale client gets
+        // a re-challenge from sendPaymentRequired below instead of
+        // having its disallowed method honoured.
+        if (!allowedSet || allowedSet.mpp.has(credential.challenge.method)) {
           return handleMPPRequest(
             args,
             credential,

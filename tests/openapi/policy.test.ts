@@ -504,6 +504,34 @@ await t.test(
       t.end();
     });
 
+    await t.test(
+      "x-faremeter-policy without x-faremeter-pricing rejected",
+      (t) => {
+        // An operation that declares a policy but no pricing rules
+        // has nothing for the policy to gate. Previously the parser
+        // silently dropped the policy along with the unpriced
+        // operation; now the orphan is loud.
+        const doc = {
+          paths: {
+            "/test": {
+              post: {
+                "x-faremeter-policy": { allow: ["x402:exact"] },
+              },
+            },
+          },
+        };
+        t.throws(
+          () => extractSpec(doc),
+          {
+            message:
+              /paths\["\/test"\]\.post: x-faremeter-policy is declared but the operation has no x-faremeter-pricing rules/,
+          },
+          "orphan policy must be rejected at parse time",
+        );
+        t.end();
+      },
+    );
+
     t.end();
   },
 );

@@ -46,6 +46,14 @@ export type CreateTestFacilitatorHandlerOpts = {
    * `(settle, signed) => settle <= signed`.
    */
   amountPolicy?: AmountPolicy;
+  /**
+   * When false, the returned handler omits `handleVerify` entirely so
+   * the middleware's dispatch path treats it as a settle-only handler
+   * (forces `capturesAt = "request"` for two-phase rules). Defaults to
+   * true to preserve the historical shape. Mirrors the
+   * `supportsVerify` opt on `createTestMPPHandler`.
+   */
+  supportsVerify?: boolean;
   /** Optional callback invoked during verify. */
   onVerify?: (
     requirements: x402PaymentRequirements,
@@ -84,6 +92,7 @@ export function createTestFacilitatorHandler(
   const {
     payTo,
     amountPolicy = (settle, signed) => settle === signed,
+    supportsVerify = true,
     onVerify,
     onSettle,
   } = opts;
@@ -200,7 +209,7 @@ export function createTestFacilitatorHandler(
     };
   };
 
-  return {
+  const handler: FacilitatorHandler = {
     capabilities: {
       networks: [TEST_NETWORK],
       assets: [TEST_ASSET],
@@ -208,7 +217,10 @@ export function createTestFacilitatorHandler(
     schemes: [TEST_SCHEME],
     getSupported,
     getRequirements,
-    handleVerify,
     handleSettle,
   };
+  if (supportsVerify) {
+    handler.handleVerify = handleVerify;
+  }
+  return handler;
 }

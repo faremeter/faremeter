@@ -168,9 +168,9 @@ lose precision to IEEE-754 rounding.
 
 ### OperationPricing
 
-| Type               | Type                                                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `OperationPricing` | `{ method: string; path: string; transport: TransportType; rates?: Rates; rules?: PricingRule[] or undefined; }` |
+| Type               | Type                                                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `OperationPricing` | `{ method: string; path: string; transport: TransportType; rates?: Rates; rules?: PricingRule[] or undefined; policy?: PaymentPolicy; }` |
 
 ### FaremeterSpec
 

@@ -1,3 +1,7 @@
+import type { PaymentPolicy } from "@faremeter/middleware/common";
+
+export type { PaymentPolicy };
+
 export type Asset = {
   chain: string;
   token: string;
@@ -27,6 +31,7 @@ export type OperationPricing = {
   transport: TransportType;
   rates?: Rates;
   rules?: PricingRule[] | undefined;
+  policy?: PaymentPolicy;
 };
 
 export type FaremeterSpec = {

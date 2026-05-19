@@ -8,6 +8,7 @@ import {
 } from "@scalar/json-magic/bundle/plugins/browser";
 import { dereference } from "@scalar/openapi-parser";
 import { isValidationError } from "@faremeter/types";
+import type { PaymentPolicy } from "@faremeter/middleware/common";
 import type {
   FaremeterSpec,
   OperationPricing,
@@ -139,6 +140,66 @@ function validatePricingExtension(
   return result;
 }
 
+const pinEntryValidator = type({
+  "capturesAt?": '"request" | "response"',
+});
+
+const policyValidator = type({
+  "allow?": "string[]",
+  "pin?": "Record<string, unknown>",
+});
+
+/**
+ * Parses an `x-faremeter-policy` block. Shape validation only; cross-
+ * referencing against registered handlers (allow/pin entries that
+ * don't match any known scheme or method, pin to "response" on a
+ * settle-only handler, etc.) happens at `createGatewayHandler`
+ * construction time, where the handler set is known.
+ */
+function validatePolicyExtension(
+  raw: unknown,
+  context: string,
+): PaymentPolicy | undefined {
+  if (raw == null) return undefined;
+  const validated = policyValidator(raw);
+  if (isValidationError(validated)) {
+    throw new Error(`${context}: ${validated.summary}`);
+  }
+  const result: PaymentPolicy = {};
+  if (validated.allow !== undefined) {
+    result.allow = validated.allow;
+  }
+  if (validated.pin !== undefined) {
+    const pin: Record<string, { capturesAt?: "request" | "response" }> = {};
+    for (const [key, entry] of Object.entries(validated.pin)) {
+      const validatedEntry = pinEntryValidator(entry);
+      if (isValidationError(validatedEntry)) {
+        throw new Error(`${context} pin["${key}"]: ${validatedEntry.summary}`);
+      }
+      pin[key] = validatedEntry;
+    }
+    result.pin = pin;
+  }
+  return result;
+}
+
+/**
+ * `x-faremeter-policy` is operation-level only for this commit.
+ * Inheritance from path-level or document-level is a future piece of
+ * work; for now an extension at those levels is rejected loudly so
+ * operators do not silently misconfigure routes by writing
+ * inheritable-looking policy.
+ */
+function rejectPolicyAtNonOperationLevel(raw: unknown, level: string): void {
+  if (raw != null) {
+    throw new Error(
+      `${level}: x-faremeter-policy is only supported at the operation ` +
+        `level; remove it here or move it onto each operation that needs ` +
+        `it`,
+    );
+  }
+}
+
 function resolveRates(
   documentRates: Rates,
   pathRates: Rates | undefined,
@@ -235,6 +296,8 @@ export function extractSpec(doc: Record<string, unknown>): FaremeterSpec {
   const documentRates = documentPricing?.rates ?? {};
   const documentRules = documentPricing?.rules;
 
+  rejectPolicyAtNonOperationLevel(doc["x-faremeter-policy"], "document");
+
   if (!isRecord(doc.paths)) {
     return { assets, operations: {} };
   }
@@ -255,6 +318,11 @@ export function extractSpec(doc: Record<string, unknown>): FaremeterSpec {
     const pathRates = pathPricing?.rates;
     const pathRules = pathPricing?.rules;
 
+    rejectPolicyAtNonOperationLevel(
+      pathItem["x-faremeter-policy"],
+      `paths["${path}"]`,
+    );
+
     for (const method of HTTP_METHODS) {
       const rawOperation = pathItem[method];
       if (!isRecord(rawOperation)) {
@@ -270,17 +338,26 @@ export function extractSpec(doc: Record<string, unknown>): FaremeterSpec {
       const rules = resolveRules(documentRules, pathRules, opPricing?.rules);
       if (!rules || rules.length === 0) continue;
 
+      const policy = validatePolicyExtension(
+        operation["x-faremeter-policy"],
+        `paths["${path}"].${method} x-faremeter-policy`,
+      );
+
       const rates = resolveRates(documentRates, pathRates, opPricing?.rates);
       const transport = detectTransport(operation);
       const upperMethod = method.toUpperCase();
       const key = `${upperMethod} ${path}`;
-      operations[key] = {
+      const operationPricing: OperationPricing = {
         method: upperMethod,
         path,
         transport,
         rates,
         rules,
       };
+      if (policy !== undefined) {
+        operationPricing.policy = policy;
+      }
+      operations[key] = operationPricing;
     }
   }
 

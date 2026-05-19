@@ -519,6 +519,81 @@ export type AuthorizeResult<MiddlewareResponse> =
 export type CapturesAt = "request" | "response";
 
 /**
+ * Per-operation payment policy. Restricts which protocol schemes /
+ * methods are accepted for a given route and optionally pins specific
+ * ones to one-phase or two-phase capture regardless of the handler's
+ * declared capability.
+ *
+ * Keys in `allow` and `pin` are of the form `"<protocol>:<id>"`:
+ *
+ * - `"x402:exact"`, `"x402:permit2"` — x402 schemes
+ * - `"mpp:solana"` — MPP methods
+ *
+ * The protocol prefix is case-sensitive and uses the lowercase wire
+ * form (`"mpp:"`, not `"MPP:"`), matching how schemes and methods are
+ * identified on the protocol surface itself.
+ *
+ * `allow: undefined` permits every registered scheme and method.
+ * `allow: []` denies all of them (the deny-all sentinel).
+ *
+ * `pin["x402:exact"].capturesAt: "request"` forces one-phase capture
+ * for that scheme regardless of whether the handler supports
+ * `handleVerify` and regardless of whether the rule has `authorize`.
+ * A pin to `"response"` against a handler that cannot authorize is a
+ * configuration error caught at construction.
+ */
+export type PaymentPolicy = {
+  allow?: string[];
+  pin?: Record<string, { capturesAt?: CapturesAt }>;
+};
+
+/**
+ * Parsed allow list, split by protocol prefix. `undefined` means no
+ * filter applies (every scheme and method permitted). An empty set in
+ * a side denies all entries of that protocol.
+ */
+type AllowedSet = { x402: Set<string>; mpp: Set<string> };
+
+function parseAllow(allow: string[] | undefined): AllowedSet | undefined {
+  if (allow === undefined) return undefined;
+  const x402 = new Set<string>();
+  const mpp = new Set<string>();
+  for (const entry of allow) {
+    if (entry.startsWith("x402:")) {
+      x402.add(entry.slice("x402:".length));
+    } else if (entry.startsWith("mpp:")) {
+      mpp.add(entry.slice("mpp:".length));
+    } else {
+      // OpenAPI gateway callers have these caught at construction by
+      // validateOperationPolicies; programmatic callers bypass that
+      // path and would otherwise get a silent deny-all (an unprefixed
+      // entry contributes to no set, so nothing matches it later).
+      // Fail loudly to match the strict-fail posture used everywhere
+      // else in the policy surface.
+      throw new Error(
+        `PaymentPolicy.allow: entry "${entry}" must be prefixed with ` +
+          `"x402:" or "mpp:"`,
+      );
+    }
+  }
+  return { x402, mpp };
+}
+
+function resolvePinForX402(
+  policy: PaymentPolicy | undefined,
+  scheme: string,
+): CapturesAt | undefined {
+  return policy?.pin?.[`x402:${scheme}`]?.capturesAt;
+}
+
+function resolvePinForMPP(
+  policy: PaymentPolicy | undefined,
+  method: string,
+): CapturesAt | undefined {
+  return policy?.pin?.[`mpp:${method}`]?.capturesAt;
+}
+
+/**
  * Context provided to the middleware body handler for v1 protocol requests.
  * Contains payment information and the industry-standard `authorize` /
  * `capture` operations. Under the hood these dispatch to the matched
@@ -633,17 +708,26 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = {
    * the middleware treats every request as one-phase.
    */
   hasAuthorize?: boolean;
+  /**
+   * Per-operation payment policy. Restricts which schemes / methods
+   * are advertised in the 402 challenge, rejects payments for
+   * disallowed schemes, and threads `pin` overrides into the
+   * `capturesAt` resolution per matched handler.
+   */
+  policy?: PaymentPolicy;
 };
 
 /**
  * Resolves whether the body callback should capture at `/request`
  * (one-phase) or defer to `/response` (two-phase).
  *
- * | `canAuthorize` | `hasAuthorize` | `capturesAt` |
- * |----------------|----------------|--------------|
- * | false          | any            | `request`    |
- * | true           | false          | `request`    |
- * | true           | true           | `response`   |
+ * | `canAuthorize` | `hasAuthorize` | `pin`        | `capturesAt` |
+ * |----------------|----------------|--------------|--------------|
+ * | false          | any            | none         | `request`    |
+ * | true           | false          | none         | `request`    |
+ * | true           | true           | none         | `response`   |
+ * | any            | any            | `"request"`  | `request`    |
+ * | true           | any            | `"response"` | `response`   |
  *
  * `canAuthorize` is "any handler that actually accepts THIS scheme /
  * method declares verification". For x402 the candidate set is
@@ -656,11 +740,22 @@ export type HandleMiddlewareRequestArgs<MiddlewareResponse = unknown> = {
  * the handlers filtered by exact `method` match. The middleware
  * computes the predicate per request before invoking `body`, so the
  * body callback only has to read `context.capturesAt`.
+ *
+ * `pin` is the operator-supplied override from `PaymentPolicy.pin`
+ * keyed by `<protocol>:<scheme-or-method>`. A pin to `"response"`
+ * against a handler that cannot authorize is rejected at construction
+ * by `validateOperationPolicies` in middleware-openapi. If one somehow
+ * reaches this resolver at runtime (e.g. a programmatic spec that
+ * bypasses validation) the body's `authorize()` call will throw "no
+ * handler accepted the verification", which propagates up as a 500 --
+ * loud failure rather than a silent demotion to one-phase.
  */
 export function resolveCapturesAt(
   canAuthorize: boolean,
   hasAuthorize: boolean,
+  pin?: CapturesAt,
 ): CapturesAt {
+  if (pin !== undefined) return pin;
   if (!canAuthorize) return "request";
   if (!hasAuthorize) return "request";
   return "response";
@@ -686,6 +781,7 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
 
   const hasX402 = x402Handlers.length > 0;
   const hasMPP = mppMethodHandlers.length > 0;
+  const allowedSet = parseAllow(args.policy?.allow);
 
   // x402: resolve requirements eagerly (needed for matching and 402 response)
   let enrichedRequirements: x402PaymentRequirements[] = [];
@@ -696,6 +792,11 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
       resource,
       { logger },
     );
+    if (allowedSet) {
+      enrichedRequirements = enrichedRequirements.filter((r) =>
+        allowedSet.x402.has(r.scheme),
+      );
+    }
   }
 
   const resourceInfo: x402ResourceInfo = args.resourceInfo ?? { url: resource };
@@ -736,14 +837,24 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
     if (authHeader) {
       const credential = parseAuthorizationPayment(authHeader);
       if (credential) {
-        return handleMPPRequest(
-          args,
-          credential,
-          mppMethodHandlers,
-          pricing,
-          resource,
-          mppDigest,
-        );
+        // Reject credentials for disallowed methods. The 402 only
+        // advertises allowed methods, so a well-behaved client never
+        // reaches this branch; a malicious or stale client gets a
+        // re-challenge instead of having its disallowed method
+        // honoured.
+        if (allowedSet && !allowedSet.mpp.has(credential.challenge.method)) {
+          // Fall through to sendPaymentRequired below (re-challenge).
+        } else {
+          return handleMPPRequest(
+            args,
+            credential,
+            mppMethodHandlers,
+            pricing,
+            resource,
+            mppDigest,
+            args.policy,
+          );
+        }
       }
     }
   }
@@ -771,12 +882,17 @@ export async function handleMiddlewareRequest<MiddlewareResponse>(
         logger,
       };
       if (mppDigest !== undefined) resolveOpts.digest = mppDigest;
-      const mppChallenges = await resolveMPPChallenges(
+      let mppChallenges = await resolveMPPChallenges(
         mppMethodHandlers,
         pricing,
         resource,
         resolveOpts,
       );
+      if (allowedSet) {
+        mppChallenges = mppChallenges.filter((c) =>
+          allowedSet.mpp.has(c.method),
+        );
+      }
       Object.assign(headers, buildMPPChallengeHeaders(mppChallenges));
     }
 
@@ -973,6 +1089,7 @@ async function handleV1Request<MiddlewareResponse>(
   const capturesAt = resolveCapturesAt(
     canAuthorize,
     args.hasAuthorize ?? false,
+    resolvePinForX402(args.policy, v1Requirements.scheme),
   );
 
   return await args.body({
@@ -1077,6 +1194,7 @@ async function handleV2Request<MiddlewareResponse>(
   const capturesAt = resolveCapturesAt(
     canAuthorize,
     args.hasAuthorize ?? false,
+    resolvePinForX402(args.policy, paymentRequirements.scheme),
   );
 
   return await args.body({
@@ -1102,6 +1220,7 @@ async function handleMPPRequest<MiddlewareResponse>(
   pricing: ResourcePricing[],
   resource: string,
   digest?: string,
+  policy?: PaymentPolicy,
 ): Promise<MiddlewareResponse | undefined> {
   const sendPaymentRequired = async (): Promise<MiddlewareResponse> => {
     const resolveOpts: Parameters<typeof resolveMPPChallenges>[3] = {
@@ -1181,6 +1300,7 @@ async function handleMPPRequest<MiddlewareResponse>(
   const capturesAt = resolveCapturesAt(
     canAuthorize,
     args.hasAuthorize ?? false,
+    resolvePinForMPP(policy, method),
   );
 
   return await args.body({

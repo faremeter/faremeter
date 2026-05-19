@@ -707,7 +707,7 @@ export function createGatewayHandler(
     // handler, so /response must skip capture entirely (no
     // double-charge, no second onCapture fire). Uniform across x402
     // and MPP -- the resolver's capturesAt encodes the decision.
-    let alreadySettledAtRequest = false;
+    let alreadyCapturedAtRequest = false;
 
     if (authResult.hasAuthorize) {
       // authorize + capture: settle the captured amount now.
@@ -742,7 +742,7 @@ export function createGatewayHandler(
             // double-charging. The resolver's capturesAt encodes
             // the decision uniformly across protocols.
             if (context.capturesAt === "request") {
-              alreadySettledAtRequest = true;
+              alreadyCapturedAtRequest = true;
               return { status: 200 };
             }
 
@@ -806,7 +806,7 @@ export function createGatewayHandler(
       }
     }
 
-    if (!authResult.hasAuthorize || alreadySettledAtRequest) {
+    if (!authResult.hasAuthorize || alreadyCapturedAtRequest) {
       // One-phase rule (or MPP handler without handleVerify that
       // settled as one-phase at /request): settlement already happened
       // at /request time. The response phase has nothing to do.

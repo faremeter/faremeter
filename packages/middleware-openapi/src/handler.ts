@@ -291,6 +291,143 @@ function makeBodyGetter(
   };
 }
 
+/**
+ * Validates every operation's `x-faremeter-policy` block against the
+ * registered handler set. Catches configuration errors at construction
+ * time so a misconfigured spec never starts serving requests.
+ *
+ * Error messages name the operation key, the offending entry, and the
+ * supported set so an operator can fix the problem without reading
+ * framework code.
+ */
+function validateOperationPolicies(
+  operations: FaremeterSpec["operations"],
+  x402Handlers: FacilitatorHandler[],
+  mppMethodHandlers: MPPMethodHandler[],
+): void {
+  // The set of schemes / methods this gateway can actually serve. A
+  // scheme appears in the verify-capable set only if at least one
+  // handler that supports it also implements `handleVerify` — pinning
+  // a settle-only scheme to "response" would deadlock at /request.
+  const allX402Schemes = new Set<string>();
+  const verifyX402Schemes = new Set<string>();
+  for (const handler of x402Handlers) {
+    const schemes = handler.schemes ?? [];
+    for (const scheme of schemes) {
+      allX402Schemes.add(scheme);
+      if (handler.handleVerify !== undefined) {
+        verifyX402Schemes.add(scheme);
+      }
+    }
+  }
+  const allMPPMethods = new Set<string>();
+  const verifyMPPMethods = new Set<string>();
+  for (const handler of mppMethodHandlers) {
+    allMPPMethods.add(handler.method);
+    if (handler.handleVerify !== undefined) {
+      verifyMPPMethods.add(handler.method);
+    }
+  }
+
+  const supportedList = (() => {
+    const entries: string[] = [];
+    for (const s of [...allX402Schemes].sort()) entries.push(`x402:${s}`);
+    for (const m of [...allMPPMethods].sort()) entries.push(`mpp:${m}`);
+    return entries.length > 0 ? entries.join(", ") : "(none)";
+  })();
+
+  function isSupported(entry: string): boolean {
+    if (entry.startsWith("x402:")) {
+      return allX402Schemes.has(entry.slice("x402:".length));
+    }
+    if (entry.startsWith("mpp:")) {
+      return allMPPMethods.has(entry.slice("mpp:".length));
+    }
+    return false;
+  }
+
+  function canAuthorize(entry: string): boolean {
+    if (entry.startsWith("x402:")) {
+      return verifyX402Schemes.has(entry.slice("x402:".length));
+    }
+    if (entry.startsWith("mpp:")) {
+      return verifyMPPMethods.has(entry.slice("mpp:".length));
+    }
+    return false;
+  }
+
+  for (const [opKey, operation] of Object.entries(operations)) {
+    const policy = operation.policy;
+    if (!policy) continue;
+
+    if (policy.allow !== undefined) {
+      for (const entry of policy.allow) {
+        if (!isSupported(entry)) {
+          throw new Error(
+            `policy[${opKey}].allow: unknown entry "${entry}" ` +
+              `(supported: ${supportedList})`,
+          );
+        }
+      }
+    }
+
+    if (policy.pin !== undefined) {
+      const allowSet =
+        policy.allow !== undefined ? new Set(policy.allow) : undefined;
+      for (const [entry, pinValue] of Object.entries(policy.pin)) {
+        if (!isSupported(entry)) {
+          throw new Error(
+            `policy[${opKey}].pin: unknown entry "${entry}" ` +
+              `(supported: ${supportedList})`,
+          );
+        }
+        if (allowSet !== undefined && !allowSet.has(entry)) {
+          throw new Error(
+            `policy[${opKey}].pin["${entry}"]: pinned entry is not in ` +
+              `the allow list`,
+          );
+        }
+        // A pin entry with no `capturesAt` is a no-op at runtime
+        // (resolvePinFor* returns undefined and the resolver falls
+        // through to the canAuthorize/hasAuthorize path), which means
+        // the operator wrote configuration that doesn't do anything.
+        // Reject it for the same reason orphan policy-without-rules is
+        // rejected: silently dead config is worse than a loud error.
+        if (pinValue.capturesAt === undefined) {
+          throw new Error(
+            `policy[${opKey}].pin["${entry}"]: capturesAt is required ` +
+              `(an entry with no capturesAt would have no effect)`,
+          );
+        }
+        // Shape validation. The OpenAPI parser's arktype validator
+        // catches malformed `capturesAt` values in YAML/JSON specs, but
+        // programmatic callers that construct a `FaremeterSpec` by hand
+        // bypass it. Re-checking here is the only thing standing
+        // between an unknown value and resolveCapturesAt silently
+        // returning it -- which downstream code would then read as
+        // anything-but-"response", quietly demoting two-phase rules to
+        // one-phase. Fail loudly instead.
+        if (
+          pinValue.capturesAt !== "request" &&
+          pinValue.capturesAt !== "response"
+        ) {
+          throw new Error(
+            `policy[${opKey}].pin["${entry}"].capturesAt: must be ` +
+              `"request" or "response", got ` +
+              JSON.stringify(pinValue.capturesAt),
+          );
+        }
+        if (pinValue.capturesAt === "response" && !canAuthorize(entry)) {
+          throw new Error(
+            `policy[${opKey}].pin["${entry}"]: capturesAt "response" ` +
+              `requires a handler that implements handleVerify`,
+          );
+        }
+      }
+    }
+  }
+}
+
 export function createGatewayHandler(
   config: GatewayHandlerConfig,
 ): GatewayHandler {
@@ -315,6 +452,7 @@ export function createGatewayHandler(
         "but no settlement will occur on /response",
     );
   }
+  validateOperationPolicies(spec.operations, x402Handlers, mppMethodHandlers);
   const supportedVersions = resolveSupportedVersions(config.supportedVersions);
   const evaluator = createPricingEvaluator(spec);
 
@@ -353,6 +491,7 @@ export function createGatewayHandler(
     let settledPayment: SettledPayment | undefined;
     let authorizeResponse: AuthorizeResponse | undefined;
 
+    const operation = spec.operations[ctx.operationKey];
     const result = await handleMiddlewareRequest<GatewayRequestResult>({
       x402Handlers,
       mppMethodHandlers,
@@ -360,6 +499,7 @@ export function createGatewayHandler(
       resource: new URL(ctx.path, baseURL).toString(),
       supportedVersions,
       hasAuthorize: authResult.hasAuthorize ?? false,
+      ...(operation?.policy ? { policy: operation.policy } : {}),
       getHeader: makeHeaderGetter(headers),
       getBody: makeBodyGetter(ctx.method, ctx.body),
 
@@ -578,6 +718,7 @@ export function createGatewayHandler(
         // drops zero-amount entries, so there is nothing to settle.
         paymentSettled = true;
       } else {
+        const operation = spec.operations[ctx.operationKey];
         await handleMiddlewareRequest<GatewayResponseResult>({
           x402Handlers,
           mppMethodHandlers,
@@ -585,6 +726,7 @@ export function createGatewayHandler(
           resource: new URL(ctx.path, baseURL).toString(),
           supportedVersions,
           hasAuthorize: true,
+          ...(operation?.policy ? { policy: operation.policy } : {}),
           getHeader: makeHeaderGetter(headers),
           getBody: makeBodyGetter(ctx.method, ctx.body),
           setResponseHeader: (_key: string, _value: string) => {

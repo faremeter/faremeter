@@ -447,7 +447,7 @@ export class TestHarness {
       if (this.settleMode === "verify-then-settle") {
         const authorizeResult = await context.authorize();
         if (!authorizeResult.success) return authorizeResult.errorResponse;
-        verifyResponse = authorizeResult.facilitatorResponse;
+        verifyResponse = authorizeResult.response;
       }
       const captureResult = await context.capture();
       if (!captureResult.success) return captureResult.errorResponse;
@@ -458,7 +458,7 @@ export class TestHarness {
         request: c.req.raw,
         paymentRequirements: context.paymentRequirements,
         paymentPayload: context.paymentPayload,
-        settleResponse: captureResult.facilitatorResponse,
+        settleResponse: captureResult.response,
         verifyResponse,
       };
     } else {
@@ -466,7 +466,7 @@ export class TestHarness {
       if (this.settleMode === "verify-then-settle") {
         const authorizeResult = await context.authorize();
         if (!authorizeResult.success) return authorizeResult.errorResponse;
-        verifyResponse = authorizeResult.facilitatorResponse;
+        verifyResponse = authorizeResult.response;
       }
       const captureResult = await context.capture();
       if (!captureResult.success) return captureResult.errorResponse;
@@ -477,7 +477,7 @@ export class TestHarness {
         request: c.req.raw,
         paymentRequirements: context.paymentRequirements,
         paymentPayload: context.paymentPayload,
-        settleResponse: captureResult.facilitatorResponse,
+        settleResponse: captureResult.response,
         verifyResponse,
       };
     }

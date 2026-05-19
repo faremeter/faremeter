@@ -533,7 +533,7 @@ export function createGatewayHandler(
               if (!r.success) return r.errorResponse;
               authorizeResponse = {
                 protocol: "x402v1",
-                verification: r.facilitatorResponse,
+                verification: r.response,
               };
               break;
             }
@@ -542,7 +542,7 @@ export function createGatewayHandler(
               if (!r.success) return r.errorResponse;
               authorizeResponse = {
                 protocol: "x402v2",
-                verification: r.facilitatorResponse,
+                verification: r.response,
               };
               break;
             }
@@ -574,7 +574,7 @@ export function createGatewayHandler(
               if (!r.success) return r.errorResponse;
               settledPayment = {
                 protocol: "x402v1",
-                settlement: r.facilitatorResponse,
+                settlement: r.response,
               };
               break;
             }
@@ -583,7 +583,7 @@ export function createGatewayHandler(
               if (!r.success) return r.errorResponse;
               settledPayment = {
                 protocol: "x402v2",
-                settlement: r.facilitatorResponse,
+                settlement: r.response,
               };
               break;
             }
@@ -758,7 +758,7 @@ export function createGatewayHandler(
                 } else {
                   settledPayment = {
                     protocol: "x402v1",
-                    settlement: r.facilitatorResponse,
+                    settlement: r.response,
                   };
                 }
                 break;
@@ -774,7 +774,7 @@ export function createGatewayHandler(
                 } else {
                   settledPayment = {
                     protocol: "x402v2",
-                    settlement: r.facilitatorResponse,
+                    settlement: r.response,
                   };
                 }
                 break;

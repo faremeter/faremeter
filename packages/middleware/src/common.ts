@@ -462,7 +462,7 @@ export function resolveConfig(args: CommonMiddlewareArgs): ResolvedConfig {
 }
 
 export type CaptureResultV1<MiddlewareResponse> =
-  | { success: true; facilitatorResponse: x402SettleResponseV1 }
+  | { success: true; response: x402SettleResponseV1 }
   | {
       success: false;
       errorResponse: MiddlewareResponse;
@@ -470,7 +470,7 @@ export type CaptureResultV1<MiddlewareResponse> =
     };
 
 export type CaptureResultV2<MiddlewareResponse> =
-  | { success: true; facilitatorResponse: x402SettleResponse }
+  | { success: true; response: x402SettleResponse }
   | {
       success: false;
       errorResponse: MiddlewareResponse;
@@ -482,7 +482,7 @@ export type CaptureResult<MiddlewareResponse> =
   | CaptureResultV2<MiddlewareResponse>;
 
 export type AuthorizeResultV1<MiddlewareResponse> =
-  | { success: true; facilitatorResponse: x402VerifyResponseV1 }
+  | { success: true; response: x402VerifyResponseV1 }
   | {
       success: false;
       errorResponse: MiddlewareResponse;
@@ -490,7 +490,7 @@ export type AuthorizeResultV1<MiddlewareResponse> =
     };
 
 export type AuthorizeResultV2<MiddlewareResponse> =
-  | { success: true; facilitatorResponse: x402VerifyResponse }
+  | { success: true; response: x402VerifyResponse }
   | {
       success: false;
       errorResponse: MiddlewareResponse;
@@ -1041,7 +1041,7 @@ async function handleV1Request<MiddlewareResponse>(
       return result;
     }
 
-    return { success: true, facilitatorResponse: settlementResponse };
+    return { success: true, response: settlementResponse };
   };
 
   const authorize = async (): Promise<
@@ -1070,7 +1070,7 @@ async function handleV1Request<MiddlewareResponse>(
       return result;
     }
 
-    return { success: true, facilitatorResponse: verifyResponse };
+    return { success: true, response: verifyResponse };
   };
 
   // narrowHandlers filters by network+asset only; narrow further by
@@ -1152,7 +1152,7 @@ async function handleV2Request<MiddlewareResponse>(
       return result;
     }
 
-    return { success: true, facilitatorResponse: settlementResponse };
+    return { success: true, response: settlementResponse };
   };
 
   const authorize = async (): Promise<
@@ -1179,7 +1179,7 @@ async function handleV2Request<MiddlewareResponse>(
       return result;
     }
 
-    return { success: true, facilitatorResponse: verifyResponse };
+    return { success: true, response: verifyResponse };
   };
 
   // Narrow by scheme as well so canAuthorize reflects the actual

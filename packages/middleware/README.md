@@ -371,14 +371,14 @@ Supports two mutually exclusive modes: in-process handlers or remote facilitator
 ### CaptureResultV1
 
 | Type              | Type |
-| ----------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CaptureResultV1` | `    | { success: true; facilitatorResponse: x402SettleResponseV1 } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
+| ----------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `CaptureResultV1` | `    | { success: true; response: x402SettleResponseV1 } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### CaptureResultV2
 
 | Type              | Type |
-| ----------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CaptureResultV2` | `    | { success: true; facilitatorResponse: x402SettleResponse } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
+| ----------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `CaptureResultV2` | `    | { success: true; response: x402SettleResponse } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### CaptureResult
 
@@ -389,14 +389,14 @@ Supports two mutually exclusive modes: in-process handlers or remote facilitator
 ### AuthorizeResultV1
 
 | Type                | Type |
-| ------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AuthorizeResultV1` | `    | { success: true; facilitatorResponse: x402VerifyResponseV1 } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
+| ------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `AuthorizeResultV1` | `    | { success: true; response: x402VerifyResponseV1 } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### AuthorizeResultV2
 
 | Type                | Type |
-| ------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AuthorizeResultV2` | `    | { success: true; facilitatorResponse: x402VerifyResponse } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
+| ------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `AuthorizeResultV2` | `    | { success: true; response: x402VerifyResponse } or { success: false; errorResponse: MiddlewareResponse; errorMessage?: string; }` |
 
 ### AuthorizeResult
 

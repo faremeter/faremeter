@@ -111,7 +111,7 @@ export function createUptoHandler(opts: CreateUptoHandlerOpts): Handler {
               `Settlement failed for amount ${amount} (ceiling ${ceiling})`,
             );
           }
-          return result.facilitatorResponse;
+          return result.response;
         };
 
         return opts.handle(body, settle);

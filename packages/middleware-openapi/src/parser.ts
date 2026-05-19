@@ -335,13 +335,28 @@ export function extractSpec(doc: Record<string, unknown>): FaremeterSpec {
         `paths["${path}"].${method} x-faremeter-pricing`,
       );
 
-      const rules = resolveRules(documentRules, pathRules, opPricing?.rules);
-      if (!rules || rules.length === 0) continue;
-
+      // Extract the policy block first so an orphan policy (defined
+      // on an operation that has no pricing rules) surfaces loudly
+      // rather than being silently dropped along with the unpriced
+      // operation. Without this, deleting pricing from an operation
+      // leaves its `x-faremeter-policy` in place with no effect and
+      // no signal to the operator that their config is dead.
       const policy = validatePolicyExtension(
         operation["x-faremeter-policy"],
         `paths["${path}"].${method} x-faremeter-policy`,
       );
+
+      const rules = resolveRules(documentRules, pathRules, opPricing?.rules);
+      if (!rules || rules.length === 0) {
+        if (policy !== undefined) {
+          throw new Error(
+            `paths["${path}"].${method}: x-faremeter-policy is declared but ` +
+              `the operation has no x-faremeter-pricing rules; either remove ` +
+              `the policy or add rules for it to gate`,
+          );
+        }
+        continue;
+      }
 
       const rates = resolveRates(documentRates, pathRates, opPricing?.rates);
       const transport = detectTransport(operation);

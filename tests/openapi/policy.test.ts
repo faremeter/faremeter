@@ -522,6 +522,74 @@ await t.test(
       },
     );
 
+    await t.test(
+      "x-faremeter-policy applies when rules are inherited from path level",
+      (t) => {
+        // The orphan-policy check fires when an operation has no
+        // rules at all; it must NOT mis-fire when an operation
+        // declares policy but inherits rules from a path-level
+        // x-faremeter-pricing block. The resulting OperationPricing
+        // carries both the inherited rules and the operation-level
+        // policy.
+        const doc = {
+          paths: {
+            "/test": {
+              "x-faremeter-pricing": {
+                rules: [{ match: "$", capture: "100" }],
+              },
+              post: {
+                "x-faremeter-policy": { allow: ["x402:exact"] },
+              },
+            },
+          },
+        };
+        const spec = extractSpec(doc);
+        const operation = spec.operations["POST /test"];
+        t.ok(operation, "operation must be extracted");
+        t.equal(operation?.rules?.length, 1, "rules inherited from path level");
+        t.equal(
+          operation?.policy?.allow?.[0],
+          "x402:exact",
+          "operation-level policy is attached to the operation pricing",
+        );
+        t.end();
+      },
+    );
+
+    await t.test(
+      "x-faremeter-policy applies when rules are inherited from document level",
+      (t) => {
+        // Same as the path-level inheritance case but with rules
+        // sourced from the document-level x-faremeter-pricing.
+        const doc = {
+          "x-faremeter-pricing": {
+            rules: [{ match: "$", capture: "100" }],
+          },
+          paths: {
+            "/test": {
+              post: {
+                "x-faremeter-policy": { allow: ["x402:exact"] },
+              },
+            },
+          },
+        };
+        const spec = extractSpec(doc);
+        const operation = spec.operations["POST /test"];
+        t.ok(operation, "operation must be extracted");
+        t.equal(
+          operation?.rules?.length,
+          1,
+          "rules inherited from document level",
+        );
+        t.equal(
+          operation?.policy?.allow?.[0],
+          "x402:exact",
+          "operation-level policy is attached to the operation pricing",
+        );
+        t.end();
+      },
+    );
+
     t.end();
   },
 );

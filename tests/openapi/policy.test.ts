@@ -695,3 +695,116 @@ await t.test(
     t.end();
   },
 );
+
+await t.test("openapi gateway: PaymentPolicy MPP pin behaviour", async (t) => {
+  // The "pin capturesAt=request forces one-phase on a verify-capable
+  // handler" case is already covered for x402 in the behavioural
+  // block above. The MPP path through resolvePinForMPP is separate
+  // code; this test pins down the symmetric behaviour for MPP.
+  await t.test(
+    "pin mpp:<method> capturesAt=request forces one-phase on verify-capable MPP",
+    async (t) => {
+      let verifyCalls = 0;
+      let settleCalls = 0;
+      const mppHandler = createTestMPPHandler({
+        supportsVerify: true,
+        onVerify: () => {
+          verifyCalls++;
+        },
+        onSettle: () => {
+          settleCalls++;
+        },
+      });
+
+      const spec: FaremeterSpec = {
+        assets: TEST_SPEC_ASSETS,
+        operations: {
+          [OP]: {
+            method: "POST",
+            path: "/v1/chat/completions",
+            transport: "json",
+            rates: { test: 1n },
+            rules: [
+              {
+                match: "$",
+                authorize: "100",
+                capture: "$.response.body.usage.total_tokens",
+              },
+            ],
+            policy: {
+              pin: {
+                [`mpp:${TEST_MPP_METHOD}`]: { capturesAt: "request" },
+              },
+            },
+          },
+        },
+      };
+
+      const handler = createGatewayHandler({
+        spec,
+        baseURL: BASE_URL,
+        mppMethodHandlers: [mppHandler],
+      });
+
+      const challengeResult = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: {},
+        query: {},
+        body: {},
+      });
+      const wwwAuth = challengeResult.headers?.["WWW-Authenticate"];
+      if (!wwwAuth) throw new Error("no WWW-Authenticate header");
+      const challenges = parseWWWAuthenticate(wwwAuth);
+      const challenge = challenges[0];
+      if (!challenge) throw new Error("no challenge parsed");
+      const clientHandler = createTestMPPPaymentHandler();
+      const execer = await clientHandler(challenge);
+      if (!execer) throw new Error("client handler refused challenge");
+      const credential = await execer.exec();
+      const authHeader = `Payment ${serializeCredential(credential)}`;
+
+      const requestResult = await handler.handleRequest({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { Authorization: authHeader },
+        query: {},
+        body: {},
+      });
+      t.equal(requestResult.status, 200, "/request must succeed");
+      t.equal(
+        verifyCalls,
+        0,
+        "pin=request: handleVerify must not fire even though handler is verify-capable",
+      );
+      t.equal(
+        settleCalls,
+        1,
+        "pin=request: handleSettle fires once at /request",
+      );
+
+      // /response must be a no-op (alreadyCapturedAtRequest path).
+      const responseResult = await handler.handleResponse({
+        operationKey: OP,
+        method: "POST",
+        path: "/v1/chat/completions",
+        headers: { Authorization: authHeader },
+        query: {},
+        body: {},
+        response: {
+          status: 200,
+          headers: {},
+          body: { usage: { total_tokens: 75 } },
+        },
+      });
+      t.equal(responseResult.status, 200, "/response must succeed");
+      t.equal(settleCalls, 1, "/response must not fire a second handleSettle");
+      t.equal(verifyCalls, 0, "/response must not fire handleVerify");
+      t.end();
+    },
+  );
+
+  t.end();
+});

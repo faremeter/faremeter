@@ -1696,25 +1696,6 @@ await t.test("openapi gateway: capturesAt resolution", async (t) => {
   // | yes                   | no                 | "request"  |
   // | yes                   | yes                | "response" |
 
-  function makeSettleOnlyX402Handler(opts: {
-    payTo: string;
-    onSettle?: Parameters<typeof createTestFacilitatorHandler>[0]["onSettle"];
-    onVerify?: Parameters<typeof createTestFacilitatorHandler>[0]["onVerify"];
-  }) {
-    const constructorOpts: Parameters<typeof createTestFacilitatorHandler>[0] =
-      {
-        payTo: opts.payTo,
-        amountPolicy: holdAndSettle,
-      };
-    if (opts.onSettle) constructorOpts.onSettle = opts.onSettle;
-    if (opts.onVerify) constructorOpts.onVerify = opts.onVerify;
-    const handler = createTestFacilitatorHandler(constructorOpts);
-    // Strip handleVerify to simulate a handler that cannot authorize
-    // (e.g. a facilitator that only supports immediate settlement).
-    delete (handler as { handleVerify?: unknown }).handleVerify;
-    return handler;
-  }
-
   await t.test(
     "settle-only x402 handler on two-phase rule captures once at /request",
     async (t) => {
@@ -1732,8 +1713,10 @@ await t.test("openapi gateway: capturesAt resolution", async (t) => {
         baseURL: BASE_URL,
         supportedVersions: { x402v1: false, x402v2: true },
         x402Handlers: [
-          makeSettleOnlyX402Handler({
+          createTestFacilitatorHandler({
             payTo: PAY_TO,
+            supportsVerify: false,
+            amountPolicy: holdAndSettle,
             onVerify: (r) => verifyCalls.push({ amount: r.amount }),
             onSettle: (r) => settleCalls.push({ phase, amount: r.amount }),
           }),
@@ -2112,8 +2095,9 @@ await t.test("openapi gateway: capturesAt resolution", async (t) => {
         baseURL: BASE_URL,
         supportedVersions: { x402v1: false, x402v2: true },
         x402Handlers: [
-          makeSettleOnlyX402Handler({
+          createTestFacilitatorHandler({
             payTo: PAY_TO,
+            supportsVerify: false,
             onVerify: () => verifyCallsSettleOnly.push({ phase }),
             onSettle: () => settleCallsSettleOnly.push({ phase }),
           }),
@@ -2164,16 +2148,13 @@ await t.test("openapi gateway: capturesAt resolution", async (t) => {
         [];
       let phase: "request" | "response" = "request";
 
-      // H1: scheme "test", settle-only. Built by stripping handleVerify
-      // from the standard test facilitator -- the helper to do this
-      // cleanly via an opt is being introduced in a follow-up commit.
+      // H1: scheme "test", settle-only.
       const settleOnlyTestSchemeHandler = createTestFacilitatorHandler({
         payTo: PAY_TO,
+        supportsVerify: false,
         amountPolicy: holdAndSettle,
         onSettle: (r) => settleCalls.push({ phase, amount: r.amount }),
       });
-      delete (settleOnlyTestSchemeHandler as { handleVerify?: unknown })
-        .handleVerify;
 
       // H2: scheme "other-scheme", verify-capable. Same network/asset
       // as H1 so narrowHandlers includes it in the candidate pool;

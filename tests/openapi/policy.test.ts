@@ -78,21 +78,6 @@ function makeV2PaymentHeader(scheme: string, amount: string): string {
   return btoa(JSON.stringify(payload));
 }
 
-function makeSettleOnlyX402Handler(opts: {
-  payTo: string;
-  onSettle?: Parameters<typeof createTestFacilitatorHandler>[0]["onSettle"];
-  onVerify?: Parameters<typeof createTestFacilitatorHandler>[0]["onVerify"];
-}) {
-  const constructorOpts: Parameters<typeof createTestFacilitatorHandler>[0] = {
-    payTo: opts.payTo,
-  };
-  if (opts.onSettle) constructorOpts.onSettle = opts.onSettle;
-  if (opts.onVerify) constructorOpts.onVerify = opts.onVerify;
-  const handler = createTestFacilitatorHandler(constructorOpts);
-  delete (handler as { handleVerify?: unknown }).handleVerify;
-  return handler;
-}
-
 // Construct a second x402 handler that advertises a different scheme
 // so behavioural tests have something to filter against. The shared
 // test facilitator hardcodes TEST_SCHEME (its getRequirements and
@@ -320,7 +305,12 @@ await t.test(
               spec,
               baseURL: BASE_URL,
               supportedVersions: { x402v1: false, x402v2: true },
-              x402Handlers: [makeSettleOnlyX402Handler({ payTo: PAY_TO })],
+              x402Handlers: [
+                createTestFacilitatorHandler({
+                  payTo: PAY_TO,
+                  supportsVerify: false,
+                }),
+              ],
             }),
           {
             message: new RegExp(

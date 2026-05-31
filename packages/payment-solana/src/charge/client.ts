@@ -6,16 +6,18 @@ import type {
 } from "@faremeter/types/mpp";
 import { decodeBase64URL } from "@faremeter/types/mpp";
 import { isValidationError } from "@faremeter/types";
+import { caip2ToCluster, normalizeNetworkId } from "@faremeter/info/solana";
 import {
+  getCreateAssociatedTokenIdempotentInstruction,
   fetchMint,
   findAssociatedTokenPda,
   getTransferCheckedInstruction,
-  TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
 import {
   getSetComputeUnitLimitInstruction,
   getSetComputeUnitPriceInstruction,
 } from "@solana-program/compute-budget";
+import { getAddMemoInstruction } from "@solana-program/memo";
 import { getTransferSolInstruction } from "@solana-program/system";
 import {
   address,
@@ -34,8 +36,48 @@ import {
   type Wallet,
   type WalletLifetimeConstraint,
 } from "../exact/client";
-import { mppChargeRequest } from "./common";
+import {
+  chargeHasATACreationSplits,
+  getChargeChallengeMemo,
+  getChargeMemoValidationError,
+  getChargePrimaryAmount,
+  getChargeSplits,
+  mppChargeRequest,
+} from "./common";
 import { toAddress, toRpc } from "../compat";
+
+type AddressInput = Address | { toBase58(): string };
+type AmountInput = string | bigint;
+
+export type MPPSolanaChargeClientExpectedSplit = {
+  amount: AmountInput;
+  recipient: AddressInput;
+  memo?: string;
+  ataCreationRequired?: boolean;
+};
+
+export type MPPSolanaChargeClientExpected = {
+  amount?: AmountInput;
+  recipient?: AddressInput;
+  network?: string;
+  feePayerKey?: AddressInput | null;
+  splits?: readonly MPPSolanaChargeClientExpectedSplit[];
+};
+
+type NormalizedChargeClientExpectedSplit = {
+  amount: string;
+  recipient: Address;
+  memo: string | undefined;
+  ataCreationRequired: boolean;
+};
+
+type NormalizedChargeClientExpected = {
+  amount: string | undefined;
+  recipient: Address | undefined;
+  network: string | undefined;
+  feePayerKey: Address | null | undefined;
+  splits: readonly NormalizedChargeClientExpectedSplit[] | undefined;
+};
 
 async function broadcastAndConfirm(
   tx: Transaction,
@@ -116,23 +158,161 @@ async function fetchLifetimeConstraint(
   };
 }
 
+function getOptionalChargeMemo(request: mppChargeRequest): string | undefined {
+  const memo = getChargeChallengeMemo(request);
+  if (memo === undefined || memo.length === 0) {
+    return undefined;
+  }
+  const error = getChargeMemoValidationError(memo);
+  if (error) throw new Error(error);
+  return memo;
+}
+
+function addMemoInstruction(
+  instructions: Instruction[],
+  memo: string | undefined,
+) {
+  if (memo === undefined || memo.length === 0) return;
+  const error = getChargeMemoValidationError(memo);
+  if (error) throw new Error(error);
+  instructions.push(getAddMemoInstruction({ memo }));
+}
+
+function normalizeChargeAmount(amount: AmountInput): string {
+  if (typeof amount === "bigint") return amount.toString();
+  return amount;
+}
+
+function getNetworkString(network: Wallet["network"] | undefined) {
+  if (network === undefined) return undefined;
+  if (typeof network === "string") return network;
+  return network.caip2;
+}
+
+function normalizeChargeNetwork(network: Wallet["network"] | undefined) {
+  const rawNetwork = getNetworkString(network) ?? "mainnet";
+  const normalizedNetwork = normalizeNetworkId(rawNetwork);
+  const cluster = caip2ToCluster(normalizedNetwork) ?? normalizedNetwork;
+  if (cluster === "mainnet-beta") return "mainnet";
+  return cluster;
+}
+
+function normalizeChargeClientExpected(
+  expected: MPPSolanaChargeClientExpected | undefined,
+): NormalizedChargeClientExpected {
+  if (!expected) {
+    return {
+      amount: undefined,
+      recipient: undefined,
+      network: undefined,
+      feePayerKey: undefined,
+      splits: undefined,
+    };
+  }
+  return {
+    amount:
+      expected.amount === undefined
+        ? undefined
+        : normalizeChargeAmount(expected.amount),
+    recipient:
+      expected.recipient === undefined
+        ? undefined
+        : toAddress(expected.recipient),
+    network:
+      expected.network === undefined
+        ? undefined
+        : normalizeChargeNetwork(expected.network),
+    feePayerKey:
+      expected.feePayerKey === undefined || expected.feePayerKey === null
+        ? expected.feePayerKey
+        : toAddress(expected.feePayerKey),
+    splits: expected.splits?.map((split) => ({
+      amount: normalizeChargeAmount(split.amount),
+      recipient: toAddress(split.recipient),
+      memo: split.memo,
+      ataCreationRequired: split.ataCreationRequired === true,
+    })),
+  };
+}
+
+function getChargeFeePayerKey(request: mppChargeRequest): string | null {
+  const methodDetails = request.methodDetails;
+  if (methodDetails?.feePayer !== true) return null;
+  return methodDetails.feePayerKey ?? null;
+}
+
+function getChargeClientValidationError(
+  request: mppChargeRequest,
+  walletNetwork: Wallet["network"],
+  expected: NormalizedChargeClientExpected,
+) {
+  if (
+    normalizeChargeNetwork(request.methodDetails?.network) !==
+    normalizeChargeNetwork(walletNetwork)
+  ) {
+    return "charge network does not match wallet network";
+  }
+  if (expected.amount !== undefined && request.amount !== expected.amount) {
+    return "charge amount does not match expected amount";
+  }
+  if (
+    expected.recipient !== undefined &&
+    request.recipient !== expected.recipient
+  ) {
+    return "charge recipient does not match expected recipient";
+  }
+  if (
+    expected.network !== undefined &&
+    normalizeChargeNetwork(request.methodDetails?.network) !== expected.network
+  ) {
+    return "charge network does not match expected network";
+  }
+  if (
+    expected.feePayerKey !== undefined &&
+    getChargeFeePayerKey(request) !== expected.feePayerKey
+  ) {
+    return "charge fee payer does not match expected fee payer";
+  }
+  if (expected.splits !== undefined) {
+    const splits = getChargeSplits(request);
+    if (splits.length !== expected.splits.length) {
+      return "charge splits do not match expected splits";
+    }
+    for (let i = 0; i < splits.length; i++) {
+      const split = splits[i];
+      const expectedSplit = expected.splits[i];
+      if (!split || !expectedSplit) {
+        return "charge splits do not match expected splits";
+      }
+      if (
+        split.amount !== expectedSplit.amount ||
+        split.recipient !== expectedSplit.recipient ||
+        split.memo !== expectedSplit.memo ||
+        (split.ataCreationRequired === true) !==
+          expectedSplit.ataCreationRequired
+      ) {
+        return "charge splits do not match expected splits";
+      }
+    }
+  }
+  return null;
+}
+
 export type CreateMPPSolanaChargeClientArgs = {
   wallet: Wallet;
   mint: Address | { toBase58(): string };
   rpc?: Rpc<SolanaRpcApi> | string;
-  tokenProgramId?: Address | { toBase58(): string };
   broadcast?: boolean;
+  expected?: MPPSolanaChargeClientExpected;
 };
 
 export function createMPPSolanaChargeClient(
   args: CreateMPPSolanaChargeClientArgs,
 ): MPPPaymentHandler {
   const mint = toAddress(args.mint);
-  const defaultTokenProgram = args.tokenProgramId
-    ? toAddress(args.tokenProgramId)
-    : undefined;
   const rpc = args.rpc ? toRpc(args.rpc) : undefined;
   const { wallet, broadcast = false } = args;
+  const expected = normalizeChargeClientExpected(args.expected);
 
   if (broadcast && !rpc) {
     throw new Error("rpc is required when broadcast is true");
@@ -154,13 +334,18 @@ export function createMPPSolanaChargeClient(
     const request = mppChargeRequest(requestBody);
     if (isValidationError(request)) return null;
     if (request.currency === "sol") return null;
+    if (request.currency !== mint) return null;
+    if (getChargeClientValidationError(request, wallet.network, expected)) {
+      return null;
+    }
 
     return {
       challenge,
       exec: async (): Promise<mppCredential> => {
         const md = request.methodDetails;
-        const amount = BigInt(request.amount);
-        const recipientKey = address(request.recipient);
+        const memo = getOptionalChargeMemo(request);
+        const primaryAmount = getChargePrimaryAmount(request);
+        const splits = getChargeSplits(request);
         const feePayerKey =
           md?.feePayer === true && md.feePayerKey
             ? address(md.feePayerKey)
@@ -181,19 +366,22 @@ export function createMPPSolanaChargeClient(
           throw new Error("no decimals available");
         }
 
-        const tokenProgramId: Address = md?.tokenProgram
-          ? address(md.tokenProgram)
-          : (defaultTokenProgram ?? TOKEN_PROGRAM_ADDRESS);
+        let tokenProgramId: Address;
+        if (md?.tokenProgram !== undefined) {
+          tokenProgramId = address(md.tokenProgram);
+        } else {
+          if (!rpc) {
+            throw new Error("rpc is required when tokenProgram is absent");
+          }
+          // Servers should include tokenProgram; this lookup is required by
+          // the spec when it is omitted, but adds an RPC round trip.
+          const mintInfo = await fetchMint(rpc, mint);
+          tokenProgramId = mintInfo.programAddress;
+        }
 
         const [sourceAccount] = await findAssociatedTokenPda({
           mint,
           owner: wallet.publicKey,
-          tokenProgram: tokenProgramId,
-        });
-
-        const [receiverAccount] = await findAssociatedTokenPda({
-          mint,
-          owner: recipientKey,
           tokenProgram: tokenProgramId,
         });
 
@@ -202,18 +390,59 @@ export function createMPPSolanaChargeClient(
         const instructions: Instruction[] = [
           getSetComputeUnitLimitInstruction({ units: 200_000 }),
           getSetComputeUnitPriceInstruction({ microLamports: 1n }),
-          getTransferCheckedInstruction(
-            {
-              source: sourceAccount,
-              mint,
-              destination: receiverAccount,
-              authority: walletSigner,
-              amount,
-              decimals,
-            },
-            { programAddress: tokenProgramId },
-          ),
         ];
+        const addTransfer = async (
+          recipient: string,
+          amount: bigint,
+          createATA: boolean,
+        ) => {
+          const recipientKey = address(recipient);
+          const [receiverAccount] = await findAssociatedTokenPda({
+            mint,
+            owner: recipientKey,
+            tokenProgram: tokenProgramId,
+          });
+          if (createATA) {
+            instructions.push(
+              getCreateAssociatedTokenIdempotentInstruction({
+                ata: receiverAccount,
+                owner: recipientKey,
+                payer: feePayerKey
+                  ? createNoopSigner(feePayerKey)
+                  : walletSigner,
+                mint,
+                tokenProgram: tokenProgramId,
+              }),
+            );
+          }
+          instructions.push(
+            getTransferCheckedInstruction(
+              {
+                source: sourceAccount,
+                mint,
+                destination: receiverAccount,
+                authority: walletSigner,
+                amount,
+                decimals,
+              },
+              { programAddress: tokenProgramId },
+            ),
+          );
+        };
+
+        await addTransfer(request.recipient, primaryAmount, false);
+        addMemoInstruction(instructions, memo);
+
+        for (const split of splits) {
+          // Without a fee payer the wallet pays the rent, so it creates every
+          // split's ATA; with a sponsor, only the splits the server flagged.
+          await addTransfer(
+            split.recipient,
+            BigInt(split.amount),
+            feePayerKey ? split.ataCreationRequired === true : true,
+          );
+          addMemoInstruction(instructions, split.memo);
+        }
 
         const payerKey = feePayerKey ?? wallet.publicKey;
 
@@ -252,6 +481,7 @@ export type CreateMPPSolanaNativeChargeClientArgs = {
   wallet: Wallet;
   rpc?: Rpc<SolanaRpcApi> | string;
   broadcast?: boolean;
+  expected?: MPPSolanaChargeClientExpected;
 };
 
 export function createMPPSolanaNativeChargeClient(
@@ -259,6 +489,7 @@ export function createMPPSolanaNativeChargeClient(
 ): MPPPaymentHandler {
   const rpc = args.rpc ? toRpc(args.rpc) : undefined;
   const { wallet, broadcast = false } = args;
+  const expected = normalizeChargeClientExpected(args.expected);
 
   if (broadcast && !rpc) {
     throw new Error("rpc is required when broadcast is true");
@@ -280,13 +511,20 @@ export function createMPPSolanaNativeChargeClient(
     const request = mppChargeRequest(requestBody);
     if (isValidationError(request)) return null;
     if (request.currency !== "sol") return null;
+    if (getChargeClientValidationError(request, wallet.network, expected)) {
+      return null;
+    }
 
     return {
       challenge,
       exec: async (): Promise<mppCredential> => {
         const md = request.methodDetails;
-        const amount = BigInt(request.amount);
-        const recipientKey = address(request.recipient);
+        const memo = getOptionalChargeMemo(request);
+        const primaryAmount = getChargePrimaryAmount(request);
+        const splits = getChargeSplits(request);
+        if (chargeHasATACreationSplits(request)) {
+          throw new Error("ataCreationRequired requires an SPL token charge");
+        }
         const feePayerKey =
           md?.feePayer === true && md.feePayerKey
             ? address(md.feePayerKey)
@@ -304,10 +542,22 @@ export function createMPPSolanaNativeChargeClient(
           getSetComputeUnitPriceInstruction({ microLamports: 1n }),
           getTransferSolInstruction({
             source: walletSigner,
-            destination: recipientKey,
-            amount,
+            destination: address(request.recipient),
+            amount: primaryAmount,
           }),
         ];
+        addMemoInstruction(instructions, memo);
+
+        for (const split of splits) {
+          instructions.push(
+            getTransferSolInstruction({
+              source: walletSigner,
+              destination: address(split.recipient),
+              amount: BigInt(split.amount),
+            }),
+          );
+          addMemoInstruction(instructions, split.memo);
+        }
 
         const payerKey = feePayerKey ?? wallet.publicKey;
 

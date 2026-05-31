@@ -31,11 +31,13 @@ import {
 } from "@solana/kit";
 import {
   getBase64EncodedWireTransaction,
+  getSignatureFromTransaction,
   getTransactionDecoder,
   partiallySignTransaction,
 } from "@solana/transactions";
 
-const LAMPORTS_PER_SOL = 1_000_000_000;
+const SIGNATURE_REPLAY_PREFIX = "solana-charge:consumed:";
+const SIGNATURE_REPLAY_TTL_MS = 24 * 60 * 60 * 1000;
 
 import type { CompilableTransactionMessage } from "../common";
 import { mppChargeRequest, chargeCredentialPayload } from "./common";
@@ -104,51 +106,91 @@ export type CreateMPPSolanaChargeHandlerArgs = {
   maxPriorityFee?: number;
 };
 
+type SendTransactionResult =
+  | { success: true; signature: Signature }
+  | { success: false; error: string; submitted: boolean };
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 const sendTransaction = async (
   rpc: Rpc<SolanaRpcApi>,
   signedTransaction: Transaction,
   maxRetries: number,
   retryDelayMs: number,
-): Promise<
-  { success: true; signature: string } | { success: false; error: string }
-> => {
+): Promise<SendTransactionResult> => {
   const base64EncodedTransaction =
     getBase64EncodedWireTransaction(signedTransaction);
 
-  const simResult = await rpc
-    .simulateTransaction(base64EncodedTransaction, {
-      encoding: "base64",
-    })
-    .send();
+  try {
+    const simResult = await rpc
+      .simulateTransaction(base64EncodedTransaction, {
+        encoding: "base64",
+      })
+      .send();
 
-  if (simResult.value.err) {
-    logger.error("transaction simulation failed", simResult.value);
-    return { success: false, error: "Transaction simulation failed" };
-  }
-
-  const signature = await rpc
-    .sendTransaction(base64EncodedTransaction, {
-      encoding: "base64",
-    })
-    .send();
-
-  for (let i = 0; i < maxRetries; i++) {
-    const status = await rpc.getSignatureStatuses([signature]).send();
-    if (status.value[0]?.err) {
+    if (simResult.value.err) {
+      logger.error("transaction simulation failed", simResult.value);
       return {
         success: false,
-        error: `Transaction failed: ${JSON.stringify(status.value[0].err)}`,
+        submitted: false,
+        error: "Transaction simulation failed",
       };
     }
-    if (
-      status.value[0]?.confirmationStatus === "confirmed" ||
-      status.value[0]?.confirmationStatus === "finalized"
-    ) {
-      return { success: true, signature };
+  } catch (error) {
+    return {
+      success: false,
+      submitted: false,
+      error: `Transaction simulation failed: ${getErrorMessage(error)}`,
+    };
+  }
+
+  let signature: Signature;
+  try {
+    signature = await rpc
+      .sendTransaction(base64EncodedTransaction, {
+        encoding: "base64",
+      })
+      .send();
+  } catch (error) {
+    return {
+      success: false,
+      submitted: false,
+      error: `Transaction send failed: ${getErrorMessage(error)}`,
+    };
+  }
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const status = await rpc.getSignatureStatuses([signature]).send();
+      if (status.value[0]?.err) {
+        return {
+          success: false,
+          submitted: true,
+          error: `Transaction failed: ${JSON.stringify(status.value[0].err)}`,
+        };
+      }
+      if (
+        status.value[0]?.confirmationStatus === "confirmed" ||
+        status.value[0]?.confirmationStatus === "finalized"
+      ) {
+        return { success: true, signature };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        submitted: true,
+        error: `Transaction confirmation failed: ${getErrorMessage(error)}`,
+      };
     }
     await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
   }
-  return { success: false, error: "Transaction confirmation timeout" };
+  return {
+    success: false,
+    submitted: true,
+    error: "Transaction confirmation timeout",
+  };
 };
 
 const fetchConfirmedTransaction = async (
@@ -204,6 +246,31 @@ const decodeWireTransaction = (base64Transaction: string) => {
   };
 };
 
+async function claimConsumedSignature(
+  replayStore: ReplayStore,
+  signature: string,
+) {
+  const key = `${SIGNATURE_REPLAY_PREFIX}${signature}`;
+  const claimed = await replayStore.claim(
+    key,
+    Date.now() + SIGNATURE_REPLAY_TTL_MS,
+  );
+  if (!claimed) {
+    throw new Error("transaction signature already consumed");
+  }
+  return () => replayStore.release(key);
+}
+
+async function releaseSignatureClaim(release: () => Promise<void>) {
+  try {
+    await release();
+  } catch (error) {
+    logger.error("failed to release consumed signature claim", {
+      error: getErrorMessage(error),
+    });
+  }
+}
+
 export async function createMPPSolanaChargeHandler(
   args: CreateMPPSolanaChargeHandlerArgs,
 ): Promise<MPPMethodHandler> {
@@ -253,6 +320,7 @@ export async function createMPPSolanaChargeHandler(
       amount: pricing.amount,
       currency: mintAddress,
       recipient: pricing.recipient,
+      externalId: crypto.randomUUID(),
       ...(pricing.description ? { description: pricing.description } : {}),
       methodDetails,
     };
@@ -319,7 +387,6 @@ export async function createMPPSolanaChargeHandler(
         `invalid credential payload: ${validatedPayload.summary}`,
       );
     }
-
     const verifyArgs = {
       request,
       feePayerAddress: feePayerAddress ?? "",
@@ -354,6 +421,8 @@ export async function createMPPSolanaChargeHandler(
         );
       }
 
+      await claimConsumedSignature(replayStore, validatedPayload.signature);
+
       return {
         status: "success",
         method: "solana",
@@ -375,23 +444,35 @@ export async function createMPPSolanaChargeHandler(
       throw new Error(`transaction verification failed: ${verifyResult.error}`);
     }
 
-    if (!feePayerSigner) {
-      throw new Error("pull mode requires a fee payer keypair");
+    let transactionToSend = decodedTx;
+    if (request.methodDetails?.feePayer === true) {
+      if (!feePayerSigner) {
+        throw new Error("pull mode requires a fee payer keypair");
+      }
+      transactionToSend = await partiallySignTransaction(
+        [feePayerSigner.keyPair],
+        decodedTx,
+      );
     }
 
-    const signedTransaction = await partiallySignTransaction(
-      [feePayerSigner.keyPair],
-      decodedTx,
+    // Reserve the signature before broadcasting so a replayed payment is
+    // rejected here rather than after it has already settled on-chain.
+    const releaseConsumedSignature = await claimConsumedSignature(
+      replayStore,
+      getSignatureFromTransaction(transactionToSend),
     );
 
     const txResult = await sendTransaction(
       rpc,
-      signedTransaction,
+      transactionToSend,
       maxRetries,
       retryDelayMs,
     );
 
     if (!txResult.success) {
+      if (!txResult.submitted) {
+        await releaseSignatureClaim(releaseConsumedSignature);
+      }
       throw new Error(`settlement failed: ${txResult.error}`);
     }
 
@@ -414,8 +495,6 @@ export async function createMPPSolanaChargeHandler(
     handleSettle,
   };
 }
-
-const SOL_DECIMALS = Math.log10(LAMPORTS_PER_SOL);
 
 export type CreateMPPSolanaNativeChargeHandlerArgs = {
   network: string | SolanaCAIP2Network;
@@ -460,7 +539,6 @@ export async function createMPPSolanaNativeChargeHandler(
   ): Promise<mppChallengeParams> => {
     const methodDetails: mppChargeRequest["methodDetails"] = {
       network: caip2ToCluster(solanaNetwork.caip2) ?? solanaNetwork.caip2,
-      decimals: SOL_DECIMALS,
     };
 
     if (hasFeePayer && feePayerAddress) {
@@ -474,6 +552,7 @@ export async function createMPPSolanaNativeChargeHandler(
       amount: pricing.amount,
       currency: "sol",
       recipient: pricing.recipient,
+      externalId: crypto.randomUUID(),
       ...(pricing.description ? { description: pricing.description } : {}),
       methodDetails,
     };
@@ -540,7 +619,6 @@ export async function createMPPSolanaNativeChargeHandler(
         `invalid credential payload: ${validatedPayload.summary}`,
       );
     }
-
     const verifyArgs = {
       request,
       feePayerAddress: feePayerAddress ?? "",
@@ -574,6 +652,8 @@ export async function createMPPSolanaNativeChargeHandler(
         );
       }
 
+      await claimConsumedSignature(replayStore, validatedPayload.signature);
+
       return {
         status: "success",
         method: "solana",
@@ -595,23 +675,35 @@ export async function createMPPSolanaNativeChargeHandler(
       throw new Error(`transaction verification failed: ${verifyResult.error}`);
     }
 
-    if (!feePayerSigner) {
-      throw new Error("pull mode requires a fee payer keypair");
+    let transactionToSend = decodedTx;
+    if (request.methodDetails?.feePayer === true) {
+      if (!feePayerSigner) {
+        throw new Error("pull mode requires a fee payer keypair");
+      }
+      transactionToSend = await partiallySignTransaction(
+        [feePayerSigner.keyPair],
+        decodedTx,
+      );
     }
 
-    const signedTransaction = await partiallySignTransaction(
-      [feePayerSigner.keyPair],
-      decodedTx,
+    // Reserve the signature before broadcasting so a replayed payment is
+    // rejected here rather than after it has already settled on-chain.
+    const releaseConsumedSignature = await claimConsumedSignature(
+      replayStore,
+      getSignatureFromTransaction(transactionToSend),
     );
 
     const txResult = await sendTransaction(
       rpc,
-      signedTransaction,
+      transactionToSend,
       maxRetries,
       retryDelayMs,
     );
 
     if (!txResult.success) {
+      if (!txResult.submitted) {
+        await releaseSignatureClaim(releaseConsumedSignature);
+      }
       throw new Error(`settlement failed: ${txResult.error}`);
     }
 

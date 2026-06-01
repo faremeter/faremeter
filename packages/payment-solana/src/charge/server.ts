@@ -236,6 +236,36 @@ const fetchConfirmedTransaction = async (
   return null;
 };
 
+type ConfirmedChargeVerifier = (
+  transactionMessage: CompilableTransactionMessage,
+) => Promise<{ payer: string } | { error: string }>;
+
+const verifyConfirmedTransaction = async (args: {
+  rpc: Rpc<SolanaRpcApi>;
+  signature: string;
+  maxRetries: number;
+  retryDelayMs: number;
+  verifyTransaction: ConfirmedChargeVerifier;
+}) => {
+  const transactionMessage = await fetchConfirmedTransaction(
+    args.rpc,
+    args.signature,
+    args.maxRetries,
+    args.retryDelayMs,
+  );
+
+  if (!transactionMessage) {
+    throw new Error("could not fetch confirmed transaction");
+  }
+
+  const verifyResult = await args.verifyTransaction(transactionMessage);
+  if ("error" in verifyResult) {
+    throw new Error(
+      `confirmed transaction verification failed: ${verifyResult.error}`,
+    );
+  }
+};
+
 const decodeWireTransaction = (base64Transaction: string) => {
   const txBytes = getBase64Encoder().encode(base64Transaction);
   const decodedTx = getTransactionDecoder().decode(txBytes);
@@ -413,6 +443,7 @@ export async function createMPPSolanaChargeHandler(
         `invalid credential payload: ${validatedPayload.summary}`,
       );
     }
+
     const verifyArgs = {
       request,
       feePayerAddress: feePayerAddress ?? "",
@@ -496,6 +527,18 @@ export async function createMPPSolanaChargeHandler(
       }
       throw new Error(`settlement failed: ${txResult.error}`);
     }
+
+    await verifyConfirmedTransaction({
+      rpc,
+      signature: txResult.signature,
+      maxRetries,
+      retryDelayMs,
+      verifyTransaction: (confirmedTransactionMessage) =>
+        verifyChargeTransaction({
+          transactionMessage: confirmedTransactionMessage,
+          ...verifyArgs,
+        }),
+    });
 
     return createChargeReceipt(challenge, txResult.signature);
   };
@@ -630,6 +673,7 @@ export async function createMPPSolanaNativeChargeHandler(
         `invalid credential payload: ${validatedPayload.summary}`,
       );
     }
+
     const verifyArgs = {
       request,
       feePayerAddress: feePayerAddress ?? "",
@@ -712,6 +756,18 @@ export async function createMPPSolanaNativeChargeHandler(
       }
       throw new Error(`settlement failed: ${txResult.error}`);
     }
+
+    await verifyConfirmedTransaction({
+      rpc,
+      signature: txResult.signature,
+      maxRetries,
+      retryDelayMs,
+      verifyTransaction: (confirmedTransactionMessage) =>
+        verifyNativeChargeTransaction({
+          transactionMessage: confirmedTransactionMessage,
+          ...verifyArgs,
+        }),
+    });
 
     return createChargeReceipt(challenge, txResult.signature);
   };

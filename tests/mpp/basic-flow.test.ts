@@ -214,6 +214,89 @@ await t.test("MPP basic payment flow", async (t) => {
   );
 
   await t.test(
+    "credential for cheaper route is rejected without being consumed",
+    async (t) => {
+      const cheapPricing: ResourcePricing[] = [
+        {
+          amount: "100",
+          asset: TEST_ASSET,
+          recipient: "test-receiver",
+          network: TEST_NETWORK,
+        },
+      ];
+      const expensivePricing: ResourcePricing[] = [
+        {
+          amount: "10000",
+          asset: TEST_ASSET,
+          recipient: "test-receiver",
+          network: TEST_NETWORK,
+        },
+      ];
+      const methodHandler = createTestMPPHandler();
+
+      const cheapHarness = new TestHarness({
+        mppMethodHandlers: [methodHandler],
+        mppClientHandlers: [],
+        pricing: cheapPricing,
+        clientHandlers: [],
+        settleMode: "settle-only",
+      });
+      const expensiveHarness = new TestHarness({
+        mppMethodHandlers: [methodHandler],
+        mppClientHandlers: [],
+        pricing: expensivePricing,
+        clientHandlers: [],
+        settleMode: "settle-only",
+      });
+
+      const cheapClientFetch = cheapHarness.createClientFetch();
+      const challengeResponse = await cheapClientFetch("/cheap-resource");
+      t.equal(challengeResponse.status, 402);
+
+      const wwwAuth = challengeResponse.headers.get("WWW-Authenticate") ?? "";
+      const challenges = parseWWWAuthenticate(wwwAuth);
+      const challenge = challenges[0];
+      if (!challenge) {
+        t.fail("no challenge parsed");
+        t.end();
+        return;
+      }
+
+      const clientHandler = createTestMPPPaymentHandler();
+      const execer = await clientHandler(challenge);
+      if (!execer) {
+        t.fail("client handler should match the challenge");
+        t.end();
+        return;
+      }
+
+      const credential = await execer.exec();
+      const authHeader = `Payment ${serializeCredential(credential)}`;
+
+      const expensiveResponse = await expensiveHarness.createClientFetch()(
+        "/expensive-resource",
+        { headers: { Authorization: authHeader } },
+      );
+      t.equal(
+        expensiveResponse.status,
+        402,
+        "cheap credential should not settle expensive route",
+      );
+
+      const cheapResponse = await cheapClientFetch("/cheap-resource", {
+        headers: { Authorization: authHeader },
+      });
+      t.equal(
+        cheapResponse.status,
+        200,
+        "route mismatch must not consume the cheap credential",
+      );
+
+      t.end();
+    },
+  );
+
+  await t.test(
     "dual protocol: x402 and MPP coexist on same harness",
     async (t) => {
       const harness = new TestHarness({

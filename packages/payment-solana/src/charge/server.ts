@@ -1,6 +1,7 @@
 import type {
   MPPMethodHandler,
   ChallengeOpts,
+  MPPHandlerContext,
   mppChallengeParams,
   mppCredential,
   mppReceipt,
@@ -332,6 +333,22 @@ function assertChallengeNotExpired(challenge: mppChallengeParams) {
   }
 }
 
+function chargeRequestMatchesPricing(args: {
+  currency: string;
+  pricing: ResourcePricing;
+  request: mppChargeRequest;
+  solanaNetwork: SolanaCAIP2Network;
+}): boolean {
+  const { currency, pricing, request, solanaNetwork } = args;
+  return (
+    lookupX402Network(pricing.network).caip2 === solanaNetwork.caip2 &&
+    request.amount === pricing.amount &&
+    request.currency === currency &&
+    pricing.asset === currency &&
+    request.recipient === pricing.recipient
+  );
+}
+
 export async function createMPPSolanaChargeHandler(
   args: CreateMPPSolanaChargeHandlerArgs,
 ): Promise<MPPMethodHandler> {
@@ -408,6 +425,7 @@ export async function createMPPSolanaChargeHandler(
 
   const handleSettle = async (
     credential: mppCredential,
+    context: MPPHandlerContext,
   ): Promise<mppReceipt | null> => {
     const { challenge, payload } = credential;
 
@@ -431,6 +449,17 @@ export async function createMPPSolanaChargeHandler(
     }
 
     assertChallengeNotExpired(challenge);
+
+    if (
+      !chargeRequestMatchesPricing({
+        currency: mintAddress,
+        pricing: context.pricing,
+        request,
+        solanaNetwork,
+      })
+    ) {
+      return null;
+    }
 
     const consumed = await replayStore.consume(challenge.id);
     if (!consumed) {
@@ -638,6 +667,7 @@ export async function createMPPSolanaNativeChargeHandler(
 
   const handleSettle = async (
     credential: mppCredential,
+    context: MPPHandlerContext,
   ): Promise<mppReceipt | null> => {
     const { challenge, payload } = credential;
 
@@ -661,6 +691,17 @@ export async function createMPPSolanaNativeChargeHandler(
     }
 
     assertChallengeNotExpired(challenge);
+
+    if (
+      !chargeRequestMatchesPricing({
+        currency: "sol",
+        pricing: context.pricing,
+        request,
+        solanaNetwork,
+      })
+    ) {
+      return null;
+    }
 
     const consumed = await replayStore.consume(challenge.id);
     if (!consumed) {

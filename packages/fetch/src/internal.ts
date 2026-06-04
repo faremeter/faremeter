@@ -26,6 +26,7 @@ import { normalizeNetworkId, translateNetworkToLegacy } from "@faremeter/info";
 
 import type { MPPPaymentHandler } from "@faremeter/types/mpp";
 import {
+  parseMPPExpiresAtMs,
   parseWWWAuthenticate,
   serializeCredential,
   WWW_AUTHENTICATE_HEADER,
@@ -218,8 +219,8 @@ export async function processPaymentRequiredResponseMPP(
 
   for (const challenge of challenges) {
     if (challenge.expires !== undefined) {
-      const expiresAtMs = Number(challenge.expires) * 1000;
-      if (expiresAtMs <= Date.now()) continue;
+      const expiresAtMs = parseMPPExpiresAtMs(challenge.expires);
+      if (expiresAtMs === null || expiresAtMs <= Date.now()) continue;
     }
 
     if (challenge.digest !== undefined) {

@@ -30,6 +30,7 @@ export type mppCredential = typeof mppCredential.infer;
 export const mppReceipt = type({
   status: "'success'|'failed'",
   method: "string",
+  challengeId: "string",
   timestamp: "string",
   reference: "string",
 });

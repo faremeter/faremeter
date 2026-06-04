@@ -9,6 +9,8 @@ import {
   encodeBase64URL,
   canonicalizeSortedJSON,
   decodeBase64URL,
+  formatMPPDateTime,
+  parseMPPExpiresAtMs,
 } from "@faremeter/types/mpp";
 import type { ResourcePricing } from "@faremeter/types/pricing";
 import { isValidationError } from "@faremeter/types";
@@ -271,6 +273,35 @@ async function releaseSignatureClaim(release: () => Promise<void>) {
   }
 }
 
+function getReceiptTimestamp(now = new Date()): string {
+  return formatMPPDateTime(now);
+}
+
+function createChargeReceipt(
+  challenge: mppChallengeParams,
+  reference: string,
+): mppReceipt {
+  return {
+    status: "success",
+    method: "solana",
+    challengeId: challenge.id,
+    timestamp: getReceiptTimestamp(),
+    reference,
+  };
+}
+
+function assertChallengeNotExpired(challenge: mppChallengeParams) {
+  if (challenge.expires === undefined) return;
+
+  const expiresAtMs = parseMPPExpiresAtMs(challenge.expires);
+  if (expiresAtMs === null) {
+    throw new Error("invalid challenge expiry");
+  }
+  if (Date.now() > expiresAtMs) {
+    throw new Error("challenge expired");
+  }
+}
+
 export async function createMPPSolanaChargeHandler(
   args: CreateMPPSolanaChargeHandlerArgs,
 ): Promise<MPPMethodHandler> {
@@ -335,7 +366,7 @@ export async function createMPPSolanaChargeHandler(
       method: "solana",
       intent,
       request: requestEncoded,
-      expires: String(Math.floor(expiresAt / 1000)),
+      expires: formatMPPDateTime(new Date(expiresAt)),
       ...(opts?.digest !== undefined ? { digest: opts.digest } : {}),
     };
 
@@ -369,12 +400,7 @@ export async function createMPPSolanaChargeHandler(
       throw new Error("invalid challenge ID");
     }
 
-    if (challenge.expires !== undefined) {
-      const expiresAtMs = Number(challenge.expires) * 1000;
-      if (expiresAtMs > 0 && Date.now() > expiresAtMs) {
-        throw new Error("challenge expired");
-      }
-    }
+    assertChallengeNotExpired(challenge);
 
     const consumed = await replayStore.consume(challenge.id);
     if (!consumed) {
@@ -423,12 +449,7 @@ export async function createMPPSolanaChargeHandler(
 
       await claimConsumedSignature(replayStore, validatedPayload.signature);
 
-      return {
-        status: "success",
-        method: "solana",
-        timestamp: new Date().toISOString(),
-        reference: validatedPayload.signature,
-      };
+      return createChargeReceipt(challenge, validatedPayload.signature);
     }
 
     const { transactionMessage, decodedTx } = decodeWireTransaction(
@@ -476,12 +497,7 @@ export async function createMPPSolanaChargeHandler(
       throw new Error(`settlement failed: ${txResult.error}`);
     }
 
-    return {
-      status: "success",
-      method: "solana",
-      timestamp: new Date().toISOString(),
-      reference: txResult.signature,
-    };
+    return createChargeReceipt(challenge, txResult.signature);
   };
 
   return {
@@ -567,7 +583,7 @@ export async function createMPPSolanaNativeChargeHandler(
       method: "solana",
       intent,
       request: requestEncoded,
-      expires: String(Math.floor(expiresAt / 1000)),
+      expires: formatMPPDateTime(new Date(expiresAt)),
       ...(opts?.digest !== undefined ? { digest: opts.digest } : {}),
     };
 
@@ -601,12 +617,7 @@ export async function createMPPSolanaNativeChargeHandler(
       throw new Error("invalid challenge ID");
     }
 
-    if (challenge.expires !== undefined) {
-      const expiresAtMs = Number(challenge.expires) * 1000;
-      if (expiresAtMs > 0 && Date.now() > expiresAtMs) {
-        throw new Error("challenge expired");
-      }
-    }
+    assertChallengeNotExpired(challenge);
 
     const consumed = await replayStore.consume(challenge.id);
     if (!consumed) {
@@ -654,12 +665,7 @@ export async function createMPPSolanaNativeChargeHandler(
 
       await claimConsumedSignature(replayStore, validatedPayload.signature);
 
-      return {
-        status: "success",
-        method: "solana",
-        timestamp: new Date().toISOString(),
-        reference: validatedPayload.signature,
-      };
+      return createChargeReceipt(challenge, validatedPayload.signature);
     }
 
     const { transactionMessage, decodedTx } = decodeWireTransaction(
@@ -707,12 +713,7 @@ export async function createMPPSolanaNativeChargeHandler(
       throw new Error(`settlement failed: ${txResult.error}`);
     }
 
-    return {
-      status: "success",
-      method: "solana",
-      timestamp: new Date().toISOString(),
-      reference: txResult.signature,
-    };
+    return createChargeReceipt(challenge, txResult.signature);
   };
 
   return {

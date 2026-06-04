@@ -1,12 +1,13 @@
 #!/usr/bin/env pnpm tsx
 
 import t from "tap";
-import { processPaymentRequiredResponseMPP } from "./internal";
-import { formatWWWAuthenticate } from "@faremeter/types/mpp";
+import { formatMPPDateTime, formatWWWAuthenticate } from "@faremeter/types/mpp";
 import type {
   MPPPaymentHandler,
   mppChallengeParams,
 } from "@faremeter/types/mpp";
+
+import { processPaymentRequiredResponseMPP } from "./internal";
 
 function makeChallenge(
   overrides: Partial<mppChallengeParams> = {},
@@ -25,6 +26,10 @@ function makeResponse(challenges: mppChallengeParams[]): Response {
   const headers = new Headers();
   headers.set("WWW-Authenticate", formatWWWAuthenticate(challenges));
   return new Response(null, { status: 402, headers });
+}
+
+function expiresIn(seconds: number) {
+  return formatMPPDateTime(new Date(Date.now() + seconds * 1000));
 }
 
 function makeMockHandler(): {
@@ -49,7 +54,7 @@ await t.test("MPP challenge expiry", async (t) => {
   await t.test("skips expired challenges", async (t) => {
     const expired = makeChallenge({
       id: "expired",
-      expires: String(Math.floor(Date.now() / 1000) - 10),
+      expires: expiresIn(-10),
     });
 
     const { handler, calls } = makeMockHandler();
@@ -84,11 +89,11 @@ await t.test("MPP challenge expiry", async (t) => {
   await t.test("skips expired, uses valid", async (t) => {
     const expired = makeChallenge({
       id: "expired",
-      expires: String(Math.floor(Date.now() / 1000) - 10),
+      expires: expiresIn(-10),
     });
     const valid = makeChallenge({
       id: "valid",
-      expires: String(Math.floor(Date.now() / 1000) + 60),
+      expires: expiresIn(60),
     });
 
     const { handler, calls } = makeMockHandler();
@@ -100,6 +105,41 @@ await t.test("MPP challenge expiry", async (t) => {
     t.ok(result, "should produce an authorization header");
     t.equal(calls.length, 1, "handler should be called once");
     t.equal(calls[0]?.id, "valid", "should use the non-expired challenge");
+    t.end();
+  });
+
+  await t.test("accepts legacy unix-second expires", async (t) => {
+    const valid = makeChallenge({
+      id: "legacy-valid",
+      expires: String(Math.floor(Date.now() / 1000) + 60),
+    });
+
+    const { handler, calls } = makeMockHandler();
+    const result = await processPaymentRequiredResponseMPP(
+      makeResponse([valid]),
+      [handler],
+    );
+
+    t.ok(result, "should produce an authorization header");
+    t.equal(calls.length, 1, "handler should be called");
+    t.equal(calls[0]?.id, "legacy-valid");
+    t.end();
+  });
+
+  await t.test("skips malformed expires", async (t) => {
+    const malformed = makeChallenge({
+      id: "malformed",
+      expires: "not-a-date",
+    });
+
+    const { handler, calls } = makeMockHandler();
+    const result = await processPaymentRequiredResponseMPP(
+      makeResponse([malformed]),
+      [handler],
+    );
+
+    t.equal(result, undefined, "should not produce an authorization header");
+    t.equal(calls.length, 0, "handler should not be called");
     t.end();
   });
 

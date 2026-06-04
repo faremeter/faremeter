@@ -22,6 +22,7 @@ function makeReceipt(method: string, ref: string): mppReceipt {
   return {
     status: "success",
     method,
+    challengeId: "test-id",
     timestamp: new Date().toISOString(),
     reference: ref,
   };

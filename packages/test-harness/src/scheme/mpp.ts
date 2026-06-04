@@ -115,6 +115,7 @@ export function createTestMPPHandler(
       return {
         status: "success" as const,
         method,
+        challengeId: credential.challenge.id,
         timestamp: new Date().toISOString(),
         reference: `test-tx-${Date.now()}`,
       };
@@ -134,6 +135,7 @@ export function createTestMPPHandler(
       return {
         status: "success" as const,
         method,
+        challengeId: credential.challenge.id,
         timestamp: new Date().toISOString(),
         reference: `test-verify-${Date.now()}`,
       };

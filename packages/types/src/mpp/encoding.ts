@@ -29,6 +29,37 @@ export function decodeBase64URL(encoded: string): string {
   return new TextDecoder().decode(bytes);
 }
 
+const NUMERIC_UNIX_SECONDS_RE = /^[0-9]+$/;
+const RFC3339_TIMESTAMP_RE =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+
+export function formatMPPDateTime(date: Date): string {
+  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+export function parseMPPExpiresAtMs(expires: string): number | null {
+  if (NUMERIC_UNIX_SECONDS_RE.test(expires)) {
+    const seconds = Number(expires);
+    if (
+      !Number.isSafeInteger(seconds) ||
+      seconds > Math.floor(Number.MAX_SAFE_INTEGER / 1000)
+    ) {
+      return null;
+    }
+    return seconds * 1000;
+  }
+
+  if (!RFC3339_TIMESTAMP_RE.test(expires)) {
+    return null;
+  }
+
+  const expiresAtMs = Date.parse(expires);
+  if (!Number.isFinite(expiresAtMs)) {
+    return null;
+  }
+  return expiresAtMs;
+}
+
 /**
  * Sorted-key JSON canonicalization following RFC 8785 JCS for the
  * subset of inputs used by MPP (string keys, no integer-indexed

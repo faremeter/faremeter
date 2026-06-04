@@ -13,6 +13,11 @@ export type ChallengeOpts = {
   digest?: string;
 };
 
+export type MPPHandlerContext = {
+  pricing: ResourcePricing;
+  resourceURL: string;
+};
+
 export interface MPPMethodHandler {
   method: string;
   capabilities: HandlerCapabilities;
@@ -23,8 +28,14 @@ export interface MPPMethodHandler {
     resourceURL: string,
     opts?: ChallengeOpts,
   ): Promise<mppChallengeParams>;
-  handleSettle(credential: mppCredential): Promise<mppReceipt | null>;
-  handleVerify?(credential: mppCredential): Promise<mppReceipt | null>;
+  handleSettle(
+    credential: mppCredential,
+    context: MPPHandlerContext,
+  ): Promise<mppReceipt | null>;
+  handleVerify?(
+    credential: mppCredential,
+    context: MPPHandlerContext,
+  ): Promise<mppReceipt | null>;
 }
 
 /**
@@ -109,19 +120,26 @@ export async function resolveMPPChallenges(
  * Routes an MPP credential to the appropriate handler for settlement.
  *
  * Filters handlers by exact method match against the credential's
- * challenge method, then iterates handleSettle until one returns a
- * non-null result.
+ * challenge method, then iterates matching route pricing entries through
+ * handleSettle until one returns a non-null result.
  */
 export async function settleMPPPayment(
   handlers: MPPMethodHandler[],
   credential: mppCredential,
+  pricing: ResourcePricing[],
+  resourceURL: string,
 ): Promise<mppReceipt> {
   const method = credential.challenge.method;
   const candidates = handlers.filter((h) => h.method === method);
 
   for (const handler of candidates) {
-    const result = await handler.handleSettle(credential);
-    if (result) return result;
+    for (const p of matchPricingToCapabilities(handler.capabilities, pricing)) {
+      const result = await handler.handleSettle(credential, {
+        pricing: p,
+        resourceURL,
+      });
+      if (result) return result;
+    }
   }
 
   throw new Error(`no MPP handler accepted settlement for method "${method}"`);
@@ -131,11 +149,14 @@ export async function settleMPPPayment(
  * Routes an MPP credential to the appropriate handler for verification.
  *
  * Filters handlers by exact method match and presence of handleVerify,
- * then iterates until one returns a non-null result.
+ * then iterates matching route pricing entries until one returns a
+ * non-null result.
  */
 export async function verifyMPPPayment(
   handlers: MPPMethodHandler[],
   credential: mppCredential,
+  pricing: ResourcePricing[],
+  resourceURL: string,
 ): Promise<mppReceipt> {
   const method = credential.challenge.method;
   const candidates = handlers.filter(
@@ -153,8 +174,13 @@ export async function verifyMPPPayment(
   }
 
   for (const handler of candidates) {
-    const result = await handler.handleVerify(credential);
-    if (result) return result;
+    for (const p of matchPricingToCapabilities(handler.capabilities, pricing)) {
+      const result = await handler.handleVerify(credential, {
+        pricing: p,
+        resourceURL,
+      });
+      if (result) return result;
+    }
   }
 
   throw new Error(

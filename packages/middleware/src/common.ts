@@ -1208,8 +1208,8 @@ async function handleV2Request<MiddlewareResponse>(
 /**
  * Handle an MPP protocol request.
  *
- * The credential carries its challenge, so there is no matching step.
- * Settlement routes by method through the MPP glue layer.
+ * Settlement routes by method, then binds the credential to a pricing
+ * option for the current resource.
  */
 async function handleMPPRequest<MiddlewareResponse>(
   args: HandleMiddlewareRequestArgs<MiddlewareResponse>,
@@ -1252,7 +1252,12 @@ async function handleMPPRequest<MiddlewareResponse>(
 
   const capture = async (): Promise<CaptureResultMPP<MiddlewareResponse>> => {
     try {
-      const receipt = await settleMPPPayment(mppHandlers, credential);
+      const receipt = await settleMPPPayment(
+        mppHandlers,
+        credential,
+        pricing,
+        resource,
+      );
 
       if (args.setResponseHeader) {
         args.setResponseHeader(
@@ -1281,7 +1286,12 @@ async function handleMPPRequest<MiddlewareResponse>(
   const authorize = canAuthorize
     ? async (): Promise<AuthorizeResultMPP<MiddlewareResponse>> => {
         try {
-          const receipt = await verifyMPPPayment(mppHandlers, credential);
+          const receipt = await verifyMPPPayment(
+            mppHandlers,
+            credential,
+            pricing,
+            resource,
+          );
           return { success: true, receipt };
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);

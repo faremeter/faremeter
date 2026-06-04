@@ -10,13 +10,34 @@ import {
   type mppChallengeParams,
 } from "@faremeter/types/mpp";
 import {
-  getBase64Encoder,
+  appendTransactionMessageInstructions,
+  compileTransaction,
+  compressTransactionMessageUsingAddressLookupTables,
+  createNoopSigner,
+  createTransactionMessage,
   generateKeyPairSigner,
+  getBase64Encoder,
+  pipe,
+  setTransactionMessageFeePayer,
+  setTransactionMessageLifetimeUsingBlockhash,
+  type Address,
+  type Instruction,
+  type KeyPairSigner,
   type Rpc,
   type SolanaRpcApi,
+  type TransactionMessage,
+  type TransactionMessageWithBlockhashLifetime,
+  type TransactionMessageWithFeePayer,
 } from "@solana/kit";
-import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
+import type { Blockhash } from "@solana/rpc-types";
 import {
+  findAssociatedTokenPda,
+  getTransferCheckedInstruction,
+  TOKEN_PROGRAM_ADDRESS,
+} from "@solana-program/token";
+import { getTransferSolInstruction } from "@solana-program/system";
+import {
+  getBase64EncodedWireTransaction,
   getSignatureFromTransaction,
   getTransactionDecoder,
   partiallySignTransaction,
@@ -35,7 +56,8 @@ import {
 } from "./server";
 import type { Wallet } from "../exact/client";
 
-const FAKE_BLOCKHASH = "EETubP46DHLkT9hAFKy4x2BoFUqUFvKjiiNVY3CaYRi3";
+const FAKE_BLOCKHASH =
+  "EETubP46DHLkT9hAFKy4x2BoFUqUFvKjiiNVY3CaYRi3" as Blockhash;
 const SIGNATURE =
   "1111111111111111111111111111111111111111111111111111111111111111";
 const SETTLEMENT_SIGNATURE =
@@ -45,6 +67,13 @@ const TOKEN_SIGNATURE =
 const SECRET_KEY = new Uint8Array(32).fill(1);
 const RECEIPT_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 const RESOURCE_URL = "https://example.test/resource";
+
+type V0CompilableTransactionMessage = Extract<
+  TransactionMessage,
+  { version: 0 }
+> &
+  TransactionMessageWithFeePayer &
+  TransactionMessageWithBlockhashLifetime;
 
 async function createWallet(): Promise<Wallet> {
   const signer = await generateKeyPairSigner();
@@ -92,6 +121,40 @@ function getPayloadTransactionSignature(transaction: string) {
   const txBytes = getBase64Encoder().encode(transaction);
   const decodedTx = getTransactionDecoder().decode(txBytes);
   return getSignatureFromTransaction(decodedTx);
+}
+
+function buildTransactionMessage(
+  instructions: Instruction[],
+  feePayer: KeyPairSigner,
+): V0CompilableTransactionMessage {
+  return pipe(
+    createTransactionMessage({ version: 0 }),
+    (msg) => setTransactionMessageFeePayer(feePayer.address, msg),
+    (msg) =>
+      setTransactionMessageLifetimeUsingBlockhash(
+        { blockhash: FAKE_BLOCKHASH, lastValidBlockHeight: 1000n },
+        msg,
+      ),
+    (msg) => appendTransactionMessageInstructions(instructions, msg),
+  );
+}
+
+async function encodeTransactionWithLookupTable(
+  transactionMessage: V0CompilableTransactionMessage,
+  signer: KeyPairSigner,
+  lookupAddresses: Address[],
+) {
+  const lookupTable = await generateKeyPairSigner();
+  const compressedMessage = compressTransactionMessageUsingAddressLookupTables(
+    transactionMessage,
+    { [lookupTable.address]: lookupAddresses },
+  );
+  const transaction = compileTransaction(compressedMessage);
+  const signedTransaction = await partiallySignTransaction(
+    [signer.keyPair],
+    transaction,
+  );
+  return getBase64EncodedWireTransaction(signedTransaction);
 }
 
 type CreateFakeRpcOpts = {
@@ -530,6 +593,66 @@ await t.test(
       ),
       false,
     );
+    t.end();
+  },
+);
+
+await t.test(
+  "native charge rejects pull transactions with address lookup tables",
+  async (t) => {
+    let sendCount = 0;
+    const rpc = createFakeRpc(undefined, {
+      onSendTransaction: () => {
+        sendCount += 1;
+      },
+    });
+    const replayStore = createInMemoryReplayStore();
+    const handler = await createMPPSolanaNativeChargeHandler({
+      network: "devnet",
+      rpc,
+      replayStore,
+      realm: "test",
+      secretKey: SECRET_KEY,
+    });
+
+    const sender = await generateKeyPairSigner();
+    const receiver = await generateKeyPairSigner();
+    const challenge = await handler.getChallenge(
+      "charge",
+      {
+        amount: "1000000",
+        asset: "sol",
+        recipient: receiver.address,
+        network: "solana:devnet",
+      },
+      "https://example.test/resource",
+    );
+    const transaction = await encodeTransactionWithLookupTable(
+      buildTransactionMessage(
+        [
+          getTransferSolInstruction({
+            source: createNoopSigner(sender.address),
+            destination: receiver.address,
+            amount: 1_000_000n,
+          }),
+        ],
+        sender,
+      ),
+      sender,
+      [receiver.address],
+    );
+
+    await t.rejects(
+      handler.handleSettle(
+        {
+          challenge,
+          payload: { type: "transaction", transaction },
+        },
+        createChargeContext(challenge),
+      ),
+      { message: "address lookup tables are not supported" },
+    );
+    t.equal(sendCount, 0);
     t.end();
   },
 );

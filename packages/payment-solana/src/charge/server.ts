@@ -228,6 +228,7 @@ const fetchConfirmedTransaction = async (
       const compiledMessage = getCompiledTransactionMessageDecoder().decode(
         decodedTx.messageBytes,
       );
+      assertNoAddressLookupTables(compiledMessage);
       return decompileTransactionMessage(compiledMessage);
     }
 
@@ -273,11 +274,21 @@ const decodeWireTransaction = (base64Transaction: string) => {
   const compiledMessage = getCompiledTransactionMessageDecoder().decode(
     decodedTx.messageBytes,
   );
+  assertNoAddressLookupTables(compiledMessage);
   return {
     transactionMessage: decompileTransactionMessage(compiledMessage),
     decodedTx,
   };
 };
+
+function assertNoAddressLookupTables(compiledMessage: unknown) {
+  const addressTableLookups = (
+    compiledMessage as { readonly addressTableLookups?: readonly unknown[] }
+  ).addressTableLookups;
+  if ((addressTableLookups?.length ?? 0) > 0) {
+    throw new Error("address lookup tables are not supported");
+  }
+}
 
 async function claimConsumedSignature(
   replayStore: ReplayStore,

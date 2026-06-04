@@ -44,6 +44,25 @@ async function generateTestChallengeID(
   return encodeBase64URL(String.fromCharCode(...new Uint8Array(sig)));
 }
 
+function credentialMatchesPricing(
+  credential: mppCredential,
+  pricing: ResourcePricing,
+): boolean {
+  let requestBody: unknown;
+  try {
+    requestBody = JSON.parse(decodeBase64URL(credential.challenge.request));
+  } catch {
+    return false;
+  }
+
+  if (typeof requestBody !== "object" || requestBody === null) return false;
+  return (
+    Reflect.get(requestBody, "amount") === pricing.amount &&
+    Reflect.get(requestBody, "currency") === pricing.asset &&
+    Reflect.get(requestBody, "recipient") === pricing.recipient
+  );
+}
+
 export type CreateTestMPPHandlerOpts = {
   method?: string;
   realm?: string;
@@ -65,6 +84,7 @@ export function createTestMPPHandler(
   const realm = opts.realm ?? TEST_MPP_REALM;
   const intents = opts.intents ?? [TEST_MPP_INTENT];
   const challengeStore = new Map<string, boolean>();
+  const verifiedChallenges = new Set<string>();
 
   const supportsVerify = opts.supportsVerify ?? false;
 
@@ -102,7 +122,7 @@ export function createTestMPPHandler(
 
       return { id, ...paramsWithoutID };
     },
-    handleSettle: async (credential) => {
+    handleSettle: async (credential, context) => {
       opts.onSettle?.(credential);
 
       if (credential.challenge.method !== method) return null;
@@ -110,7 +130,14 @@ export function createTestMPPHandler(
       if (!challengeStore.has(credential.challenge.id)) {
         throw new Error("unknown or consumed challenge ID");
       }
+      if (
+        !credentialMatchesPricing(credential, context.pricing) &&
+        !verifiedChallenges.has(credential.challenge.id)
+      ) {
+        return null;
+      }
       challengeStore.delete(credential.challenge.id);
+      verifiedChallenges.delete(credential.challenge.id);
 
       return {
         status: "success" as const,
@@ -123,7 +150,7 @@ export function createTestMPPHandler(
   };
 
   if (supportsVerify) {
-    handler.handleVerify = async (credential) => {
+    handler.handleVerify = async (credential, context) => {
       opts.onVerify?.(credential);
 
       if (credential.challenge.method !== method) return null;
@@ -131,6 +158,8 @@ export function createTestMPPHandler(
       if (!challengeStore.has(credential.challenge.id)) {
         throw new Error("unknown challenge ID");
       }
+      if (!credentialMatchesPricing(credential, context.pricing)) return null;
+      verifiedChallenges.add(credential.challenge.id);
 
       return {
         status: "success" as const,

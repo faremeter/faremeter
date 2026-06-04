@@ -6,6 +6,7 @@ import {
   canonicalizeSortedJSON,
   decodeBase64URL,
   encodeBase64URL,
+  type MPPHandlerContext,
   type mppChallengeParams,
 } from "@faremeter/types/mpp";
 import {
@@ -58,7 +59,7 @@ async function createWallet(): Promise<Wallet> {
 function createChargeContext(
   challenge: mppChallengeParams,
   network = "devnet",
-) {
+): MPPHandlerContext {
   const request = mppChargeRequest(
     JSON.parse(decodeBase64URL(challenge.request)),
   );
@@ -532,6 +533,115 @@ await t.test(
     t.end();
   },
 );
+
+await t.test(
+  "native charge route mismatch does not consume the challenge",
+  async (t) => {
+    const rpc = createFakeRpc();
+    const replayStore = createInMemoryReplayStore();
+    const handler = await createMPPSolanaNativeChargeHandler({
+      network: "devnet",
+      rpc,
+      replayStore,
+      realm: "test",
+      secretKey: SECRET_KEY,
+    });
+
+    const receiver = await generateKeyPairSigner();
+    const challenge = await handler.getChallenge(
+      "charge",
+      {
+        amount: "1000000",
+        asset: "sol",
+        recipient: receiver.address,
+        network: "solana:devnet",
+      },
+      "https://example.test/resource",
+    );
+
+    const client = createMPPSolanaNativeChargeClient({
+      wallet: await createWallet(),
+      rpc,
+    });
+    const execer = await client(challenge);
+    if (!execer) {
+      throw new Error("expected client to handle native charge challenge");
+    }
+    const credential = await execer.exec();
+    const mismatchedContext = createChargeContext(challenge);
+    mismatchedContext.pricing.amount = "2000000";
+
+    t.equal(await handler.handleSettle(credential, mismatchedContext), null);
+
+    const receipt = await handler.handleSettle(
+      credential,
+      createChargeContext(challenge),
+    );
+    t.match(receipt, {
+      status: "success",
+      method: "solana",
+      challengeId: challenge.id,
+      timestamp: RECEIPT_TIMESTAMP_RE,
+      reference: SETTLEMENT_SIGNATURE,
+    });
+    t.end();
+  },
+);
+
+await t.test("native charge rejects unknown pricing networks", async (t) => {
+  const rpc = createFakeRpc();
+  const replayStore = createInMemoryReplayStore();
+  const handler = await createMPPSolanaNativeChargeHandler({
+    network: "devnet",
+    rpc,
+    replayStore,
+    realm: "test",
+    secretKey: SECRET_KEY,
+  });
+
+  const receiver = await generateKeyPairSigner();
+  const challenge = await handler.getChallenge(
+    "charge",
+    {
+      amount: "1000000",
+      asset: "sol",
+      recipient: receiver.address,
+      network: "solana:devnet",
+    },
+    "https://example.test/resource",
+  );
+
+  const client = createMPPSolanaNativeChargeClient({
+    wallet: await createWallet(),
+    rpc,
+  });
+  const execer = await client(challenge);
+  if (!execer) {
+    throw new Error("expected client to handle native charge challenge");
+  }
+  const credential = await execer.exec();
+
+  await t.rejects(
+    handler.handleSettle(
+      credential,
+      createChargeContext(challenge, "unknown-network"),
+    ),
+    { message: "Unknown Solana network: unknown-network" },
+  );
+
+  const receipt = await handler.handleSettle(
+    credential,
+    createChargeContext(challenge),
+  );
+  t.match(receipt, {
+    status: "success",
+    method: "solana",
+    challengeId: challenge.id,
+    timestamp: RECEIPT_TIMESTAMP_RE,
+    reference: SETTLEMENT_SIGNATURE,
+  });
+  t.end();
+});
 
 await t.test(
   "native charge rejects pull when the confirmed transaction differs",

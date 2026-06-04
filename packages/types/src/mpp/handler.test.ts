@@ -3,7 +3,17 @@
 import t from "tap";
 import type { MPPMethodHandler } from "./handler";
 import { settleMPPPayment, verifyMPPPayment } from "./handler";
+import type { ResourcePricing } from "../pricing";
 import type { mppCredential, mppReceipt } from "./types";
+
+const TEST_RESOURCE_URL = "https://example.test/resource";
+const TEST_PRICING_ENTRY: ResourcePricing = {
+  amount: "100",
+  asset: "USD",
+  recipient: "recipient-1",
+  network: "testnet",
+};
+const TEST_PRICING: ResourcePricing[] = [TEST_PRICING_ENTRY];
 
 function makeCredential(method: string): mppCredential {
   return {
@@ -59,7 +69,12 @@ await t.test("settleMPPPayment", async (t) => {
   await t.test("routes to matching handler and returns receipt", async (t) => {
     const receipt = makeReceipt("solana", "tx-1");
     const handler = makeHandler("solana", { settleResult: receipt });
-    const result = await settleMPPPayment([handler], makeCredential("solana"));
+    const result = await settleMPPPayment(
+      [handler],
+      makeCredential("solana"),
+      TEST_PRICING,
+      TEST_RESOURCE_URL,
+    );
     t.matchOnly(result, receipt);
     t.end();
   });
@@ -70,9 +85,17 @@ await t.test("settleMPPPayment", async (t) => {
       const handler = makeHandler("ethereum", {
         settleResult: makeReceipt("ethereum", "tx-1"),
       });
-      await t.rejects(settleMPPPayment([handler], makeCredential("solana")), {
-        message: 'no MPP handler accepted settlement for method "solana"',
-      });
+      await t.rejects(
+        settleMPPPayment(
+          [handler],
+          makeCredential("solana"),
+          TEST_PRICING,
+          TEST_RESOURCE_URL,
+        ),
+        {
+          message: 'no MPP handler accepted settlement for method "solana"',
+        },
+      );
       t.end();
     },
   );
@@ -80,16 +103,32 @@ await t.test("settleMPPPayment", async (t) => {
   await t.test("throws when all matching handlers return null", async (t) => {
     const h1 = makeHandler("solana", { settleResult: null });
     const h2 = makeHandler("solana", { settleResult: null });
-    await t.rejects(settleMPPPayment([h1, h2], makeCredential("solana")), {
-      message: 'no MPP handler accepted settlement for method "solana"',
-    });
+    await t.rejects(
+      settleMPPPayment(
+        [h1, h2],
+        makeCredential("solana"),
+        TEST_PRICING,
+        TEST_RESOURCE_URL,
+      ),
+      {
+        message: 'no MPP handler accepted settlement for method "solana"',
+      },
+    );
     t.end();
   });
 
   await t.test("throws when handler list is empty", async (t) => {
-    await t.rejects(settleMPPPayment([], makeCredential("solana")), {
-      message: 'no MPP handler accepted settlement for method "solana"',
-    });
+    await t.rejects(
+      settleMPPPayment(
+        [],
+        makeCredential("solana"),
+        TEST_PRICING,
+        TEST_RESOURCE_URL,
+      ),
+      {
+        message: 'no MPP handler accepted settlement for method "solana"',
+      },
+    );
     t.end();
   });
 
@@ -99,11 +138,42 @@ await t.test("settleMPPPayment", async (t) => {
       const expected = makeReceipt("solana", "tx-second");
       const h1 = makeHandler("solana", { settleResult: null });
       const h2 = makeHandler("solana", { settleResult: expected });
-      const result = await settleMPPPayment([h1, h2], makeCredential("solana"));
+      const result = await settleMPPPayment(
+        [h1, h2],
+        makeCredential("solana"),
+        TEST_PRICING,
+        TEST_RESOURCE_URL,
+      );
       t.matchOnly(result, expected);
       t.end();
     },
   );
+
+  await t.test("passes matched pricing context to handler", async (t) => {
+    const receipt = makeReceipt("solana", "tx-1");
+    let receivedPricing: ResourcePricing | undefined;
+    let receivedResourceURL: string | undefined;
+    const handler: MPPMethodHandler = {
+      ...makeHandler("solana"),
+      handleSettle: async (_credential, context) => {
+        receivedPricing = context.pricing;
+        receivedResourceURL = context.resourceURL;
+        return receipt;
+      },
+    };
+
+    const result = await settleMPPPayment(
+      [handler],
+      makeCredential("solana"),
+      TEST_PRICING,
+      TEST_RESOURCE_URL,
+    );
+
+    t.matchOnly(result, receipt);
+    t.matchOnly(receivedPricing, TEST_PRICING_ENTRY);
+    t.equal(receivedResourceURL, TEST_RESOURCE_URL);
+    t.end();
+  });
 
   t.end();
 });
@@ -112,7 +182,12 @@ await t.test("verifyMPPPayment", async (t) => {
   await t.test("routes to matching handler and returns receipt", async (t) => {
     const receipt = makeReceipt("solana", "verify-1");
     const handler = makeHandler("solana", { verifyResult: receipt });
-    const result = await verifyMPPPayment([handler], makeCredential("solana"));
+    const result = await verifyMPPPayment(
+      [handler],
+      makeCredential("solana"),
+      TEST_PRICING,
+      TEST_RESOURCE_URL,
+    );
     t.matchOnly(result, receipt);
     t.end();
   });
@@ -121,9 +196,17 @@ await t.test("verifyMPPPayment", async (t) => {
     "throws when no handler supports verification for the method",
     async (t) => {
       const handler = makeHandler("solana", { hasVerify: false });
-      await t.rejects(verifyMPPPayment([handler], makeCredential("solana")), {
-        message: 'no MPP handler supports verification for method "solana"',
-      });
+      await t.rejects(
+        verifyMPPPayment(
+          [handler],
+          makeCredential("solana"),
+          TEST_PRICING,
+          TEST_RESOURCE_URL,
+        ),
+        {
+          message: 'no MPP handler supports verification for method "solana"',
+        },
+      );
       t.end();
     },
   );
@@ -134,9 +217,17 @@ await t.test("verifyMPPPayment", async (t) => {
       const handler = makeHandler("ethereum", {
         verifyResult: makeReceipt("ethereum", "verify-1"),
       });
-      await t.rejects(verifyMPPPayment([handler], makeCredential("solana")), {
-        message: 'no MPP handler supports verification for method "solana"',
-      });
+      await t.rejects(
+        verifyMPPPayment(
+          [handler],
+          makeCredential("solana"),
+          TEST_PRICING,
+          TEST_RESOURCE_URL,
+        ),
+        {
+          message: 'no MPP handler supports verification for method "solana"',
+        },
+      );
       t.end();
     },
   );
@@ -146,17 +237,33 @@ await t.test("verifyMPPPayment", async (t) => {
     async (t) => {
       const h1 = makeHandler("solana", { verifyResult: null });
       const h2 = makeHandler("solana", { verifyResult: null });
-      await t.rejects(verifyMPPPayment([h1, h2], makeCredential("solana")), {
-        message: 'no MPP handler accepted verification for method "solana"',
-      });
+      await t.rejects(
+        verifyMPPPayment(
+          [h1, h2],
+          makeCredential("solana"),
+          TEST_PRICING,
+          TEST_RESOURCE_URL,
+        ),
+        {
+          message: 'no MPP handler accepted verification for method "solana"',
+        },
+      );
       t.end();
     },
   );
 
   await t.test("throws when handler list is empty", async (t) => {
-    await t.rejects(verifyMPPPayment([], makeCredential("solana")), {
-      message: 'no MPP handler supports verification for method "solana"',
-    });
+    await t.rejects(
+      verifyMPPPayment(
+        [],
+        makeCredential("solana"),
+        TEST_PRICING,
+        TEST_RESOURCE_URL,
+      ),
+      {
+        message: 'no MPP handler supports verification for method "solana"',
+      },
+    );
     t.end();
   });
 
@@ -170,6 +277,8 @@ await t.test("verifyMPPPayment", async (t) => {
       const result = await verifyMPPPayment(
         [noVerify, withVerify],
         makeCredential("solana"),
+        TEST_PRICING,
+        TEST_RESOURCE_URL,
       );
       t.equal(result.reference, "verify-2");
       t.end();
@@ -182,7 +291,12 @@ await t.test("verifyMPPPayment", async (t) => {
       const expected = makeReceipt("solana", "verify-second");
       const h1 = makeHandler("solana", { verifyResult: null });
       const h2 = makeHandler("solana", { verifyResult: expected });
-      const result = await verifyMPPPayment([h1, h2], makeCredential("solana"));
+      const result = await verifyMPPPayment(
+        [h1, h2],
+        makeCredential("solana"),
+        TEST_PRICING,
+        TEST_RESOURCE_URL,
+      );
       t.matchOnly(result, expected);
       t.end();
     },

@@ -43,6 +43,7 @@ const TOKEN_SIGNATURE =
   "3L3RY5sT8K4kyEnqhizwaqxLEbcYvpGrGPNEYRwtbCSUtL6YL86jdrvCbohnP5q8VxQ3qzGmt3W3iQJW97rD7m3";
 const SECRET_KEY = new Uint8Array(32).fill(1);
 const RECEIPT_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+const RESOURCE_URL = "https://example.test/resource";
 
 async function createWallet(): Promise<Wallet> {
   const signer = await generateKeyPairSigner();
@@ -51,6 +52,27 @@ async function createWallet(): Promise<Wallet> {
     publicKey: signer.address,
     partiallySignTransaction: (tx) =>
       partiallySignTransaction([signer.keyPair], tx),
+  };
+}
+
+function createChargeContext(
+  challenge: mppChallengeParams,
+  network = "devnet",
+) {
+  const request = mppChargeRequest(
+    JSON.parse(decodeBase64URL(challenge.request)),
+  );
+  if (isValidationError(request)) {
+    throw new Error(request.summary);
+  }
+  return {
+    pricing: {
+      amount: request.amount,
+      asset: request.currency,
+      recipient: request.recipient,
+      network,
+    },
+    resourceURL: RESOURCE_URL,
   };
 }
 
@@ -310,10 +332,13 @@ await t.test(
     const credential = await execer.exec();
     transactionBase64 = getTransactionPayload(credential.payload);
 
-    const receipt = await handler.handleSettle({
-      challenge,
-      payload: { type: "signature", signature: SIGNATURE },
-    });
+    const receipt = await handler.handleSettle(
+      {
+        challenge,
+        payload: { type: "signature", signature: SIGNATURE },
+      },
+      createChargeContext(challenge),
+    );
 
     t.match(receipt, {
       status: "success",
@@ -376,7 +401,10 @@ await t.test("native charge settles without externalId", async (t) => {
     throw new Error("expected client to handle native charge challenge");
   }
 
-  const receipt = await handler.handleSettle(await execer.exec());
+  const receipt = await handler.handleSettle(
+    await execer.exec(),
+    createChargeContext(challengeWithoutExternalId),
+  );
 
   t.match(receipt, {
     status: "success",
@@ -428,7 +456,10 @@ await t.test(
       throw new Error("expected client to handle native charge challenge");
     }
 
-    const receipt = await handler.handleSettle(await execer.exec());
+    const receipt = await handler.handleSettle(
+      await execer.exec(),
+      createChargeContext(legacyChallenge),
+    );
 
     t.match(receipt, {
       status: "success",
@@ -479,7 +510,10 @@ await t.test(
       getTransactionPayload(credential.payload),
     );
 
-    const receipt = await handler.handleSettle(credential);
+    const receipt = await handler.handleSettle(
+      credential,
+      createChargeContext(challenge),
+    );
 
     t.match(receipt, {
       status: "success",
@@ -554,10 +588,13 @@ await t.test(
     const wrongCredential = await wrongExecer.exec();
     confirmedTransactionBase64 = getTransactionPayload(wrongCredential.payload);
 
-    await t.rejects(handler.handleSettle(credential), {
-      message:
-        /confirmed transaction verification failed: no matching transferSol instruction found/,
-    });
+    await t.rejects(
+      handler.handleSettle(credential, createChargeContext(challenge)),
+      {
+        message:
+          /confirmed transaction verification failed: no matching transferSol instruction found/,
+      },
+    );
     t.end();
   },
 );
@@ -612,9 +649,12 @@ await t.test(
       ),
       true,
     );
-    await t.rejects(handler.handleSettle(credential), {
-      message: "transaction signature already consumed",
-    });
+    await t.rejects(
+      handler.handleSettle(credential, createChargeContext(challenge)),
+      {
+        message: "transaction signature already consumed",
+      },
+    );
     t.equal(sendCount, 0);
     t.end();
   },
@@ -784,10 +824,13 @@ await t.test("native charge rejects consumed push signatures", async (t) => {
     true,
   );
   await t.rejects(
-    handler.handleSettle({
-      challenge,
-      payload: { type: "signature", signature: SIGNATURE },
-    }),
+    handler.handleSettle(
+      {
+        challenge,
+        payload: { type: "signature", signature: SIGNATURE },
+      },
+      createChargeContext(challenge),
+    ),
     { message: "transaction signature already consumed" },
   );
   t.end();
@@ -834,7 +877,10 @@ await t.test(
       getTransactionPayload(credential.payload),
     );
 
-    const receipt = await handler.handleSettle(credential);
+    const receipt = await handler.handleSettle(
+      credential,
+      createChargeContext(challenge),
+    );
 
     t.match(receipt, {
       status: "success",
@@ -1054,10 +1100,13 @@ await t.test(
     const wrongCredential = await wrongExecer.exec();
     confirmedTransactionBase64 = getTransactionPayload(wrongCredential.payload);
 
-    await t.rejects(handler.handleSettle(credential), {
-      message:
-        /confirmed transaction verification failed: no matching transferChecked instruction found/,
-    });
+    await t.rejects(
+      handler.handleSettle(credential, createChargeContext(challenge)),
+      {
+        message:
+          /confirmed transaction verification failed: no matching transferChecked instruction found/,
+      },
+    );
     t.end();
   },
 );
@@ -1105,10 +1154,13 @@ await t.test("SPL charge rejects consumed push signatures", async (t) => {
     true,
   );
   await t.rejects(
-    handler.handleSettle({
-      challenge,
-      payload: { type: "signature", signature: TOKEN_SIGNATURE },
-    }),
+    handler.handleSettle(
+      {
+        challenge,
+        payload: { type: "signature", signature: TOKEN_SIGNATURE },
+      },
+      createChargeContext(challenge),
+    ),
     { message: "transaction signature already consumed" },
   );
   t.end();

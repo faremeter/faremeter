@@ -393,6 +393,8 @@ export async function createMPPSolanaChargeHandler(
     opts?: ChallengeOpts,
   ): Promise<mppChallengeParams> => {
     const methodDetails: mppChargeRequest["methodDetails"] = {
+      // Keep Solana's "mainnet-beta" cluster spelling for
+      // interoperability with other implementations.
       network: caip2ToCluster(solanaNetwork.caip2) ?? solanaNetwork.caip2,
       decimals: mintInfo.data.decimals,
       tokenProgram: tokenProgram as string,
@@ -637,6 +639,8 @@ export async function createMPPSolanaNativeChargeHandler(
     opts?: ChallengeOpts,
   ): Promise<mppChallengeParams> => {
     const methodDetails: mppChargeRequest["methodDetails"] = {
+      // Keep Solana's "mainnet-beta" cluster spelling for
+      // interoperability with other implementations.
       network: caip2ToCluster(solanaNetwork.caip2) ?? solanaNetwork.caip2,
     };
 

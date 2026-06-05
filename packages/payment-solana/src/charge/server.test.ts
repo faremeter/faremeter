@@ -67,6 +67,7 @@ const TOKEN_SIGNATURE =
 const SECRET_KEY = new Uint8Array(32).fill(1);
 const RECEIPT_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 const RESOURCE_URL = "https://example.test/resource";
+const STALE_BLOCK_TIME_DELTA_MS = -25 * 60 * 60 * 1000;
 
 type V0CompilableTransactionMessage = Extract<
   TransactionMessage,
@@ -123,6 +124,10 @@ function getPayloadTransactionSignature(transaction: string) {
   return getSignatureFromTransaction(decodedTx);
 }
 
+function blockTimeSecondsFromNow(deltaMs = 0) {
+  return Math.floor((Date.now() + deltaMs) / 1000);
+}
+
 function buildTransactionMessage(
   instructions: Instruction[],
   feePayer: KeyPairSigner,
@@ -163,6 +168,7 @@ type CreateFakeRpcOpts = {
     confirmationStatus?: "confirmed" | "finalized" | "processed" | null;
     err?: unknown;
   } | null;
+  blockTime?: number | bigint | null;
   simulationError?: unknown;
 };
 
@@ -203,6 +209,10 @@ function createFakeRpc(
     }),
     getTransaction: () => ({
       send: async () => ({
+        blockTime:
+          opts.blockTime === undefined
+            ? blockTimeSecondsFromNow()
+            : opts.blockTime,
         meta: { err: null },
         transaction: [
           getTransactionBase64?.() ?? sentTransactionBase64,
@@ -1070,6 +1080,112 @@ await t.test("native charge rejects consumed push signatures", async (t) => {
 });
 
 await t.test(
+  "native charge rejects stale push transaction block time",
+  async (t) => {
+    let transactionBase64 = "";
+    const rpc = createFakeRpc(() => transactionBase64, {
+      blockTime: blockTimeSecondsFromNow(STALE_BLOCK_TIME_DELTA_MS),
+    });
+    const replayStore = createInMemoryReplayStore();
+    const handler = await createMPPSolanaNativeChargeHandler({
+      network: "devnet",
+      rpc,
+      replayStore,
+      realm: "test",
+      secretKey: new Uint8Array(32).fill(1),
+    });
+
+    const receiver = await generateKeyPairSigner();
+    const challenge = await handler.getChallenge(
+      "charge",
+      {
+        amount: "1000000",
+        asset: "sol",
+        recipient: receiver.address,
+        network: "solana:devnet",
+      },
+      "https://example.test/resource",
+    );
+
+    const client = createMPPSolanaNativeChargeClient({
+      wallet: await createWallet(),
+      rpc,
+    });
+    const execer = await client(challenge);
+    if (!execer) {
+      throw new Error("expected client to handle native charge challenge");
+    }
+    const credential = await execer.exec();
+    transactionBase64 = getTransactionPayload(credential.payload);
+
+    await t.rejects(
+      handler.handleSettle(
+        {
+          challenge,
+          payload: { type: "signature", signature: SIGNATURE },
+        },
+        createChargeContext(challenge),
+      ),
+      {
+        message: "confirmed transaction block time is outside challenge window",
+      },
+    );
+    t.end();
+  },
+);
+
+await t.test(
+  "native charge rejects push transactions without block time",
+  async (t) => {
+    let transactionBase64 = "";
+    const rpc = createFakeRpc(() => transactionBase64, { blockTime: null });
+    const replayStore = createInMemoryReplayStore();
+    const handler = await createMPPSolanaNativeChargeHandler({
+      network: "devnet",
+      rpc,
+      replayStore,
+      realm: "test",
+      secretKey: new Uint8Array(32).fill(1),
+    });
+
+    const receiver = await generateKeyPairSigner();
+    const challenge = await handler.getChallenge(
+      "charge",
+      {
+        amount: "1000000",
+        asset: "sol",
+        recipient: receiver.address,
+        network: "solana:devnet",
+      },
+      "https://example.test/resource",
+    );
+
+    const client = createMPPSolanaNativeChargeClient({
+      wallet: await createWallet(),
+      rpc,
+    });
+    const execer = await client(challenge);
+    if (!execer) {
+      throw new Error("expected client to handle native charge challenge");
+    }
+    const credential = await execer.exec();
+    transactionBase64 = getTransactionPayload(credential.payload);
+
+    await t.rejects(
+      handler.handleSettle(
+        {
+          challenge,
+          payload: { type: "signature", signature: SIGNATURE },
+        },
+        createChargeContext(challenge),
+      ),
+      { message: "confirmed transaction is missing block time" },
+    );
+    t.end();
+  },
+);
+
+await t.test(
   "SPL charge settles client-paid pull transactions without fee payer",
   async (t) => {
     const rpc = createFakeRpc();
@@ -1398,3 +1514,61 @@ await t.test("SPL charge rejects consumed push signatures", async (t) => {
   );
   t.end();
 });
+
+await t.test(
+  "SPL charge rejects stale push transaction block time",
+  async (t) => {
+    let transactionBase64 = "";
+    const rpc = createFakeRpc(() => transactionBase64, {
+      blockTime: blockTimeSecondsFromNow(STALE_BLOCK_TIME_DELTA_MS),
+    });
+    const replayStore = createInMemoryReplayStore();
+    const mint = await generateKeyPairSigner();
+    const handler = await createMPPSolanaChargeHandler({
+      network: "devnet",
+      rpc,
+      mint: mint.address,
+      replayStore,
+      realm: "test",
+      secretKey: new Uint8Array(32).fill(1),
+    });
+
+    const receiver = await generateKeyPairSigner();
+    const challenge = await handler.getChallenge(
+      "charge",
+      {
+        amount: "1000000",
+        asset: mint.address,
+        recipient: receiver.address,
+        network: "solana:devnet",
+      },
+      "https://example.test/resource",
+    );
+
+    const client = createMPPSolanaChargeClient({
+      wallet: await createWallet(),
+      mint: mint.address,
+      rpc,
+    });
+    const execer = await client(challenge);
+    if (!execer) {
+      throw new Error("expected client to handle SPL charge challenge");
+    }
+    const credential = await execer.exec();
+    transactionBase64 = getTransactionPayload(credential.payload);
+
+    await t.rejects(
+      handler.handleSettle(
+        {
+          challenge,
+          payload: { type: "signature", signature: TOKEN_SIGNATURE },
+        },
+        createChargeContext(challenge),
+      ),
+      {
+        message: "confirmed transaction block time is outside challenge window",
+      },
+    );
+    t.end();
+  },
+);

@@ -41,6 +41,8 @@ import {
 
 const SIGNATURE_REPLAY_PREFIX = "solana-charge:consumed:";
 const SIGNATURE_REPLAY_TTL_MS = 24 * 60 * 60 * 1000;
+const CHARGE_CHALLENGE_TIMEOUT_MS = 60_000;
+const SIGNATURE_BLOCK_TIME_CLOCK_SKEW_MS = 5_000;
 
 import type { CompilableTransactionMessage } from "../common";
 import { mppChargeRequest, chargeCredentialPayload } from "./common";
@@ -112,6 +114,11 @@ export type CreateMPPSolanaChargeHandlerArgs = {
 type SendTransactionResult =
   | { success: true; signature: Signature }
   | { success: false; error: string; submitted: boolean };
+
+type ConfirmedChargeTransaction = {
+  transactionMessage: CompilableTransactionMessage;
+  blockTime: number | bigint | null;
+};
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -201,7 +208,7 @@ const fetchConfirmedTransaction = async (
   signature: string,
   maxRetries: number,
   retryDelayMs: number,
-): Promise<CompilableTransactionMessage | null> => {
+): Promise<ConfirmedChargeTransaction | null> => {
   for (let i = 0; i < maxRetries; i++) {
     const result = await rpc
       .getTransaction(signature as Signature, {
@@ -229,7 +236,10 @@ const fetchConfirmedTransaction = async (
         decodedTx.messageBytes,
       );
       assertNoAddressLookupTables(compiledMessage);
-      return decompileTransactionMessage(compiledMessage);
+      return {
+        transactionMessage: decompileTransactionMessage(compiledMessage),
+        blockTime: getRPCBlockTime(result),
+      };
     }
 
     await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
@@ -237,6 +247,69 @@ const fetchConfirmedTransaction = async (
 
   return null;
 };
+
+function getRPCBlockTime(result: unknown): number | bigint | null {
+  if (typeof result !== "object" || result === null) {
+    return null;
+  }
+  if (!("blockTime" in result)) {
+    return null;
+  }
+  const { blockTime } = result;
+  if (typeof blockTime === "number" || typeof blockTime === "bigint") {
+    return blockTime;
+  }
+  return null;
+}
+
+function getBlockTimeMs(blockTime: number | bigint | null): number | null {
+  if (blockTime === null) {
+    return null;
+  }
+  const blockTimeSeconds = Number(blockTime);
+  if (!Number.isFinite(blockTimeSeconds)) {
+    return null;
+  }
+  return blockTimeSeconds * 1000;
+}
+
+function assertPushTransactionFresh(
+  challenge: mppChallengeParams,
+  blockTime: number | bigint | null,
+) {
+  const blockTimeMs = getBlockTimeMs(blockTime);
+  if (blockTimeMs === null) {
+    throw new Error("confirmed transaction is missing block time");
+  }
+
+  const now = Date.now();
+  if (blockTimeMs > now + SIGNATURE_BLOCK_TIME_CLOCK_SKEW_MS) {
+    throw new Error("confirmed transaction block time is in the future");
+  }
+
+  if (challenge.expires === undefined) {
+    if (now - blockTimeMs > SIGNATURE_REPLAY_TTL_MS) {
+      throw new Error("confirmed transaction is too old");
+    }
+    return;
+  }
+
+  const expiresAtMs = parseMPPExpiresAtMs(challenge.expires);
+  if (expiresAtMs === null) {
+    throw new Error("invalid challenge expiration");
+  }
+
+  const earliestBlockTimeMs =
+    expiresAtMs -
+    CHARGE_CHALLENGE_TIMEOUT_MS -
+    SIGNATURE_BLOCK_TIME_CLOCK_SKEW_MS;
+  const latestBlockTimeMs = expiresAtMs + SIGNATURE_BLOCK_TIME_CLOCK_SKEW_MS;
+  if (blockTimeMs < earliestBlockTimeMs || blockTimeMs > latestBlockTimeMs) {
+    throw new Error(
+      "confirmed transaction block time is outside challenge window",
+    );
+  }
+}
 
 type ConfirmedChargeVerifier = (
   transactionMessage: CompilableTransactionMessage,
@@ -249,18 +322,20 @@ const verifyConfirmedTransaction = async (args: {
   retryDelayMs: number;
   verifyTransaction: ConfirmedChargeVerifier;
 }) => {
-  const transactionMessage = await fetchConfirmedTransaction(
+  const confirmedTransaction = await fetchConfirmedTransaction(
     args.rpc,
     args.signature,
     args.maxRetries,
     args.retryDelayMs,
   );
 
-  if (!transactionMessage) {
+  if (!confirmedTransaction) {
     throw new Error("could not fetch confirmed transaction");
   }
 
-  const verifyResult = await args.verifyTransaction(transactionMessage);
+  const verifyResult = await args.verifyTransaction(
+    confirmedTransaction.transactionMessage,
+  );
   if ("error" in verifyResult) {
     throw new Error(
       `confirmed transaction verification failed: ${verifyResult.error}`,
@@ -418,8 +493,7 @@ export async function createMPPSolanaChargeHandler(
 
     const requestEncoded = encodeBase64URL(canonicalizeSortedJSON(requestBody));
 
-    const challengeTimeoutMs = 60_000;
-    const expiresAt = Date.now() + challengeTimeoutMs;
+    const expiresAt = Date.now() + CHARGE_CHALLENGE_TIMEOUT_MS;
 
     const paramsWithoutID: Omit<mppChallengeParams, "id"> = {
       realm,
@@ -498,19 +572,20 @@ export async function createMPPSolanaChargeHandler(
         throw new Error("push mode is not allowed with fee sponsorship");
       }
 
-      const transactionMessage = await fetchConfirmedTransaction(
+      const confirmedTransaction = await fetchConfirmedTransaction(
         rpc,
         validatedPayload.signature,
         maxRetries,
         retryDelayMs,
       );
 
-      if (!transactionMessage) {
+      if (!confirmedTransaction) {
         throw new Error("could not fetch confirmed transaction");
       }
+      assertPushTransactionFresh(challenge, confirmedTransaction.blockTime);
 
       const verifyResult = await verifyChargeTransaction({
-        transactionMessage,
+        transactionMessage: confirmedTransaction.transactionMessage,
         ...verifyArgs,
       });
 
@@ -662,8 +737,7 @@ export async function createMPPSolanaNativeChargeHandler(
 
     const requestEncoded = encodeBase64URL(canonicalizeSortedJSON(requestBody));
 
-    const challengeTimeoutMs = 60_000;
-    const expiresAt = Date.now() + challengeTimeoutMs;
+    const expiresAt = Date.now() + CHARGE_CHALLENGE_TIMEOUT_MS;
 
     const paramsWithoutID: Omit<mppChallengeParams, "id"> = {
       realm,
@@ -741,19 +815,20 @@ export async function createMPPSolanaNativeChargeHandler(
         throw new Error("push mode is not allowed with fee sponsorship");
       }
 
-      const transactionMessage = await fetchConfirmedTransaction(
+      const confirmedTransaction = await fetchConfirmedTransaction(
         rpc,
         validatedPayload.signature,
         maxRetries,
         retryDelayMs,
       );
 
-      if (!transactionMessage) {
+      if (!confirmedTransaction) {
         throw new Error("could not fetch confirmed transaction");
       }
+      assertPushTransactionFresh(challenge, confirmedTransaction.blockTime);
 
       const verifyResult = await verifyNativeChargeTransaction({
-        transactionMessage,
+        transactionMessage: confirmedTransaction.transactionMessage,
         ...verifyArgs,
       });
 

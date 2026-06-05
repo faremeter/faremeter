@@ -130,6 +130,59 @@ function createFakeRpc(): Rpc<SolanaRpcApi> {
   } as unknown as Rpc<SolanaRpcApi>;
 }
 
+type CreateBroadcastRpcOpts = {
+  blockhashValid?: boolean;
+  blockHeights?: readonly bigint[];
+  confirmationStatus?: "confirmed" | "finalized" | "processed" | null;
+  onGetSignatureStatuses?: () => void;
+  onSendTransaction?: () => void;
+};
+
+function createBroadcastRpc(
+  opts: CreateBroadcastRpcOpts = {},
+): Rpc<SolanaRpcApi> {
+  const blockHeights = opts.blockHeights ?? [1000n];
+  let blockHeightIndex = 0;
+  const nextBlockHeight = () => {
+    const height =
+      blockHeights[Math.min(blockHeightIndex, blockHeights.length - 1)] ??
+      1000n;
+    blockHeightIndex += 1;
+    return height;
+  };
+  const signatureStatus =
+    opts.confirmationStatus === null
+      ? null
+      : {
+          confirmationStatus: opts.confirmationStatus ?? "confirmed",
+          err: null,
+        };
+  return {
+    getBlockHeight: () => ({
+      send: async () => nextBlockHeight(),
+    }),
+    getSignatureStatuses: () => ({
+      send: async () => {
+        opts.onGetSignatureStatuses?.();
+        return {
+          value: [signatureStatus],
+        };
+      },
+    }),
+    isBlockhashValid: () => ({
+      send: async () => ({
+        value: opts.blockhashValid ?? true,
+      }),
+    }),
+    sendTransaction: () => ({
+      send: async () => {
+        opts.onSendTransaction?.();
+        return "settlement-signature";
+      },
+    }),
+  } as unknown as Rpc<SolanaRpcApi>;
+}
+
 await t.test(
   "createMPPSolanaChargeClient includes challenge memo",
   async (t) => {
@@ -468,6 +521,143 @@ await t.test(
     });
 
     t.matchOnly(result, { payer: wallet.publicKey });
+    t.end();
+  },
+);
+
+await t.test(
+  "createMPPSolanaNativeChargeClient rejects invalid recentBlockhash",
+  async (t) => {
+    const wallet = await createWallet();
+    const receiver = await generateKeyPairSigner();
+    const request: mppChargeRequest = {
+      amount: "1000000",
+      currency: "sol",
+      recipient: receiver.address,
+      methodDetails: {
+        recentBlockhash: "not-a-blockhash",
+      },
+    };
+
+    const handler = createMPPSolanaNativeChargeClient({ wallet });
+    const execer = await handler(makeChallenge(request));
+    if (!execer) {
+      throw new Error("expected client to handle native charge challenge");
+    }
+
+    await t.rejects(execer.exec(), { message: "invalid recentBlockhash" });
+    t.end();
+  },
+);
+
+await t.test(
+  "createMPPSolanaNativeChargeClient rejects stale broadcast recentBlockhash",
+  async (t) => {
+    let sendCount = 0;
+    const wallet = await createWallet();
+    const receiver = await generateKeyPairSigner();
+    const request: mppChargeRequest = {
+      amount: "1000000",
+      currency: "sol",
+      recipient: receiver.address,
+      methodDetails: {
+        recentBlockhash: FAKE_BLOCKHASH,
+      },
+    };
+
+    const handler = createMPPSolanaNativeChargeClient({
+      wallet,
+      rpc: createBroadcastRpc({
+        blockhashValid: false,
+        onSendTransaction: () => {
+          sendCount += 1;
+        },
+      }),
+      broadcast: true,
+    });
+    const execer = await handler(makeChallenge(request));
+    if (!execer) {
+      throw new Error("expected client to handle native charge challenge");
+    }
+
+    await t.rejects(execer.exec(), {
+      message: "recentBlockhash is no longer valid",
+    });
+    t.equal(sendCount, 0);
+    t.end();
+  },
+);
+
+await t.test(
+  "createMPPSolanaNativeChargeClient expires server blockhash during polling",
+  async (t) => {
+    const wallet = await createWallet();
+    const receiver = await generateKeyPairSigner();
+    const request: mppChargeRequest = {
+      amount: "1000000",
+      currency: "sol",
+      recipient: receiver.address,
+      methodDetails: {
+        recentBlockhash: FAKE_BLOCKHASH,
+      },
+    };
+
+    const handler = createMPPSolanaNativeChargeClient({
+      wallet,
+      rpc: createBroadcastRpc({
+        blockHeights: [1000n, 10_000n],
+        confirmationStatus: "processed",
+      }),
+      broadcast: true,
+    });
+    const execer = await handler(makeChallenge(request));
+    if (!execer) {
+      throw new Error("expected client to handle native charge challenge");
+    }
+
+    await t.rejects(execer.exec(), {
+      message: "blockhash expired before confirmation",
+    });
+    t.end();
+  },
+);
+
+await t.test(
+  "createMPPSolanaNativeChargeClient honors broadcast polling options",
+  async (t) => {
+    let statusPolls = 0;
+    const wallet = await createWallet();
+    const receiver = await generateKeyPairSigner();
+    const request: mppChargeRequest = {
+      amount: "1000000",
+      currency: "sol",
+      recipient: receiver.address,
+      methodDetails: {
+        recentBlockhash: FAKE_BLOCKHASH,
+      },
+    };
+
+    const handler = createMPPSolanaNativeChargeClient({
+      wallet,
+      rpc: createBroadcastRpc({
+        confirmationStatus: null,
+        onGetSignatureStatuses: () => {
+          statusPolls += 1;
+        },
+      }),
+      broadcast: true,
+      maxRetries: 2,
+      retryDelayMs: 0,
+    });
+    const execer = await handler(makeChallenge(request));
+    if (!execer) {
+      throw new Error("expected client to handle native charge challenge");
+    }
+
+    await t.rejects(execer.exec(), {
+      message: "transaction confirmation timed out",
+    });
+    t.equal(statusPolls, 2);
     t.end();
   },
 );

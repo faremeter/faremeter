@@ -472,14 +472,14 @@ export async function createMPPSolanaChargeHandler(
       // interoperability with other implementations.
       network: caip2ToCluster(solanaNetwork.caip2) ?? solanaNetwork.caip2,
       decimals: mintInfo.data.decimals,
-      tokenProgram: tokenProgram as string,
+      tokenProgram,
     };
 
     if (hasFeePayer && feePayerAddress) {
       const latestBlockhash = await rpc.getLatestBlockhash().send();
       methodDetails.feePayer = true;
       methodDetails.feePayerKey = feePayerAddress;
-      methodDetails.recentBlockhash = latestBlockhash.value.blockhash as string;
+      methodDetails.recentBlockhash = latestBlockhash.value.blockhash;
     }
 
     const requestBody: mppChargeRequest = {
@@ -723,7 +723,7 @@ export async function createMPPSolanaNativeChargeHandler(
       const latestBlockhash = await rpc.getLatestBlockhash().send();
       methodDetails.feePayer = true;
       methodDetails.feePayerKey = feePayerAddress;
-      methodDetails.recentBlockhash = latestBlockhash.value.blockhash as string;
+      methodDetails.recentBlockhash = latestBlockhash.value.blockhash;
     }
 
     const requestBody: mppChargeRequest = {

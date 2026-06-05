@@ -23,8 +23,8 @@ import {
   address,
   createNoopSigner,
   getBase64EncodedWireTransaction,
+  isBlockhash,
   type Address,
-  type Blockhash,
   type Instruction,
   type Rpc,
   type Signature,
@@ -79,13 +79,27 @@ type NormalizedChargeClientExpected = {
   splits: readonly NormalizedChargeClientExpectedSplit[] | undefined;
 };
 
+type ChargeLifetimeConstraint = WalletLifetimeConstraint & {
+  fallbackLastValidBlockHeight?: bigint;
+};
+
+type ChargeBroadcastConfirmOpts = {
+  maxRetries: number;
+  retryDelayMs: number;
+};
+
+const SERVER_BLOCKHASH_FALLBACK_VALIDITY_BLOCKS = 150n;
+const DEFAULT_BROADCAST_MAX_RETRIES = 60;
+const DEFAULT_BROADCAST_RETRY_DELAY_MS = 1000;
+
 async function broadcastAndConfirm(
   tx: Transaction,
   wallet: Wallet,
   rpc: Rpc<SolanaRpcApi>,
   challenge: mppChallengeParams,
   md: mppChargeRequest["methodDetails"],
-  lifetimeConstraint: WalletLifetimeConstraint,
+  lifetimeConstraint: ChargeLifetimeConstraint,
+  opts: ChargeBroadcastConfirmOpts,
 ): Promise<mppCredential> {
   if (md?.feePayer) {
     throw new Error("push mode is not allowed with fee sponsorship");
@@ -99,10 +113,8 @@ async function broadcastAndConfirm(
     signature = await rpc.sendTransaction(wire, { encoding: "base64" }).send();
   }
 
-  // Poll until the signature is confirmed or the blockhash expires.
-  const maxPolls = 60;
   let confirmed = false;
-  for (let i = 0; i < maxPolls; i++) {
+  for (let i = 0; i < opts.maxRetries; i++) {
     const status = await rpc
       .getSignatureStatuses([signature as Signature])
       .send();
@@ -119,13 +131,17 @@ async function broadcastAndConfirm(
       break;
     }
     const currentHeight = await rpc.getBlockHeight().send();
+    const lastValidBlockHeight =
+      lifetimeConstraint.lastValidBlockHeight > 0n
+        ? lifetimeConstraint.lastValidBlockHeight
+        : lifetimeConstraint.fallbackLastValidBlockHeight;
     if (
-      lifetimeConstraint.lastValidBlockHeight > 0n &&
-      currentHeight > lifetimeConstraint.lastValidBlockHeight
+      lastValidBlockHeight !== undefined &&
+      currentHeight > lastValidBlockHeight
     ) {
       throw new Error("blockhash expired before confirmation");
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, opts.retryDelayMs));
   }
 
   if (!confirmed) {
@@ -141,11 +157,33 @@ async function broadcastAndConfirm(
 async function fetchLifetimeConstraint(
   rpc: Rpc<SolanaRpcApi> | undefined,
   supplied: string | undefined,
-): Promise<WalletLifetimeConstraint> {
+  verifySuppliedFreshness: boolean,
+): Promise<ChargeLifetimeConstraint> {
   if (supplied) {
+    if (!isBlockhash(supplied)) {
+      throw new Error("invalid recentBlockhash");
+    }
+    if (!verifySuppliedFreshness) {
+      return {
+        blockhash: supplied,
+        lastValidBlockHeight: 0n,
+      };
+    }
+    if (!rpc) {
+      throw new Error("rpc is required to verify recentBlockhash");
+    }
+    const [{ value: isValid }, currentHeight] = await Promise.all([
+      rpc.isBlockhashValid(supplied).send(),
+      rpc.getBlockHeight().send(),
+    ]);
+    if (!isValid) {
+      throw new Error("recentBlockhash is no longer valid");
+    }
     return {
-      blockhash: supplied as Blockhash,
+      blockhash: supplied,
       lastValidBlockHeight: 0n,
+      fallbackLastValidBlockHeight:
+        currentHeight + SERVER_BLOCKHASH_FALLBACK_VALIDITY_BLOCKS,
     };
   }
   if (!rpc) {
@@ -303,6 +341,8 @@ export type CreateMPPSolanaChargeClientArgs = {
   mint: Address | { toBase58(): string };
   rpc?: Rpc<SolanaRpcApi> | string;
   broadcast?: boolean;
+  maxRetries?: number;
+  retryDelayMs?: number;
   expected?: MPPSolanaChargeClientExpected;
 };
 
@@ -311,7 +351,12 @@ export function createMPPSolanaChargeClient(
 ): MPPPaymentHandler {
   const mint = toAddress(args.mint);
   const rpc = args.rpc ? toRpc(args.rpc) : undefined;
-  const { wallet, broadcast = false } = args;
+  const {
+    wallet,
+    broadcast = false,
+    maxRetries = DEFAULT_BROADCAST_MAX_RETRIES,
+    retryDelayMs = DEFAULT_BROADCAST_RETRY_DELAY_MS,
+  } = args;
   const expected = normalizeChargeClientExpected(args.expected);
 
   if (broadcast && !rpc) {
@@ -354,6 +399,7 @@ export function createMPPSolanaChargeClient(
         const lifetimeConstraint = await fetchLifetimeConstraint(
           rpc,
           md?.recentBlockhash,
+          broadcast,
         );
 
         let decimals: number;
@@ -462,6 +508,7 @@ export function createMPPSolanaChargeClient(
             challenge,
             md,
             lifetimeConstraint,
+            { maxRetries, retryDelayMs },
           );
         }
 
@@ -481,6 +528,8 @@ export type CreateMPPSolanaNativeChargeClientArgs = {
   wallet: Wallet;
   rpc?: Rpc<SolanaRpcApi> | string;
   broadcast?: boolean;
+  maxRetries?: number;
+  retryDelayMs?: number;
   expected?: MPPSolanaChargeClientExpected;
 };
 
@@ -488,7 +537,12 @@ export function createMPPSolanaNativeChargeClient(
   args: CreateMPPSolanaNativeChargeClientArgs,
 ): MPPPaymentHandler {
   const rpc = args.rpc ? toRpc(args.rpc) : undefined;
-  const { wallet, broadcast = false } = args;
+  const {
+    wallet,
+    broadcast = false,
+    maxRetries = DEFAULT_BROADCAST_MAX_RETRIES,
+    retryDelayMs = DEFAULT_BROADCAST_RETRY_DELAY_MS,
+  } = args;
   const expected = normalizeChargeClientExpected(args.expected);
 
   if (broadcast && !rpc) {
@@ -533,6 +587,7 @@ export function createMPPSolanaNativeChargeClient(
         const lifetimeConstraint = await fetchLifetimeConstraint(
           rpc,
           md?.recentBlockhash,
+          broadcast,
         );
 
         const walletSigner = createNoopSigner(wallet.publicKey);
@@ -577,6 +632,7 @@ export function createMPPSolanaNativeChargeClient(
             challenge,
             md,
             lifetimeConstraint,
+            { maxRetries, retryDelayMs },
           );
         }
 

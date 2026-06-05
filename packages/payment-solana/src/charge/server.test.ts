@@ -777,6 +777,64 @@ await t.test("native charge rejects unknown pricing networks", async (t) => {
 });
 
 await t.test(
+  "native charge malformed payload does not consume challenge",
+  async (t) => {
+    const rpc = createFakeRpc();
+    const replayStore = createInMemoryReplayStore();
+    const handler = await createMPPSolanaNativeChargeHandler({
+      network: "devnet",
+      rpc,
+      replayStore,
+      realm: "test",
+      secretKey: SECRET_KEY,
+    });
+
+    const receiver = await generateKeyPairSigner();
+    const challenge = await handler.getChallenge(
+      "charge",
+      {
+        amount: "1000000",
+        asset: "sol",
+        recipient: receiver.address,
+        network: "solana:devnet",
+      },
+      "https://example.test/resource",
+    );
+
+    const client = createMPPSolanaNativeChargeClient({
+      wallet: await createWallet(),
+      rpc,
+    });
+    const execer = await client(challenge);
+    if (!execer) {
+      throw new Error("expected client to handle native charge challenge");
+    }
+    const credential = await execer.exec();
+
+    await t.rejects(
+      handler.handleSettle(
+        { challenge, payload: { type: "transaction" } },
+        createChargeContext(challenge),
+      ),
+      { message: /^invalid credential payload:/ },
+    );
+
+    const receipt = await handler.handleSettle(
+      credential,
+      createChargeContext(challenge),
+    );
+    t.match(receipt, {
+      status: "success",
+      method: "solana",
+      challengeId: challenge.id,
+      timestamp: RECEIPT_TIMESTAMP_RE,
+      reference: SETTLEMENT_SIGNATURE,
+    });
+    t.end();
+  },
+);
+
+await t.test(
   "native charge rejects pull when the confirmed transaction differs",
   async (t) => {
     let confirmedTransactionBase64 = "";
@@ -1245,6 +1303,67 @@ await t.test(
       ),
       false,
     );
+    t.end();
+  },
+);
+
+await t.test(
+  "SPL charge malformed payload does not consume challenge",
+  async (t) => {
+    const rpc = createFakeRpc();
+    const replayStore = createInMemoryReplayStore();
+    const mint = await generateKeyPairSigner();
+    const handler = await createMPPSolanaChargeHandler({
+      network: "devnet",
+      rpc,
+      mint: mint.address,
+      replayStore,
+      realm: "test",
+      secretKey: SECRET_KEY,
+    });
+
+    const receiver = await generateKeyPairSigner();
+    const challenge = await handler.getChallenge(
+      "charge",
+      {
+        amount: "1000000",
+        asset: mint.address,
+        recipient: receiver.address,
+        network: "solana:devnet",
+      },
+      "https://example.test/resource",
+    );
+
+    const client = createMPPSolanaChargeClient({
+      wallet: await createWallet(),
+      mint: mint.address,
+      rpc,
+    });
+    const execer = await client(challenge);
+    if (!execer) {
+      throw new Error("expected client to handle SPL charge challenge");
+    }
+    const credential = await execer.exec();
+
+    await t.rejects(
+      handler.handleSettle(
+        { challenge, payload: { type: "transaction" } },
+        createChargeContext(challenge),
+      ),
+      { message: /^invalid credential payload:/ },
+    );
+
+    const receipt = await handler.handleSettle(
+      credential,
+      createChargeContext(challenge),
+    );
+    t.match(receipt, {
+      status: "success",
+      method: "solana",
+      challengeId: challenge.id,
+      timestamp: RECEIPT_TIMESTAMP_RE,
+      reference: SETTLEMENT_SIGNATURE,
+    });
     t.end();
   },
 );

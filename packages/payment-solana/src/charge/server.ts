@@ -519,6 +519,11 @@ export async function createMPPSolanaChargeHandler(
     if (challenge.method !== "solana") return null;
     if (challenge.intent !== "charge") return null;
 
+    const idValid = await verifyChallengeID(secretKey, challenge);
+    if (!idValid) {
+      throw new Error("invalid challenge ID");
+    }
+
     let requestBody: unknown;
     try {
       requestBody = JSON.parse(decodeBase64URL(challenge.request));
@@ -529,11 +534,6 @@ export async function createMPPSolanaChargeHandler(
     const request = mppChargeRequest(requestBody);
     if (isValidationError(request)) return null;
     if (request.currency === "sol") return null;
-
-    const idValid = await verifyChallengeID(secretKey, challenge);
-    if (!idValid) {
-      throw new Error("invalid challenge ID");
-    }
 
     assertChallengeNotExpired(challenge);
 
@@ -548,16 +548,16 @@ export async function createMPPSolanaChargeHandler(
       return null;
     }
 
-    const consumed = await replayStore.consume(challenge.id);
-    if (!consumed) {
-      throw new Error("challenge ID already consumed or expired");
-    }
-
     const validatedPayload = chargeCredentialPayload(payload);
     if (isValidationError(validatedPayload)) {
       throw new Error(
         `invalid credential payload: ${validatedPayload.summary}`,
       );
+    }
+
+    const consumed = await replayStore.consume(challenge.id);
+    if (!consumed) {
+      throw new Error("challenge ID already consumed or expired");
     }
 
     const verifyArgs = {
@@ -763,6 +763,11 @@ export async function createMPPSolanaNativeChargeHandler(
     if (challenge.method !== "solana") return null;
     if (challenge.intent !== "charge") return null;
 
+    const idValid = await verifyChallengeID(secretKey, challenge);
+    if (!idValid) {
+      throw new Error("invalid challenge ID");
+    }
+
     let requestBody: unknown;
     try {
       requestBody = JSON.parse(decodeBase64URL(challenge.request));
@@ -773,11 +778,6 @@ export async function createMPPSolanaNativeChargeHandler(
     const request = mppChargeRequest(requestBody);
     if (isValidationError(request)) return null;
     if (request.currency !== "sol") return null;
-
-    const idValid = await verifyChallengeID(secretKey, challenge);
-    if (!idValid) {
-      throw new Error("invalid challenge ID");
-    }
 
     assertChallengeNotExpired(challenge);
 
@@ -792,16 +792,16 @@ export async function createMPPSolanaNativeChargeHandler(
       return null;
     }
 
-    const consumed = await replayStore.consume(challenge.id);
-    if (!consumed) {
-      throw new Error("challenge ID already consumed or expired");
-    }
-
     const validatedPayload = chargeCredentialPayload(payload);
     if (isValidationError(validatedPayload)) {
       throw new Error(
         `invalid credential payload: ${validatedPayload.summary}`,
       );
+    }
+
+    const consumed = await replayStore.consume(challenge.id);
+    if (!consumed) {
+      throw new Error("challenge ID already consumed or expired");
     }
 
     const verifyArgs = {

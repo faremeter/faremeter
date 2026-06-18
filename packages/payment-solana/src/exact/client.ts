@@ -111,7 +111,7 @@ async function extractMetadata(args: {
 
   const payerKey = address(extra.feePayer);
   const payTo = address(requirements.payTo);
-  const amount = Number(requirements.amount);
+  const amount = BigInt(requirements.amount);
   let paymentMode: PaymentMode = PaymentMode.ToSpec;
 
   if (

@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Post-processes TypeDoc markdown output to strip .md extensions from
- * internal links. Mintlify expects extensionless paths for cross-page
- * references.
+ * Post-processes TypeDoc markdown output for Mintlify cross-page links:
+ * strips the .md extension and rewrites the path to be root-absolute
+ * under /api/. Mintlify resolves cross-page references from the site
+ * root, where the generated API reference is mounted at /api/; bare
+ * relative targets (TypeDoc's default) do not resolve.
  *
  * Only rewrites links whose target matches a generated file in the
  * output directory, so external URLs (e.g. GitHub source links) are
@@ -21,6 +23,9 @@ if (!docsDir) {
   process.exit(1);
 }
 
+// The generated API reference is mounted at /api/ on the docs site.
+const SITE_BASE = "/api";
+
 const mdFiles = readdirSync(docsDir).filter((f) => f.endsWith(".md"));
 const knownBases = new Set(mdFiles.map((f) => f.replace(/\.md$/, "")));
 
@@ -36,7 +41,7 @@ for (const file of mdFiles) {
   const updated = original.replace(linkRe, (match, target, anchor) => {
     if (!knownBases.has(target)) return match;
     totalRewrites++;
-    return `](${target}${anchor ?? ""})`;
+    return `](${SITE_BASE}/${target}${anchor ?? ""})`;
   });
 
   if (updated !== original) {
@@ -45,5 +50,5 @@ for (const file of mdFiles) {
 }
 
 console.log(
-  `Stripped .md from ${totalRewrites} internal links across ${mdFiles.length} files`,
+  `Rewrote ${totalRewrites} internal links to ${SITE_BASE}/ across ${mdFiles.length} files`,
 );

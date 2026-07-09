@@ -14,6 +14,8 @@ const knownX402Networks = {
   "eip155:10143": { legacyName: "monad-testnet", chainId: 10143 },
   "eip155:324705682": { legacyName: "skale-base-sepolia", chainId: 324705682 },
   "eip155:1187947933": { legacyName: "skale-base", chainId: 1187947933 },
+  "eip155:50": { legacyName: "xdc", chainId: 50 },
+  "eip155:51": { legacyName: "xdc-testnet", chainId: 51 },
 } as const;
 
 type KnownX402Networks = typeof knownX402Networks;

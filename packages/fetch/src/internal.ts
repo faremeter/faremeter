@@ -204,6 +204,8 @@ export async function processPaymentRequiredResponse(
  */
 export type ProcessMPPOpts = {
   bodyDigest?: string;
+  /** Read the request body only when an unexpired challenge requires a digest. */
+  getBodyDigest?: () => Promise<string | undefined>;
 };
 
 export async function processPaymentRequiredResponseMPP(
@@ -217,6 +219,9 @@ export async function processPaymentRequiredResponseMPP(
   const challenges = parseWWWAuthenticate(wwwAuth);
   if (challenges.length === 0) return undefined;
 
+  let bodyDigest = opts?.bodyDigest;
+  let digestRead = bodyDigest !== undefined;
+
   for (const challenge of challenges) {
     if (challenge.expires !== undefined) {
       const expiresAtMs = parseMPPExpiresAtMs(challenge.expires);
@@ -224,11 +229,11 @@ export async function processPaymentRequiredResponseMPP(
     }
 
     if (challenge.digest !== undefined) {
-      if (
-        opts?.bodyDigest === undefined ||
-        challenge.digest !== opts.bodyDigest
-      )
-        continue;
+      if (!digestRead) {
+        digestRead = true;
+        bodyDigest = await opts?.getBodyDigest?.();
+      }
+      if (bodyDigest === undefined || challenge.digest !== bodyDigest) continue;
     }
 
     for (const handler of handlers) {

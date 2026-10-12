@@ -76,10 +76,14 @@ Wraps a fetch function with automatic x402 payment handling.
 When a 402 Payment Required response is received, the wrapper automatically
 processes the payment requirements, executes payment via the configured handlers,
 and retries the request with the payment header attached.
+Request inputs retain their effective headers and body, including init overrides,
+across payment attempts. Consumed body bytes are buffered for replay.
+Each attempt can cancel its body independently. A body used by the returned
+response remains readable until its consumer finishes or cancels it.
 
-| Function | Type                                                                                                                                                                                     |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wrap`   | `(phase2Fetch: (input: RequestInfo or URL, init?: RequestInit or undefined) => Promise<Response>, options: WrapOpts) => (input: RequestInfo or URL, init?: RequestInit) => Promise<...>` |
+| Function | Type                                                                                                                                                                                                     |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrap`   | `(phase2Fetch: (input: RequestInfo or URL, init?: RequestInit or undefined) => Promise<Response>, options: WrapOpts) => (input: RequestInfo or URL, fetchOptions?: RequestInit or null) => Promise<...>` |
 
 Parameters:
 
@@ -157,9 +161,9 @@ or no handler matches (allowing fallthrough to x402).
 
 Does not consume the response body.
 
-| Type             | Type                       |
-| ---------------- | -------------------------- |
-| `ProcessMPPOpts` | `{ bodyDigest?: string; }` |
+| Type             | Type                                                                                                                                                            |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ProcessMPPOpts` | `{ bodyDigest?: string; /** Read the request body only when an unexpired challenge requires a digest. */ getBodyDigest?: () => Promise<string or undefined>; }` |
 
 ### WrapOpts
 
